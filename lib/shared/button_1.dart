@@ -24,7 +24,7 @@ class ActionButton1 extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(8),
       height: btnHeight ?? 40,
-      width: screen.width * 0.6,
+      width: screen.width * 0.4,
       decoration: BoxDecoration(
         border: Border.all(color: const Color.fromARGB(120, 39, 39, 39)),
         color: btnColor,

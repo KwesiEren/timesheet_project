@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../shared/img_constant.dart';
 import 'package:timesheet_project/shared/button_1.dart';
 import 'package:timesheet_project/shared/theme_control.dart';
-import 'package:timesheet_project/shared/color_constant.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
             // width: screen.width,
             // height: screen.height,
             padding: const EdgeInsets.all(10),
-            color: ThemeCtrl.colors.colorbg,
+            // color: ThemeCtrl.colors.colorbg,
             child: Column(
               children: [
                 SizedBox(
@@ -155,22 +154,31 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ],
                             ),
-                            ActionButton1(
-                              text: 'Sign In',
-                              btnColor: ThemeCtrl.colors.colorbtn1,
-                              size: 20,
-                              borderRadius: 5,
+                            SizedBox(
+                              height: 20,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ActionButton1(
+                                  text: 'Sign In',
+                                  btnColor: ThemeCtrl.colors.colorbtn1,
+                                  size: 20,
+                                  borderRadius: 5,
+                                ),
+                              ],
                             ),
                             SizedBox(
-                              height: 50,
+                              height: 130,
                             ),
                             Text(
+                              'v1.0',
                               textAlign: TextAlign.center,
-                              'This application is designed for employess of CERSGIS only!\n Please delete if you don\'t find yourself in the demographic.\nTHANK YOU!',
+                              // 'This application is designed for employess of CERSGIS only!\n Please delete if you don\'t find yourself in the demographic.\nTHANK YOU!',
                               style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 20,
                                   fontFamily: 'Pacifico',
-                                  color: ThemeCtrl.colors.colorw),
+                                  color: ThemeCtrl.colors.color4),
                             )
                           ],
                         ),
