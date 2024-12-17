@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../shared/img_constant.dart';
+import 'package:timesheet_project/shared/button_1.dart';
+import 'package:timesheet_project/shared/theme_control.dart';
+import 'package:timesheet_project/shared/color_constant.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -57,83 +60,99 @@ class _LoginPageState extends State<LoginPage> {
                   Padding(
                     padding: const EdgeInsets.only(left: 5.0, right: 5.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Email',
-                          style: TextStyle(
-                              fontFamily: 'Comfortaa',
-                              fontSize: 15,
-                              color: Colors.white),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Email',
+                              style: TextStyle(
+                                fontFamily: 'Comfortaa',
+                                fontSize: 15,
+                                color: ThemeCtrl.colors.colortxt1,
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 247, 247, 247),
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                      color:
+                                          const Color.fromARGB(122, 0, 0, 0))),
+                              child: TextFormField(
+                                decoration: const InputDecoration(
+                                    contentPadding: EdgeInsets.only(left: 5),
+                                    // filled: true,
+                                    border: InputBorder.none,
+                                    hintText: 'JohnDoe@yahoo.com',
+                                    hintStyle: TextStyle(
+                                        color: Color.fromARGB(103, 0, 0, 0))),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Email will remain unchanged if empty';
+                                  }
+                                  if (!RegExp(
+                                          r'^[a-zA-Z0-9]+([._]?[a-zA-Z0-9]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$')
+                                      .hasMatch(value)) {
+                                    return 'Enter a valid Email address';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _username = value!;
+                                },
+                              ),
+                            ),
+                            Text(
+                              'Password',
+                              style: TextStyle(
+                                fontFamily: 'Comfortaa',
+                                fontSize: 15,
+                                color: ThemeCtrl.colors.colortxt1,
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 247, 247, 247),
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                      color:
+                                          const Color.fromARGB(122, 0, 0, 0))),
+                              child: TextFormField(
+                                obscureText: true,
+                                obscuringCharacter: '*',
+                                decoration: const InputDecoration(
+                                    contentPadding: EdgeInsets.only(left: 5),
+                                    // filled: true,
+                                    border: InputBorder.none,
+                                    hintText: '********',
+                                    hintStyle: TextStyle(
+                                        color: Color.fromARGB(103, 0, 0, 0))),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Password is needed';
+                                  }
+                                  if (value.length < 8) {
+                                    return 'Password must be at least 8 characters long.';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _password = value!;
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                        Container(
-                          margin: EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 247, 247, 247),
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                  color: const Color.fromARGB(122, 0, 0, 0))),
-                          child: TextFormField(
-                            decoration: const InputDecoration(
-                                contentPadding: EdgeInsets.only(left: 5),
-                                // filled: true,
-                                border: InputBorder.none,
-                                hintText: 'JohnDoe@yahoo.com',
-                                hintStyle: TextStyle(
-                                    color: Color.fromARGB(103, 0, 0, 0))),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Email will remain unchanged if empty';
-                              }
-                              if (!RegExp(
-                                      r'^[a-zA-Z0-9]+([._]?[a-zA-Z0-9]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$')
-                                  .hasMatch(value)) {
-                                return 'Enter a valid Email address';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) {
-                              _username = value!;
-                            },
-                          ),
-                        ),
-                        const Text(
-                          'Password',
-                          style: TextStyle(
-                              fontFamily: 'Comfortaa',
-                              fontSize: 15,
-                              color: Colors.white),
-                        ),
-                        Container(
-                          margin: EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 247, 247, 247),
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                  color: const Color.fromARGB(122, 0, 0, 0))),
-                          child: TextFormField(
-                            obscureText: true,
-                            obscuringCharacter: '*',
-                            decoration: const InputDecoration(
-                                contentPadding: EdgeInsets.only(left: 5),
-                                // filled: true,
-                                border: InputBorder.none,
-                                hintText: '********',
-                                hintStyle: TextStyle(
-                                    color: Color.fromARGB(103, 0, 0, 0))),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Password is needed';
-                              }
-                              if (value.length < 8) {
-                                return 'Password must be at least 8 characters long.';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) {
-                              _password = value!;
-                            },
-                          ),
+                        ActionButton1(
+                          text: 'Sign In',
+                          btnColor: ThemeCtrl.colors.colorbtn1,
+                          size: 20,
+                          borderRadius: 5,
                         )
                       ],
                     ),
