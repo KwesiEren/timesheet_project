@@ -15,22 +15,22 @@ class Login extends StatelessWidget {
             // Top Section with Curves
             Stack(
               children: [
-                // ClipPath(
-                //   clipper: TopCurveClipper(),
-                //   child: Container(
-                //     height: screen.height * 0.39, //400,
-                //     decoration: const BoxDecoration(
-                //         image: DecorationImage(
-                //             image: AssetImage(ImgAssets.splashBg),
-                //             fit: BoxFit.cover)
-                //         // gradient: LinearGradient(
-                //         //   colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
-                //         //   begin: Alignment.topCenter,
-                //         //   end: Alignment.bottomCenter,
-                //         // ),
-                //         ),
-                //   ),
-                // ),
+                ClipPath(
+                  clipper: TopCurveClipper(),
+                  child: Container(
+                    height: screen.height * 0.39, //400,
+                    decoration: const BoxDecoration(
+                        image: DecorationImage(
+                            image: AssetImage(ImgAssets.splashBg),
+                            fit: BoxFit.cover)
+                        // gradient: LinearGradient(
+                        //   colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+                        //   begin: Alignment.topCenter,
+                        //   end: Alignment.bottomCenter,
+                        // ),
+                        ),
+                  ),
+                ),
                 Positioned(
                   top: 50,
                   left: 16,
@@ -40,13 +40,21 @@ class Login extends StatelessWidget {
                         color: Colors.white, size: 24),
                   ),
                 ),
-                Container(
-                  height: screen.height * 0.05,
-                  width: screen.width * 0.05,
-                  decoration: const BoxDecoration(
-                      image: DecorationImage(
-                          image: AssetImage(ImgAssets.imgSat),
-                          fit: BoxFit.contain)),
+                Positioned(
+                  left: 258,
+                  top: 190,
+                  child: Container(
+                    //   margin: const EdgeInsets.only(left: 280,
+                    // top: 200),
+                    height: screen.height * 0.12, //120,
+                    width: screen.width * 0.3, //120,
+                    decoration: const BoxDecoration(
+                        // color: Colors.amber,
+                        image: DecorationImage(
+                            opacity: 0.1,
+                            image: AssetImage(ImgAssets.imgSat),
+                            fit: BoxFit.contain)),
+                  ),
                 )
               ],
             ),
