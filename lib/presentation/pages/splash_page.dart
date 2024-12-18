@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'login_page.dart';
 import 'package:get/get.dart';
+import '../sketchs/loginpage.dart';
 import 'package:flutter/material.dart';
 import '../../shared/img_constant.dart';
 
@@ -18,7 +19,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     // implement on initState
-    _timer = Timer.periodic(const Duration(seconds: 8), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       _toNextScreen();
       timer.cancel();
     });
@@ -26,7 +27,7 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void _toNextScreen() async {
-    Get.to(const LoginPage());
+    Get.to(const Login());
   }
 
   // UI Codes Implementation Here;
