@@ -40,22 +40,22 @@ class Login extends StatelessWidget {
                         color: Colors.white, size: 24),
                   ),
                 ),
-                Positioned(
-                  left: 258,
-                  top: 190,
-                  child: Container(
-                    //   margin: const EdgeInsets.only(left: 280,
-                    // top: 200),
-                    height: screen.height * 0.12, //120,
-                    width: screen.width * 0.3, //120,
-                    decoration: const BoxDecoration(
-                        // color: Colors.amber,
-                        image: DecorationImage(
-                            opacity: 0.1,
-                            image: AssetImage(ImgAssets.imgSat),
-                            fit: BoxFit.contain)),
-                  ),
-                )
+                // Positioned(
+                //   left: 258,
+                //   top: 190,
+                //   child: Container(
+                //     //   margin: const EdgeInsets.only(left: 280,
+                //     // top: 200),
+                //     height: screen.height * 0.12, //120,
+                //     width: screen.width * 0.3, //120,
+                //     decoration: const BoxDecoration(
+                //         // color: Colors.amber,
+                //         image: DecorationImage(
+                //             opacity: 0.1,
+                //             image: AssetImage(ImgAssets.imgSat),
+                //             fit: BoxFit.contain)),
+                //   ),
+                // )
               ],
             ),
 

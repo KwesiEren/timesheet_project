@@ -27,7 +27,7 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void _toNextScreen() async {
-    Get.to(const Login());
+    Get.to(const LoginPage());
   }
 
   // UI Codes Implementation Here;
