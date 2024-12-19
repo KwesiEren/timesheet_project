@@ -1,31 +1,5 @@
 import 'package:flutter/material.dart';
-// Custom TextField Widget
-
-// Widget _buildTextField({
-//     required String hint,
-//     required IconData icon,
-//     bool obscureText = false,
-//     IconData? suffixIcon,
-//   }) {
-//     return TextField(
-//       obscureText: obscureText,
-//       decoration: InputDecoration(
-//         prefixIcon: Icon(icon, color: const Color(0xFF03296E)),
-//         hintText: hint,
-//         hintStyle: const TextStyle(
-//           color: Color(0xFF4A4A4A),
-//         ),
-//         suffixIcon:
-//             suffixIcon != null ? Icon(suffixIcon, color: Colors.grey) : null,
-//         filled: true,
-//         fillColor: Colors.blue.shade50,
-//         border: OutlineInputBorder(
-//           borderRadius: BorderRadius.circular(12),
-//           borderSide: BorderSide.none,
-//         ),
-//       ),
-//     );
-//   }
+import 'package:timesheet_project/shared/validation.dart';
 
 class InputField1 extends StatelessWidget {
   InputField1({
@@ -42,6 +16,8 @@ class InputField1 extends StatelessWidget {
   IconData icon;
   bool? hideText;
   IconData? suffixIcon;
+
+  final valid = ValidationClass();
 
   @override
   Widget build(BuildContext context) {
@@ -64,20 +40,19 @@ class InputField1 extends StatelessWidget {
         ),
       ),
       validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password will remain unchanged if empty';
-                                }
-                                if (value.length < 8) {
-                                  return 'Password must be at least 8 characters long.';
-                                }
-                                if (value != _password) {
-                                  return 'Password does not match!';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) {
-                                collector = value;
-                              },
+        // This block below checks the type of input before validation;
+        if (hideText == true) {
+          // Validate password if hideText is true
+          return valid.validatePassword(value ?? '');
+        } else {
+          // Validate email if hideText is false
+          return valid.validateEmail(value ?? '');
+        }
+        // Ends here
+      },
+      onSaved: (value) {
+        collector = value;
+      },
     );
   }
 }

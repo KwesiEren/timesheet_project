@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timesheet_project/shared/components/inputfield_w_icon.dart';
 import '../../shared/img_constant.dart';
 import '../../shared/components/curve_design.dart';
 import 'package:timesheet_project/shared/button_1.dart';
@@ -20,7 +21,6 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -95,17 +95,17 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24),
 
                   // Full Name TextField
-                  _buildTextField(
-                    hint: "Full Name",
-                    icon: Icons.person_outline,
+                  InputField1(
+                    hint: "Email",
+                    icon: Icons.mail,
                   ),
                   const SizedBox(height: 16),
 
                   // Password TextField
-                  _buildTextField(
+                  InputField1(
                     hint: "Password",
-                    icon: Icons.lock_outline,
-                    obscureText: true,
+                    icon: Icons.lock,
+                    hideText: true,
                     suffixIcon: Icons.visibility_outlined,
                   ),
 
@@ -162,7 +162,6 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
       ),
-   
     );
     // appBar: AppBar(
     //   title: const Text('Login Screen'),
