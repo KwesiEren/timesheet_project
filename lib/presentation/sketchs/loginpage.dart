@@ -106,7 +106,7 @@ class Login extends StatelessWidget {
                       Row(
                         children: [
                           Checkbox(
-                              activeColor: Color(0xFF0432A0),
+                              activeColor: const Color(0xFF0432A0),
                               value: true,
                               onChanged: (val) {}),
                           const Text("Remember Me"),
@@ -131,7 +131,7 @@ class Login extends StatelessWidget {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 7, 63, 194),
+                        backgroundColor: const Color.fromARGB(255, 7, 63, 194),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
