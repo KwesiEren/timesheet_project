@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:timesheet_project/presentation/sketchs/dashboard.dart';
+import 'package:timesheet_project/presentation/sketchs/testpage.dart';
+
 import 'login_page.dart';
 import 'package:get/get.dart';
 import '../sketchs/loginpage.dart';
@@ -27,7 +30,7 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void _toNextScreen() async {
-    Get.to(const LoginPage());
+    Get.to(const DashboardPage());
   }
 
   // UI Codes Implementation Here;

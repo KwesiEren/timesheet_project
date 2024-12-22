@@ -1,3 +1,4 @@
+import '../theme_control.dart';
 import 'package:flutter/material.dart';
 import 'package:timesheet_project/shared/validation.dart';
 
@@ -5,35 +6,49 @@ class InputField1 extends StatelessWidget {
   InputField1({
     required this.hint,
     required this.icon,
-    this.collector,
+    this.controller,
     this.hideText,
     this.suffixIcon,
     super.key,
+    this.callback,
   });
 
-  String hint;
-  String? collector;
-  IconData icon;
-  bool? hideText;
-  IconData? suffixIcon;
+  final String hint;
+  final IconData icon;
+  final TextEditingController? controller;
+  final bool? hideText;
+  final IconData? suffixIcon;
+  final VoidCallback? callback;
 
   final valid = ValidationClass();
 
   @override
   Widget build(BuildContext context) {
-    var screen = MediaQuery.of(context).size;
     return TextFormField(
+      controller: controller,
       obscureText: hideText ?? false,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: const Color(0xFF03296E)),
-        hintText: hint,
-        hintStyle: const TextStyle(
-          color: Color(0xFF4A4A4A),
+        errorBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Color(0xFFF44336)),
+            borderRadius: BorderRadius.circular(20)),
+        focusedBorder:
+            OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+        focusColor: ThemeCtrl.colors.color1,
+        prefixIcon: Icon(
+          icon,
+          color: ThemeCtrl.colors.coloricn,
         ),
-        suffixIcon:
-            suffixIcon != null ? Icon(suffixIcon, color: Colors.grey) : null,
+        hintText: hint,
+        hintStyle: TextStyle(
+          fontFamily: 'Comfortaa',
+          color: ThemeCtrl.colors.color5,
+        ),
+        suffixIcon: suffixIcon != null
+            ? GestureDetector(
+                onTap: callback, child: Icon(suffixIcon, color: Colors.grey))
+            : null,
         filled: true,
-        fillColor: Colors.blue.shade50,
+        fillColor: ThemeCtrl.colors.color3,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -43,15 +58,12 @@ class InputField1 extends StatelessWidget {
         // This block below checks the type of input before validation;
         if (hideText == true) {
           // Validate password if hideText is true
-          return valid.validatePassword(value ?? '');
+          return valid.validatePassword(value);
         } else {
           // Validate email if hideText is false
-          return valid.validateEmail(value ?? '');
+          return valid.validateEmail(value);
         }
         // Ends here
-      },
-      onSaved: (value) {
-        collector = value;
       },
     );
   }
