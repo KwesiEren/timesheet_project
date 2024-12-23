@@ -1,0 +1,72 @@
+import 'package:flutter/material.dart';
+
+import '../../shared/components/curvednavbar/navbar.dart';
+import '../../shared/theme_control.dart';
+import 'activities_page.dart';
+import 'announcement_page.dart';
+import 'calendar_page.dart';
+import 'checkin_page.dart';
+import 'dashboard_page.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = [
+    const DashboardPage(),
+    const PunchInPage(),
+    const ActivitiesPage(),
+    const AnnouncementPage(),
+    const CalendarPage()
+  ];
+
+  final List<IconData> _navigationItems = [
+    Icons.home_outlined,
+    Icons.alarm_add_outlined,
+    Icons.task_outlined,
+    Icons.announcement_outlined,
+    Icons.calendar_month_outlined,
+  ];
+
+  void _onNavBarTap(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    _pageController
+        .jumpToPage(index); // Optionally use animateToPage for animations
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: _pages,
+      ),
+      bottomNavigationBar: CustomNavBar(
+        items: _navigationItems,
+        height: 60,
+        color: ThemeCtrl.colors.coloricn,
+        selectedIconColor: ThemeCtrl.colors.coloricn,
+        unselectedIconColor: ThemeCtrl.colors.colorw,
+        backgroundColor: const Color.fromARGB(0, 4, 51, 160),
+        buttonBackgroundColor: ThemeCtrl.colors.color3,
+        animationDuration: const Duration(milliseconds: 300),
+        index: _currentIndex,
+        onTap: _onNavBarTap,
+      ),
+    );
+  }
+}

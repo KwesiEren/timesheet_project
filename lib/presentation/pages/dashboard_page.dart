@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:timesheet_project/presentation/pages/activities_page.dart';
+import 'package:timesheet_project/presentation/pages/announcement_page.dart';
+import 'package:timesheet_project/presentation/pages/calendar_page.dart';
+import 'package:timesheet_project/presentation/pages/checkin_page.dart';
 import '../../shared/components/curvednavbar/navbar.dart';
 
 import '../../shared/img_constant.dart';
@@ -15,24 +19,14 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  // final PageController _pageController = PageController();
-  // int _currentIndex = 0;
-  final List<IconData> _navigationItems = [
-    Icons.home_outlined,
-    Icons.alarm_add_outlined,
-    Icons.task_outlined,
-    Icons.announcement_outlined,
-    Icons.calendar_month_outlined,
-  ];
+  int _currentIndex = 0;
+
+  //Logics used in the Dashboard screen here;
 
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Screen'),
-        centerTitle: true,
-      ),
       backgroundColor: ThemeCtrl.colors.colorbg,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -125,7 +119,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           endIndent: screen.width * 0.03,
                           height: screen.height * 0.01, // 1% of screen height
 
-                          color: Color(0x6D000000),
+                          color: const Color(0x6D000000),
                         ),
 
                         //Activities status;
@@ -180,7 +174,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             Container(
                               width: 1.2,
                               height: 80,
-                              color: Color(0x6D000000),
+                              color: const Color(0x6D000000),
                             ),
 
                             //Uncompleted;
@@ -235,7 +229,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           endIndent: screen.width * 0.03,
                           height: screen.height * 0.01, // 1% of screen height
 
-                          color: Color(0x6D000000),
+                          color: const Color(0x6D000000),
                         ),
 
                         //Work hours
@@ -290,27 +284,27 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
-      bottomNavigationBar: CustomNavBar(
-        onTap: (index) {
-          if (index == 0) {
-          } else if (index == 1) {
-          } else if (index == 2) {
-          } else if (index == 3) {
-          } else if (index == 4) {
-          } else if (index == 5) {
-          } else {
-            debugPrint('Unknown Button pushed!');
-          }
-        },
-        items: _navigationItems,
-        height: screen.height * 0.08, // 8% of screen height
-        color: ThemeCtrl.colors.coloricn,
-        selectedIconColor: ThemeCtrl.colors.coloricn,
-        unselectedIconColor: ThemeCtrl.colors.colorw,
-        backgroundColor: const Color.fromARGB(0, 4, 51, 160),
-        buttonBackgroundColor: ThemeCtrl.colors.color3,
-        animationDuration: const Duration(milliseconds: 300),
-      ),
+      // bottomNavigationBar: CustomNavBar(
+      //   onTap: (index) {
+      //     if (index == 0) {
+      //     } else if (index == 1) {
+      //     } else if (index == 2) {
+      //     } else if (index == 3) {
+      //     } else if (index == 4) {
+      //     } else if (index == 5) {
+      //     } else {
+      //       debugPrint('Unknown Button pushed!');
+      //     }
+      //   },
+      //   items: _navigationItems,
+      //   height: screen.height * 0.08, // 8% of screen height
+      //   color: ThemeCtrl.colors.coloricn,
+      //   selectedIconColor: ThemeCtrl.colors.coloricn,
+      //   unselectedIconColor: ThemeCtrl.colors.colorw,
+      //   backgroundColor: const Color.fromARGB(0, 4, 51, 160),
+      //   buttonBackgroundColor: ThemeCtrl.colors.color3,
+      //   animationDuration: const Duration(milliseconds: 300),
+      // ),
 
       // bottomNavigationBar: NavBar1(
       //   icons: _navigationItems,
