@@ -37,12 +37,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleCard1(
-                      onPressed: () {},
-                      imgPath: ImgAssets.splashBg,
-                      size: screen.width * 0.14, // 14% of screen width
-                    ),
-                    const Text('Dashboard'),
                     CircleButton1(
                       onPressed: () {},
                       size: screen.width * 0.14, // 14% of screen width
@@ -50,6 +44,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       icnColor: ThemeCtrl.colors.colorw,
                       btnColor1: ThemeCtrl.colors.coloricn,
                       btnColor2: ThemeCtrl.colors.colorbtn1,
+                    ),
+                    const Text('Dashboard'),
+                    CircleCard1(
+                      onPressed: () {},
+                      imgPath: ImgAssets.splashBg,
+                      size: screen.width * 0.14, // 14% of screen width
                     )
                   ],
                 ),
