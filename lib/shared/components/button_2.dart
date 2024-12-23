@@ -9,12 +9,12 @@ class CircleButton1 extends StatelessWidget {
     required this.btnColor1,
     required this.btnColor2,
     required this.icnColor,
-    required this.onPressed,
+    this.onPressed,
     super.key,
   });
 
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   Color? bgcolor;
   double? size;
   Color btnColor1;

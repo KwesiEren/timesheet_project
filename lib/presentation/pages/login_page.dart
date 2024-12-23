@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:timesheet_project/presentation/pages/resetpassword_page.dart';
 import '../../shared/img_constant.dart';
 import '../../shared/components/curve_design.dart';
 import '../../shared/theme_control.dart';
 
 import '../../shared/components/inputfield_w_icon.dart';
 import '../sketchs/dashboard.dart';
+import 'dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -169,7 +172,9 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            Get.to(const ResetPasswordPage());
+                          },
                           child: Text(
                             "Forgot Password?",
                             style: TextStyle(
