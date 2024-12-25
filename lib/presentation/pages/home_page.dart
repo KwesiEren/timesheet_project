@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
     Icons.home_outlined,
     Icons.alarm_add_outlined,
     Icons.task_outlined,
-    Icons.announcement_outlined,
+    Icons.campaign_outlined,
     Icons.calendar_month_outlined,
   ];
 

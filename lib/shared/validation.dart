@@ -1,13 +1,13 @@
 class ValidationClass {
   String? validateEmail(String? key) {
     if (key == null || key.isEmpty) {
-      return 'Email is required';
+      return '';
     }
     // Regular expression for basic email format validation
     String emailPattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
     RegExp regex = RegExp(emailPattern);
     if (!regex.hasMatch(key)) {
-      return 'Enter a valid email address';
+      return '';
     }
     return null;
   }
@@ -17,7 +17,7 @@ class ValidationClass {
     /*String input*/
   ) {
     if (key == null || key.isEmpty) {
-      return 'Password will remain unchanged if empty';
+      return '';
     }
     if (key.length < 8) {
       return 'Password must be at least 8 characters long.';
