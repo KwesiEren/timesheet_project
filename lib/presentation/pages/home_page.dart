@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:timesheet_project/presentation/pages/notifications_page.dart';
 
 import '../../shared/components/curvednavbar/navbar.dart';
 import '../../shared/theme_control.dart';
+import '../../shared/components/appbar/appbar1.dart';
 import 'activities_page.dart';
 import 'announcement_page.dart';
 import 'calendar_page.dart';
@@ -27,6 +29,14 @@ class _HomePageState extends State<HomePage> {
     const CalendarPage()
   ];
 
+  final List<String> _titles = [
+    'Dashboard',
+    'TimeCard',
+    'Activities',
+    'Announcements',
+    'Calendar',
+  ];
+
   final List<IconData> _navigationItems = [
     Icons.home_outlined,
     Icons.alarm_add_outlined,
@@ -45,7 +55,16 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var screen = MediaQuery.of(context).size;
     return Scaffold(
+      appBar: CustomAppBar1(
+        navigationDestination: const NotificationsPage(),
+        title: _titles[_currentIndex],
+      ),
+      endDrawer: Drawer(
+        width: screen.width * 0.6,
+        backgroundColor: Colors.blueAccent,
+      ),
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {

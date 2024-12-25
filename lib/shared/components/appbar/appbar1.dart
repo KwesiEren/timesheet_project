@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:timesheet_project/presentation/pages/activities_page.dart';
-import 'package:timesheet_project/presentation/sketchs/drawer_button.dart';
-import 'package:timesheet_project/presentation/sketchs/leading_button.dart';
+import 'package:timesheet_project/shared/components/appbar/drawer_button.dart';
+import 'package:timesheet_project/shared/components/appbar/leading_button.dart';
 
-import '../../shared/img_constant.dart';
-import '../../shared/theme_control.dart';
+import '../../img_constant.dart';
+import '../../theme_control.dart';
 
 class CustomAppBar1 extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -38,6 +38,7 @@ class CustomAppBar1 extends StatelessWidget implements PreferredSizeWidget {
                 btnColor1: ThemeCtrl.colors.coloricn,
                 btnColor2: ThemeCtrl.colors.colorbtn1,
                 destination: navigationDestination,
+                notificationCount: 6,
               ),
               Text(
                 title,

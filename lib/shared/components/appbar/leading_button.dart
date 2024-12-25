@@ -6,6 +6,7 @@ class LeadingButton extends StatelessWidget {
   final Color icnColor;
   final Color btnColor1;
   final Color btnColor2;
+  final int notificationCount;
   final Widget destination;
 
   const LeadingButton({
@@ -15,6 +16,7 @@ class LeadingButton extends StatelessWidget {
     required this.icnColor,
     required this.btnColor1,
     required this.btnColor2,
+    required this.notificationCount,
     required this.destination,
   }) : super(key: key);
 
@@ -41,9 +43,35 @@ class LeadingButton extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: Center(
-          child: Icon(icons, color: icnColor
-              // size: 30, // Adjust the size of the icon
-              ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icons, color: icnColor
+                  // size: 30, // Adjust the size of the icon
+                  ),
+              if (notificationCount >
+                  0) // Show badge only if there's a notification
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$notificationCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

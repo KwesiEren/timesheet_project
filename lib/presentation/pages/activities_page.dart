@@ -11,11 +11,6 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
   int _currentIndex = 2;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text('Activity'),
-      ),
-    );
+    return Scaffold();
   }
 }

@@ -11,11 +11,6 @@ class _CalendarPageState extends State<CalendarPage> {
   int _currentIndex = 4;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text('Calendar'),
-      ),
-    );
+    return Scaffold();
   }
 }

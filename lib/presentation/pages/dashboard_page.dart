@@ -3,7 +3,7 @@ import 'package:timesheet_project/presentation/pages/activities_page.dart';
 import 'package:timesheet_project/presentation/pages/announcement_page.dart';
 import 'package:timesheet_project/presentation/pages/calendar_page.dart';
 import 'package:timesheet_project/presentation/pages/checkin_page.dart';
-import 'package:timesheet_project/presentation/sketchs/appbar1.dart';
+import 'package:timesheet_project/shared/components/appbar/appbar1.dart';
 import '../../shared/components/curvednavbar/navbar.dart';
 
 import '../../shared/img_constant.dart';
@@ -28,14 +28,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: const CustomAppBar1(
-        navigationDestination: AnnouncementPage(),
-        title: 'Dashboard',
-      ),
       //
-      endDrawer: Drawer(
-        backgroundColor: Colors.blueAccent,
-      ),
+
       backgroundColor: ThemeCtrl.colors.colorbg,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -43,25 +37,6 @@ class _DashboardPageState extends State<DashboardPage> {
             padding: const EdgeInsets.all(8),
             child: Column(
               children: [
-                // Row(
-                //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //   children: [
-                //     CircleButton1(
-                //       onPressed: () {},
-                //       size: screen.width * 0.14, // 14% of screen width
-                //       icon: Icons.notifications_outlined,
-                //       icnColor: ThemeCtrl.colors.colorw,
-                //       btnColor1: ThemeCtrl.colors.coloricn,
-                //       btnColor2: ThemeCtrl.colors.colorbtn1,
-                //     ),
-                //     const Text('Dashboard'),
-                //     CircleCard1(
-                //       onPressed: () {},
-                //       imgPath: ImgAssets.splashBg,
-                //       size: screen.width * 0.14, // 14% of screen width
-                //     )
-                //   ],
-                // ),
                 SizedBox(height: screen.height * 0.14), // 14% of screen height
 
                 Center(

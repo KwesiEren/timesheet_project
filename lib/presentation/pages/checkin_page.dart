@@ -15,10 +15,6 @@ class _PunchInPageState extends State<PunchInPage> {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text('TimeCard'),
-      ),
       body: Center(
         child: Column(
           // crossAxisAlignment: CrossAxisAlignment.center,
