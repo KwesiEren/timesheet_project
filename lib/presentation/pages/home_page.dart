@@ -58,14 +58,17 @@ class _HomePageState extends State<HomePage> {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
       appBar: CustomAppBar1(
+        height: 85,
         navigationDestination: const NotificationsPage(),
         title: _titles[_currentIndex],
       ),
+      backgroundColor: ThemeCtrl.colors.colorbg,
       endDrawer: Drawer(
         width: screen.width * 0.6,
         backgroundColor: Colors.blueAccent,
       ),
       body: PageView(
+        physics: const NeverScrollableScrollPhysics(),
         controller: _pageController,
         onPageChanged: (index) {
           setState(() {

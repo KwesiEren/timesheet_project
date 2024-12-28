@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/theme_control.dart';
+
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
 
@@ -11,6 +13,8 @@ class _CalendarPageState extends State<CalendarPage> {
   int _currentIndex = 4;
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    return Scaffold(
+      backgroundColor: ThemeCtrl.colors.colorbg,
+    );
   }
 }
