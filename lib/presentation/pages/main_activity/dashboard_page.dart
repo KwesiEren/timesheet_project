@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:timesheet_project/presentation/pages/activities_page.dart';
-import 'package:timesheet_project/presentation/pages/announcement_page.dart';
-import 'package:timesheet_project/presentation/pages/calendar_page.dart';
-import 'package:timesheet_project/presentation/pages/checkin_page.dart';
+import 'package:timesheet_project/presentation/pages/main_activity/activities_page.dart';
+import 'package:timesheet_project/presentation/pages/main_activity/announcement_page.dart';
+import 'package:timesheet_project/presentation/pages/main_activity/calendar_page.dart';
+import 'package:timesheet_project/presentation/pages/main_activity/checkin_page.dart';
 import 'package:timesheet_project/shared/components/appbar/appbar1.dart';
-import '../../shared/components/curvednavbar/navbar.dart';
+import '../../../shared/components/curvednavbar/navbar.dart';
 
-import '../../shared/img_constant.dart';
-import '../../shared/theme_control.dart';
+import '../../../shared/img_constant.dart';
+import '../../../shared/theme_control.dart';
 
-import '../../shared/components/button_2.dart';
-import '../../shared/components/circlecard1.dart';
+import '../../../shared/components/button_2.dart';
+import '../../../shared/components/circlecard1.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});

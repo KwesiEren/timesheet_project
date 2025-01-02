@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:timesheet_project/presentation/pages/notifications_page.dart';
+import 'package:timesheet_project/presentation/pages/side_activity/notifications_page.dart';
 
-import '../../shared/components/curvednavbar/navbar.dart';
-import '../../shared/theme_control.dart';
-import '../../shared/components/appbar/appbar1.dart';
+import '../../../shared/components/curvednavbar/navbar.dart';
+import '../../../shared/theme_control.dart';
+import '../../../shared/components/appbar/appbar1.dart';
 import 'activities_page.dart';
 import 'announcement_page.dart';
 import 'calendar_page.dart';
@@ -20,6 +20,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
+
+  List<dynamic> _gottenData = [];
 
   final List<Widget> _pages = [
     const DashboardPage(),
@@ -58,6 +60,7 @@ class _HomePageState extends State<HomePage> {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
       appBar: CustomAppBar1(
+        notificationCount: _gottenData.length,
         height: 85,
         navigationDestination: const NotificationsPage(),
         title: _titles[_currentIndex],

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:timesheet_project/presentation/pages/activities_page.dart';
+import 'package:timesheet_project/presentation/pages/main_activity/activities_page.dart';
 import 'package:timesheet_project/shared/components/appbar/drawer_button.dart';
 import 'package:timesheet_project/shared/components/appbar/leading_button.dart';
 
@@ -10,13 +10,15 @@ class CustomAppBar1 extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final double height;
   final Widget navigationDestination;
+  final int? notificationCount;
 
-  const CustomAppBar1({
-    Key? key,
-    required this.title,
-    this.height = 80.0,
-    required this.navigationDestination,
-  }) : super(key: key);
+  const CustomAppBar1(
+      {Key? key,
+      required this.title,
+      this.height = 80.0,
+      required this.navigationDestination,
+      this.notificationCount})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,7 @@ class CustomAppBar1 extends StatelessWidget implements PreferredSizeWidget {
                 btnColor1: ThemeCtrl.colors.coloricn,
                 btnColor2: ThemeCtrl.colors.colorbtn1,
                 destination: navigationDestination,
-                notificationCount: 6,
+                notificationCount: notificationCount ?? 0,
               ),
               Text(
                 title,
