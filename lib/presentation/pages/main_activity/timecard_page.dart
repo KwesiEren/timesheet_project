@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:timesheet_project/presentation/pages/side_activity/checkin_page.dart';
 import 'package:timesheet_project/shared/components/button_1.dart';
 import 'package:timesheet_project/shared/theme_control.dart';
 
-import '../../../models/employee.dart';
 import '../../../services/api.dart';
 
 class PunchInPage extends StatefulWidget {
@@ -47,6 +48,14 @@ class _PunchInPageState extends State<PunchInPage> {
       isLoading = false; // Ensure loading is stopped });
       debugPrint('Refresh finished'); // Debugging log
     });
+  }
+
+  void _toNextScreen(Widget destination) async {
+    Get.to(() => destination);
+  }
+
+  void _toPreviousScreen() async {
+    Get.back();
   }
 
   @override
@@ -207,7 +216,9 @@ class _PunchInPageState extends State<PunchInPage> {
               height: screen.height * 0.1,
             ),
             ActionButton1(
-                onPressed: () {},
+                onPressed: () {
+                  _toNextScreen(PunchInScreen());
+                },
                 text: 'Check In',
                 txtcolor: ThemeCtrl.colors.color3,
                 btnWidth: screen.width * 0.7,

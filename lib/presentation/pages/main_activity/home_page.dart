@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:timesheet_project/presentation/pages/side_activity/notifications_page.dart';
 
 import '../../../shared/components/curvednavbar/navbar.dart';
+import '../../../shared/img_constant.dart';
 import '../../../shared/theme_control.dart';
 import '../../../shared/components/appbar/appbar1.dart';
 import 'activities_page.dart';
 import 'announcement_page.dart';
 import 'calendar_page.dart';
-import 'checkin_page.dart';
+import 'timecard_page.dart';
 import 'dashboard_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -67,8 +68,90 @@ class _HomePageState extends State<HomePage> {
       ),
       backgroundColor: ThemeCtrl.colors.colorbg,
       endDrawer: Drawer(
-        width: screen.width * 0.6,
-        backgroundColor: Colors.blueAccent,
+        width: screen.width * 0.7,
+        backgroundColor: ThemeCtrl.colors.colorbg,
+        child: Column(
+          children: [
+            // Drawer Header
+            UserAccountsDrawerHeader(
+              accountName: const Text(
+                'Username',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              accountEmail: const Text('#402914244'),
+              currentAccountPicture: const CircleAvatar(
+                backgroundImage:
+                    AssetImage(ImgAssets.splashBg), // Replace with your asset
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    ThemeCtrl.colors.coloricn,
+                    ThemeCtrl.colors.colorbtn1
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+
+            // Drawer Items
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Profile'),
+              onTap: () {
+                // Handle Profile navigation
+              },
+            ),
+            SizedBox(height: screen.height * 0.005),
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Notifications'),
+              onTap: () {
+                // Handle Notifications navigation
+              },
+            ),
+            SizedBox(height: screen.height * 0.005),
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Terms and Conditions'),
+              onTap: () {
+                // Handle Terms and Conditions navigation
+              },
+            ),
+            SizedBox(height: screen.height * 0.005),
+            ListTile(
+              leading: const Icon(Icons.phone_outlined),
+              title: const Text('Contact Us'),
+              onTap: () {
+                // Handle Contact Us navigation
+              },
+            ),
+
+            const Spacer(), // Pushes the logout button to the bottom
+
+            // Logout Button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  // Handle logout
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ThemeCtrl.colors.colorbtn1,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Log Out',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       body: PageView(
         physics: const NeverScrollableScrollPhysics(),

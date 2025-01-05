@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timesheet_project/presentation/pages/main_activity/activities_page.dart';
 import 'package:timesheet_project/presentation/pages/main_activity/announcement_page.dart';
 import 'package:timesheet_project/presentation/pages/main_activity/calendar_page.dart';
-import 'package:timesheet_project/presentation/pages/main_activity/checkin_page.dart';
+import 'package:timesheet_project/presentation/pages/main_activity/timecard_page.dart';
 import 'package:timesheet_project/shared/components/appbar/appbar1.dart';
 import '../../../shared/components/curvednavbar/navbar.dart';
 

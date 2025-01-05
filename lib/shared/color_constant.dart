@@ -15,6 +15,8 @@ class AppColors {
   final coloricn = const Color(0xFF03296E);
   final colorw = const Color(0xFFFEFFFF);
   final nocolor = const Color(0x00FEFFFF);
+  final colorg = const Color(0xFF28CF36);
+  final colorr = const Color(0xFFC52323);
 
   const AppColors();
 }
