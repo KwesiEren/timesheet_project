@@ -24,12 +24,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
   //Logics used in the Dashboard screen here;
 
+  // UI code block here
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-      //
-
       backgroundColor: ThemeCtrl.colors.colorbg,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -268,32 +267,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
-      // bottomNavigationBar: CustomNavBar(
-      //   onTap: (index) {
-      //     if (index == 0) {
-      //     } else if (index == 1) {
-      //     } else if (index == 2) {
-      //     } else if (index == 3) {
-      //     } else if (index == 4) {
-      //     } else if (index == 5) {
-      //     } else {
-      //       debugPrint('Unknown Button pushed!');
-      //     }
-      //   },
-      //   items: _navigationItems,
-      //   height: screen.height * 0.08, // 8% of screen height
-      //   color: ThemeCtrl.colors.coloricn,
-      //   selectedIconColor: ThemeCtrl.colors.coloricn,
-      //   unselectedIconColor: ThemeCtrl.colors.colorw,
-      //   backgroundColor: const Color.fromARGB(0, 4, 51, 160),
-      //   buttonBackgroundColor: ThemeCtrl.colors.color3,
-      //   animationDuration: const Duration(milliseconds: 300),
-      // ),
-
-      // bottomNavigationBar: NavBar1(
-      //   icons: _navigationItems,
-      //   onTap: (value) {},
-      // ),
     );
   }
 }

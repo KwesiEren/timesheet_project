@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:timesheet_project/presentation/pages/main_activity/activities_page.dart';
 import 'package:timesheet_project/shared/components/appbar/drawer_button.dart';
 import 'package:timesheet_project/shared/components/appbar/leading_button.dart';
 

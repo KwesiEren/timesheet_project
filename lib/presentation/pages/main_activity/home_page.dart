@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:timesheet_project/presentation/pages/side_activity/notifications_page.dart';
+import 'package:timesheet_project/presentation/sketchs/testpage.dart';
 
 import '../../../shared/components/curvednavbar/navbar.dart';
 import '../../../shared/img_constant.dart';
@@ -22,8 +24,10 @@ class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
+  // To contain data gotten from API;
   List<dynamic> _gottenData = [];
 
+  // List of Pages for Buttom Navigation;
   final List<Widget> _pages = [
     const DashboardPage(),
     const PunchInPage(),
@@ -40,6 +44,7 @@ class _HomePageState extends State<HomePage> {
     'Calendar',
   ];
 
+  // List of Icons for Buttom Navigation;
   final List<IconData> _navigationItems = [
     Icons.home_outlined,
     Icons.alarm_add_outlined,
@@ -48,6 +53,7 @@ class _HomePageState extends State<HomePage> {
     Icons.calendar_month_outlined,
   ];
 
+  // Method for Page Navigation control;
   void _onNavBarTap(int index) {
     setState(() {
       _currentIndex = index;
@@ -56,10 +62,22 @@ class _HomePageState extends State<HomePage> {
         .jumpToPage(index); // Optionally use animateToPage for animations
   }
 
+  // Method to navigate to the next screen
+  void _toNextScreen(Widget destination) async {
+    Get.to(() => destination);
+  }
+
+  // Method to navigate to the previous screen
+  void _toPreviousScreen() async {
+    Get.back();
+  }
+
+  // UI code block;
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
+      // Appbar Section
       appBar: CustomAppBar1(
         notificationCount: _gottenData.length,
         height: 85,
@@ -67,6 +85,8 @@ class _HomePageState extends State<HomePage> {
         title: _titles[_currentIndex],
       ),
       backgroundColor: ThemeCtrl.colors.colorbg,
+
+      // Right-side Drawer Section
       endDrawer: Drawer(
         width: screen.width * 0.7,
         backgroundColor: ThemeCtrl.colors.colorbg,
@@ -95,7 +115,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Drawer Items
+            // Drawer Options
             ListTile(
               leading: const Icon(Icons.person_outline),
               title: const Text('Profile'),
@@ -117,6 +137,7 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Terms and Conditions'),
               onTap: () {
                 // Handle Terms and Conditions navigation
+                _toNextScreen(GhanaBaseMapScreen());
               },
             ),
             SizedBox(height: screen.height * 0.005),
@@ -153,6 +174,8 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+
+      // Body to display Pages from Buttom Navigation
       body: PageView(
         physics: const NeverScrollableScrollPhysics(),
         controller: _pageController,
@@ -163,6 +186,8 @@ class _HomePageState extends State<HomePage> {
         },
         children: _pages,
       ),
+
+      // Bottom Navbar
       bottomNavigationBar: CustomNavBar(
         items: _navigationItems,
         height: 60,

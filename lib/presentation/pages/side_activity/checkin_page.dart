@@ -22,6 +22,9 @@ class _PunchInScreenState extends State<PunchInScreen> {
   Duration elapsedWorkTime = Duration.zero;
   Duration elapsedBreakTime = Duration.zero;
 
+  //Logic for PunchIn Screen here;
+
+  // Timer Controllers for Worktimer
   void startTimer() {
     if (worktimer != null && worktimer!.isActive) {
       // Prevent multiple work timers from starting
@@ -67,6 +70,7 @@ class _PunchInScreenState extends State<PunchInScreen> {
     });
   }
 
+  // Timer controllers for Breaktimer
   void startBreakTimer() {
     pauseTimer();
     breaktimer = Timer.periodic(const Duration(seconds: 1), (worktimer) {
@@ -83,7 +87,7 @@ class _PunchInScreenState extends State<PunchInScreen> {
     breaktimer?.cancel();
   }
 
-  // Starts the countdown timer
+  // Timers controllers for Countdowntimer
   void _startCountdown() {
     if (countdown != null && countdown!.isActive) {
       // Prevent multiple countdown timers from starting
@@ -137,6 +141,7 @@ class _PunchInScreenState extends State<PunchInScreen> {
     Get.back();
   }
 
+  // UI code block here
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;

@@ -14,6 +14,8 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   int _currentIndex = 4;
 
+  //Logics used in the Dashboard screen here;
+
   final Map<DateTime, String> attendance = {
     DateTime(2024, 12, 1): 'present',
     DateTime(2024, 12, 2): 'absent',
@@ -21,6 +23,7 @@ class _CalendarPageState extends State<CalendarPage> {
     DateTime(2024, 12, 4): 'present',
   };
 
+  // UI code block here
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;

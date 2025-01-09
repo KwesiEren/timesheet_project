@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'presentation/pages/splash_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final loc = await Permission.location.status;
+
+  if (!loc.isGranted) {
+    await Permission.location.request();
+  }
   runApp(const MyApp());
 }
 

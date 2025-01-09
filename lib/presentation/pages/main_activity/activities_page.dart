@@ -80,19 +80,6 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
                           "No Task available",
                           style: TextStyle(fontSize: 18, color: Colors.grey),
                         ),
-                        // InkWell(
-                        //   splashColor: ThemeCtrl.colors.coloricn,
-                        //   onTap: () {
-                        //     debugPrint("refreshed tapped");
-                        //     refreshData();
-                        //   },
-                        //   child: const Card(
-                        //     child: SizedBox(
-                        //         height: 60,
-                        //         width: 70,
-                        //         child: Center(child: Text("Refresh"))),
-                        //   ),
-                        // )
                       ],
                     ),
                   )

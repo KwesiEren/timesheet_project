@@ -56,9 +56,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       BuildContext context, Map<String, dynamic> notification) {
     showDialog(
       context: context,
-      // shape: const RoundedRectangleBorder(
-      //   borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      // ),
       builder: (context) {
         return Center(
           child: Container(

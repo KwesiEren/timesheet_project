@@ -12,10 +12,10 @@ class AnnouncementPage extends StatefulWidget {
 
 class _AnnouncementPageState extends State<AnnouncementPage> {
   int _currentIndex = 3;
-
+  List<dynamic> _gottenData = [];
   bool isLoading = true; // To show loading indicator initially
 
-  List<dynamic> _gottenData = [];
+  //Logics used in the Dashboard screen here;
 
   Future<List> getData() async {
     setState(() {
@@ -54,13 +54,11 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     getData();
   }
 
+  // Shows Popup DIalog box
   void _showAnnouncementDetails(
       BuildContext context, Map<String, dynamic> announcement) {
     showDialog(
       context: context,
-      // shape: const RoundedRectangleBorder(
-      //   borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      // ),
       builder: (context) {
         return Center(
           child: Container(
@@ -112,6 +110,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     );
   }
 
+  // UI Code block here
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
@@ -137,19 +136,6 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                         "No Announcement for now",
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
-                      // InkWell(
-                      //   splashColor: ThemeCtrl.colors.coloricn,
-                      //   onTap: () {
-                      //     debugPrint("refreshed tapped");
-                      //     refreshData();
-                      //   },
-                      //   child: const Card(
-                      //     child: SizedBox(
-                      //         height: 60,
-                      //         width: 70,
-                      //         child: Center(child: Text("Refresh"))),
-                      //   ),
-                      // )
                     ],
                   ),
                 )
