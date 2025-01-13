@@ -3,7 +3,7 @@ import 'dart:async';
 import 'login_page.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import '../../shared/img_constant.dart';
+import '../../../shared/img_constant.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});

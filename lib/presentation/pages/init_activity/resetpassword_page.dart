@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../shared/components/curve_design.dart';
-import '../../shared/components/inputfield_w_icon.dart';
-import '../../shared/img_constant.dart';
-import '../../shared/theme_control.dart';
+import '../../../shared/components/curve_design.dart';
+import '../../../shared/components/inputfield_w_icon.dart';
+import '../../../shared/img_constant.dart';
+import '../../../shared/theme_control.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});

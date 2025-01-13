@@ -18,15 +18,16 @@ class PunchInPage extends StatefulWidget {
 class _PunchInPageState extends State<PunchInPage> {
   int _currentIndex = 1;
   bool inWork = false;
-  // Work coordinates
+  // Work coordinates = 5.6513043230251565, -0.18293191893145516
   final double workLatitude =
-      5.7319823787628685; // Replace with your work's latitude
+      5.6513043230251565; // Replace with your work's latitude
   final double workLongitude =
-      -0.07775303995670355; // Replace with your work's longitude
+      -0.18293191893145516; // Replace with your work's longitude
   final double workRadius = 130; // Radius in meters
 
   LatLng? _currentLocation; // To store user's current location
   bool isLoading = true; // To show loading indicator initially
+  bool isLoading2 = true;
 
   List<dynamic> _gottenData = [];
 
@@ -52,6 +53,30 @@ class _PunchInPageState extends State<PunchInPage> {
 
   // Method to get the user's current location
   Future<void> _updateCurrentLocation() async {
+    setState(() {
+      isLoading2 = true;
+    });
+    if (isLoading2 == true) {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false, // Prevent dismissing by tapping outside
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Row(
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: 16),
+                Text("Checking Location .....",
+                    style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          );
+        },
+      );
+
+      Navigator.of(context).pop();
+    }
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -133,7 +158,7 @@ class _PunchInPageState extends State<PunchInPage> {
       },
     );
     setState(() {
-      isLoading = false; // Ensure loading is stopped });
+      isLoading2 = false; // Ensure loading is stopped });
       debugPrint('Refresh finished'); // Debugging log
     });
   }

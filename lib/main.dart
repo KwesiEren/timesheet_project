@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'presentation/pages/splash_page.dart';
+import 'presentation/pages/init_activity/splash_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

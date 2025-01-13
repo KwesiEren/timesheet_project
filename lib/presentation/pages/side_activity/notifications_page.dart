@@ -111,9 +111,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: ThemeCtrl.colors.colorbg,
         centerTitle: true,
         title: const Text('Notifications'),
       ),
+      backgroundColor: ThemeCtrl.colors.colorbg,
       body: isLoading
           ? const Center(
               child:

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:timesheet_project/presentation/pages/drawer_activity/notificationsettings_page.dart';
+import 'package:timesheet_project/presentation/pages/drawer_activity/profile_page.dart';
 import 'package:timesheet_project/presentation/pages/side_activity/notifications_page.dart';
 import 'package:timesheet_project/presentation/sketchs/testpage.dart';
 
@@ -121,6 +123,7 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Profile'),
               onTap: () {
                 // Handle Profile navigation
+                _toNextScreen(const ProfilePage());
               },
             ),
             SizedBox(height: screen.height * 0.005),
@@ -129,6 +132,7 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Notifications'),
               onTap: () {
                 // Handle Notifications navigation
+                _toNextScreen(const NotificationSettingsPage());
               },
             ),
             SizedBox(height: screen.height * 0.005),

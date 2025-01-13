@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'main_activity/home_page.dart';
-import '../../presentation/pages/resetpassword_page.dart';
-import '../../shared/img_constant.dart';
-import '../../shared/components/curve_design.dart';
-import '../../shared/theme_control.dart';
+import '../main_activity/home_page.dart';
+import 'resetpassword_page.dart';
+import '../../../shared/img_constant.dart';
+import '../../../shared/components/curve_design.dart';
+import '../../../shared/theme_control.dart';
 
-import '../../shared/components/inputfield_w_icon.dart';
+import '../../../shared/components/inputfield_w_icon.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
