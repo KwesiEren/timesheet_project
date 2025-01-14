@@ -13,7 +13,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  String? _username;
+
   String? _email;
   String? _password;
   String? _cpassword;
@@ -28,6 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         title: const Text('Profile'),
       ),
+      backgroundColor: ThemeCtrl.colors.colorbg,
       body: SafeArea(
           child: Center(
         child: Container(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:timesheet_project/presentation/pages/drawer_activity/notificationsettings_page.dart';
+import 'package:timesheet_project/presentation/pages/drawer_activity/policies_page.dart';
 import 'package:timesheet_project/presentation/pages/drawer_activity/profile_page.dart';
 import 'package:timesheet_project/presentation/pages/side_activity/notifications_page.dart';
-import 'package:timesheet_project/presentation/sketchs/testpage.dart';
 
 import '../../../shared/components/curvednavbar/navbar.dart';
 import '../../../shared/img_constant.dart';
@@ -141,7 +141,7 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Terms and Conditions'),
               onTap: () {
                 // Handle Terms and Conditions navigation
-                _toNextScreen(GhanaBaseMapScreen());
+                _toNextScreen(const PoliciesPage());
               },
             ),
             SizedBox(height: screen.height * 0.005),
