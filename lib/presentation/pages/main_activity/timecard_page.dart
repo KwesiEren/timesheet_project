@@ -195,7 +195,7 @@ class _PunchInPageState extends State<PunchInPage> {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: ThemeCtrl.colors.colorbg,
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
       body: Center(
         child: Column(
           // crossAxisAlignment: CrossAxisAlignment.center,
@@ -210,7 +210,7 @@ class _PunchInPageState extends State<PunchInPage> {
               width: screen.width * 0.8,
               height: screen.height * 0.45,
               decoration: BoxDecoration(
-                color: ThemeCtrl.colors.colorw,
+                color: ThemeCtrl.colors.surfaceColor,
                 borderRadius: BorderRadius.circular(10),
                 // boxShadow: const [
                 //   BoxShadow(
@@ -270,7 +270,7 @@ class _PunchInPageState extends State<PunchInPage> {
                                     children: [
                                       Icon(
                                         Icons.history_toggle_off_rounded,
-                                        color: ThemeCtrl.colors.color6,
+                                        color: ThemeCtrl.colors.textMuted,
                                         size: 48.0,
                                       ),
                                       const SizedBox(height: 16),
@@ -280,7 +280,7 @@ class _PunchInPageState extends State<PunchInPage> {
                                             fontSize: 18, color: Colors.grey),
                                       ),
                                       InkWell(
-                                        splashColor: ThemeCtrl.colors.coloricn,
+                                        splashColor: ThemeCtrl.colors.iconPrimary,
                                         onTap: () {
                                           debugPrint("refreshed tapped");
                                           refreshData();
@@ -295,7 +295,7 @@ class _PunchInPageState extends State<PunchInPage> {
                                                   decoration:
                                                       TextDecoration.underline,
                                                   color: ThemeCtrl
-                                                      .colors.coloricn),
+                                                      .colors.iconPrimary),
                                             ))),
                                       )
                                     ],
@@ -349,11 +349,11 @@ class _PunchInPageState extends State<PunchInPage> {
                   _updateCurrentLocation();
                 },
                 text: 'Check In',
-                txtcolor: ThemeCtrl.colors.color3,
+                txtcolor: ThemeCtrl.colors.highlightLight,
                 btnWidth: screen.width * 0.7,
                 btnHeight: 80,
                 size: 30,
-                btnColor: ThemeCtrl.colors.colorbtn1,
+                btnColor: ThemeCtrl.colors.buttonPrimary,
                 borderRadius: 5)
           ],
         ),

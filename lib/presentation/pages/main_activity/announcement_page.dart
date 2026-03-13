@@ -64,7 +64,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           child: Container(
             margin: EdgeInsets.all(10),
             decoration: BoxDecoration(
-                color: ThemeCtrl.colors.colorw,
+                color: ThemeCtrl.colors.surfaceColor,
                 borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -115,7 +115,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: ThemeCtrl.colors.colorbg,
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
       body: isLoading
           ? const Center(
               child:
@@ -128,7 +128,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                     children: [
                       Icon(
                         Icons.announcement_outlined,
-                        color: ThemeCtrl.colors.color6,
+                        color: ThemeCtrl.colors.textMuted,
                         size: 48.0,
                       ),
                       const SizedBox(height: 16),
@@ -155,7 +155,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                           itemBuilder: (context, index) {
                             final announcement = _gottenData[index];
                             return Card(
-                              color: ThemeCtrl.colors.color3,
+                              color: ThemeCtrl.colors.highlightLight,
                               margin: const EdgeInsets.symmetric(
                                   vertical: 8, horizontal: 16),
                               elevation: 4,
@@ -199,7 +199,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                                             'Read More',
                                             style: TextStyle(
                                                 color:
-                                                    ThemeCtrl.colors.colorbtn1),
+                                                    ThemeCtrl.colors.buttonPrimary),
                                           ),
                                         ),
                                       ],

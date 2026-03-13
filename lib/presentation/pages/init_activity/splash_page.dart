@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'login_page.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import '../../../routes/app_pages.dart';
 import '../../../shared/img_constant.dart';
 
 class SplashPage extends StatefulWidget {
@@ -27,7 +27,7 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void _toNextScreen() async {
-    Get.to(const LoginPage());
+    Get.offNamed(Routes.LOGIN);
   }
 
   // UI Codes Implementation Here;

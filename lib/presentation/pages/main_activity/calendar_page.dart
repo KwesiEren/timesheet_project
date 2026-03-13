@@ -29,7 +29,7 @@ class _CalendarPageState extends State<CalendarPage> {
     var screen = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: ThemeCtrl.colors.colorbg,
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

@@ -152,7 +152,7 @@ class _PunchInScreenState extends State<PunchInScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: ThemeCtrl.colors.colorbtn1),
+          icon: Icon(Icons.arrow_back, color: ThemeCtrl.colors.buttonPrimary),
           onPressed: _toPreviousScreen,
         ),
         title: const Text(
@@ -175,8 +175,8 @@ class _PunchInScreenState extends State<PunchInScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: isTimerRunning
-                      ? ThemeCtrl.colors.colorbtn1
-                      : ThemeCtrl.colors.color3,
+                      ? ThemeCtrl.colors.buttonPrimary
+                      : ThemeCtrl.colors.highlightLight,
                   borderRadius: BorderRadius.circular(screen.width * 0.03),
                 ),
                 child: Column(
@@ -186,8 +186,8 @@ class _PunchInScreenState extends State<PunchInScreen> {
                       style: TextStyle(
                         fontSize: 16 * textScale,
                         color: isTimerRunning
-                            ? ThemeCtrl.colors.colorw
-                            : ThemeCtrl.colors.colortxt1,
+                            ? ThemeCtrl.colors.surfaceColor
+                            : ThemeCtrl.colors.textPrimary,
                       ),
                     ),
                     SizedBox(height: screen.height * 0.01),
@@ -197,8 +197,8 @@ class _PunchInScreenState extends State<PunchInScreen> {
                         fontSize: screen.width * 0.08,
                         fontWeight: FontWeight.bold,
                         color: isTimerRunning
-                            ? ThemeCtrl.colors.color3
-                            : ThemeCtrl.colors.colortxt1,
+                            ? ThemeCtrl.colors.highlightLight
+                            : ThemeCtrl.colors.textPrimary,
                       ),
                     ),
                     if (isTimerRunning)
@@ -207,7 +207,7 @@ class _PunchInScreenState extends State<PunchInScreen> {
                           SizedBox(height: screen.height * 0.02),
                           Icon(
                             Icons.timelapse_rounded,
-                            color: ThemeCtrl.colors.colorw,
+                            color: ThemeCtrl.colors.surfaceColor,
                             size: screen.width * 0.3,
                           ),
                           SizedBox(height: screen.height * 0.03),
@@ -222,15 +222,15 @@ class _PunchInScreenState extends State<PunchInScreen> {
                           label: 'Day total',
                           value: formatDuration(elapsedWorkTime),
                           color: isTimerRunning
-                              ? ThemeCtrl.colors.color3
-                              : ThemeCtrl.colors.colortxt1,
+                              ? ThemeCtrl.colors.highlightLight
+                              : ThemeCtrl.colors.textPrimary,
                         ),
                         MyPlaceholders.StatColumn1(
                           label: 'Break total',
                           value: formatDuration(elapsedBreakTime),
                           color: isTimerRunning
-                              ? ThemeCtrl.colors.color3
-                              : ThemeCtrl.colors.colortxt1,
+                              ? ThemeCtrl.colors.highlightLight
+                              : ThemeCtrl.colors.textPrimary,
                         ),
                       ],
                     ),
@@ -266,11 +266,11 @@ class _PunchInScreenState extends State<PunchInScreen> {
                               startTimer();
                             },
                             text: 'Continue',
-                            txtcolor: ThemeCtrl.colors.color3,
+                            txtcolor: ThemeCtrl.colors.highlightLight,
                             btnWidth: screen.width * 0.7,
                             btnHeight: screen.height * 0.06,
                             size: 20,
-                            btnColor: ThemeCtrl.colors.colorg,
+                            btnColor: ThemeCtrl.colors.successColor,
                             borderRadius: screen.height * 0.02,
                           )
                         : ActionButton1(
@@ -278,11 +278,11 @@ class _PunchInScreenState extends State<PunchInScreen> {
                               startBreakTimer();
                             },
                             text: 'Break',
-                            txtcolor: ThemeCtrl.colors.color3,
+                            txtcolor: ThemeCtrl.colors.highlightLight,
                             btnWidth: screen.width * 0.7,
                             btnHeight: screen.height * 0.06,
                             size: 20,
-                            btnColor: ThemeCtrl.colors.colorg,
+                            btnColor: ThemeCtrl.colors.successColor,
                             borderRadius: screen.height * 0.02,
                           ),
                     SizedBox(height: screen.height * 0.02),
@@ -293,11 +293,11 @@ class _PunchInScreenState extends State<PunchInScreen> {
                         // resetTimer();
                       },
                       text: 'Punch Out',
-                      txtcolor: ThemeCtrl.colors.color3,
+                      txtcolor: ThemeCtrl.colors.highlightLight,
                       btnWidth: screen.width * 0.7,
                       btnHeight: screen.height * 0.08,
                       size: 20,
-                      btnColor: ThemeCtrl.colors.colorr,
+                      btnColor: ThemeCtrl.colors.errorColor,
                       borderRadius: screen.height * 0.02,
                     ),
                   ],
@@ -312,11 +312,11 @@ class _PunchInScreenState extends State<PunchInScreen> {
                         _startCountdown();
                       },
                       text: 'Punch In',
-                      txtcolor: ThemeCtrl.colors.color3,
+                      txtcolor: ThemeCtrl.colors.highlightLight,
                       btnWidth: screen.width * 0.7,
                       btnHeight: screen.height * 0.08,
                       size: 30,
-                      btnColor: ThemeCtrl.colors.colorbtn1,
+                      btnColor: ThemeCtrl.colors.buttonPrimary,
                       borderRadius: screen.height * 0.02,
                     ),
                   ],

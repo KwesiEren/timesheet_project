@@ -19,7 +19,7 @@
 // }
 
 // class _DashboardPageState extends State<DashboardPage> {
-//   final Color iconColor = ThemeCtrl.colors.color2;
+//   final Color iconColor = ThemeCtrl.colors.textDark;
 //   final List<IconData> _navigationItems = [
 //     Icons.home_outlined,
 //     Icons.alarm_add_outlined,
@@ -53,9 +53,9 @@
 //                     onPressed: () {},
 //                     size: 50,
 //                     icon: Icons.notifications_outlined,
-//                     icnColor: ThemeCtrl.colors.colorw,
-//                     btnColor1: ThemeCtrl.colors.coloricn,
-//                     btnColor2: ThemeCtrl.colors.colorbtn1,
+//                     icnColor: ThemeCtrl.colors.surfaceColor,
+//                     btnColor1: ThemeCtrl.colors.iconPrimary,
+//                     btnColor2: ThemeCtrl.colors.buttonPrimary,
 //                   )
 //                 ],
 //               )
@@ -65,11 +65,11 @@
 //       ),
 //       bottomNavigationBar: CustomNavBar(
 //         items: _navigationItems,
-//         color: ThemeCtrl.colors.colorw,
-//         selectedIconColor: ThemeCtrl.colors.colorw,
-//         unselectedIconColor: ThemeCtrl.colors.color1,
+//         color: ThemeCtrl.colors.surfaceColor,
+//         selectedIconColor: ThemeCtrl.colors.surfaceColor,
+//         unselectedIconColor: ThemeCtrl.colors.primaryColor,
 //         backgroundColor: const Color.fromARGB(0, 4, 51, 160),
-//         buttonBackgroundColor: ThemeCtrl.colors.color1,
+//         buttonBackgroundColor: ThemeCtrl.colors.primaryColor,
 //       ),
 //     );
 //   }

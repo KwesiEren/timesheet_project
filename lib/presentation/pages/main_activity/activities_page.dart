@@ -59,7 +59,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-        backgroundColor: ThemeCtrl.colors.colorbg,
+        backgroundColor: ThemeCtrl.colors.backgroundColor,
         body: isLoading
             ? const Center(
                 child:
@@ -72,7 +72,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
                       children: [
                         Icon(
                           Icons.list_alt_rounded,
-                          color: ThemeCtrl.colors.color6,
+                          color: ThemeCtrl.colors.textMuted,
                           size: 48.0,
                         ),
                         const SizedBox(height: 16),
@@ -124,7 +124,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
                                       ),
                                     ),
                                     Divider(
-                                      color: ThemeCtrl.colors.color2,
+                                      color: ThemeCtrl.colors.textDark,
                                       indent: screen.width *
                                           0.05, // 3% of screen width
                                       endIndent: screen.width * 0.05,
@@ -141,8 +141,8 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
                     ),
                   ),
         floatingActionButton: FloatingActionButton(
-          foregroundColor: ThemeCtrl.colors.color3,
-          backgroundColor: ThemeCtrl.colors.colorbtn1,
+          foregroundColor: ThemeCtrl.colors.highlightLight,
+          backgroundColor: ThemeCtrl.colors.buttonPrimary,
           shape: const CircleBorder(),
           onPressed: () {},
           child: const Icon(

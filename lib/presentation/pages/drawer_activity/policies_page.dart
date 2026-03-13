@@ -25,11 +25,11 @@ class _PoliciesPageState extends State<PoliciesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: ThemeCtrl.colors.colorbg,
+          backgroundColor: ThemeCtrl.colors.backgroundColor,
           centerTitle: true,
           title: const Text('Policies'),
         ),
-        backgroundColor: ThemeCtrl.colors.colorbg,
+        backgroundColor: ThemeCtrl.colors.backgroundColor,
         body: Column(
           children: [
             Expanded(

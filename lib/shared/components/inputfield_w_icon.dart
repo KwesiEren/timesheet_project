@@ -33,22 +33,22 @@ class InputField1 extends StatelessWidget {
             borderRadius: BorderRadius.circular(20)),
         focusedBorder:
             OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-        focusColor: ThemeCtrl.colors.color1,
+        focusColor: ThemeCtrl.colors.primaryColor,
         prefixIcon: Icon(
           icon,
-          color: ThemeCtrl.colors.coloricn,
+          color: ThemeCtrl.colors.iconPrimary,
         ),
         hintText: hint,
         hintStyle: TextStyle(
           fontFamily: 'Comfortaa',
-          color: ThemeCtrl.colors.color5,
+          color: ThemeCtrl.colors.textSecondary,
         ),
         suffixIcon: suffixIcon != null
             ? GestureDetector(
                 onTap: callback, child: Icon(suffixIcon, color: Colors.grey))
             : null,
         filled: true,
-        fillColor: ThemeCtrl.colors.color3,
+        fillColor: ThemeCtrl.colors.highlightLight,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

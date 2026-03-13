@@ -61,7 +61,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           child: Container(
             margin: EdgeInsets.all(10),
             decoration: BoxDecoration(
-                color: ThemeCtrl.colors.colorw,
+                color: ThemeCtrl.colors.surfaceColor,
                 borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -111,11 +111,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: ThemeCtrl.colors.colorbg,
+        backgroundColor: ThemeCtrl.colors.backgroundColor,
         centerTitle: true,
         title: const Text('Notifications'),
       ),
-      backgroundColor: ThemeCtrl.colors.colorbg,
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
       body: isLoading
           ? const Center(
               child:
@@ -128,7 +128,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     children: [
                       Icon(
                         Icons.notifications_off_outlined,
-                        color: ThemeCtrl.colors.color6,
+                        color: ThemeCtrl.colors.textMuted,
                         size: 48.0,
                       ),
                       const SizedBox(height: 16),
@@ -137,7 +137,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
                       // InkWell(
-                      //   splashColor: ThemeCtrl.colors.coloricn,
+                      //   splashColor: ThemeCtrl.colors.iconPrimary,
                       //   onTap: () {
                       //     debugPrint("refreshed tapped");
                       //     refreshData();
@@ -162,7 +162,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         _showNotificationDetails(context, notification);
                       },
                       child: Card(
-                        color: ThemeCtrl.colors.color3,
+                        color: ThemeCtrl.colors.highlightLight,
                         elevation: 3,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
@@ -171,13 +171,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: notification['isUnread']
-                                ? ThemeCtrl.colors.color1
+                                ? ThemeCtrl.colors.primaryColor
                                 : const Color(0xFFBDBDBD),
                             child: Icon(
                               notification['isUnread']
                                   ? Icons.notifications
                                   : Icons.notifications_off,
-                              color: ThemeCtrl.colors.colorw,
+                              color: ThemeCtrl.colors.surfaceColor,
                             ),
                           ),
                           title: Text(
@@ -209,7 +209,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 Icon(
                                   Icons.circle,
                                   size: 10,
-                                  color: ThemeCtrl.colors.colorbtn1,
+                                  color: ThemeCtrl.colors.buttonPrimary,
                                 ),
                             ],
                           ),

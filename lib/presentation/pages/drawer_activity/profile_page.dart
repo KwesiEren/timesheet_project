@@ -24,11 +24,11 @@ class _ProfilePageState extends State<ProfilePage> {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: ThemeCtrl.colors.colorbg,
+        backgroundColor: ThemeCtrl.colors.backgroundColor,
         centerTitle: true,
         title: const Text('Profile'),
       ),
-      backgroundColor: ThemeCtrl.colors.colorbg,
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
       body: SafeArea(
           child: Center(
         child: Container(
@@ -36,7 +36,7 @@ class _ProfilePageState extends State<ProfilePage> {
           width: screen.width,
           decoration:
               //Background Image block:
-              BoxDecoration(color: ThemeCtrl.colors.colorbg),
+              BoxDecoration(color: ThemeCtrl.colors.backgroundColor),
           child: Form(
               key: _formKey,
               child: ListView(
@@ -187,7 +187,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: ActionButton1(
                           text: 'Save Changes',
                           size: 25,
-                          btnColor: ThemeCtrl.colors.color1,
+                          btnColor: ThemeCtrl.colors.primaryColor,
                           borderRadius: 5))
                 ],
               )),

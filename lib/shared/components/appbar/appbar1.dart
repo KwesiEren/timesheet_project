@@ -26,7 +26,7 @@ class CustomAppBar1 extends StatelessWidget implements PreferredSizeWidget {
     return PreferredSize(
       preferredSize: Size.fromHeight(height),
       child: Container(
-        color: ThemeCtrl.colors.colorbg,
+        color: ThemeCtrl.colors.backgroundColor,
         padding: EdgeInsets.symmetric(horizontal: screen.width * 0.04),
         child: SafeArea(
           child: Row(
@@ -35,9 +35,9 @@ class CustomAppBar1 extends StatelessWidget implements PreferredSizeWidget {
               LeadingButton(
                 size: screen.width * 0.14, // 14% of screen width
                 icons: Icons.notifications_outlined,
-                icnColor: ThemeCtrl.colors.colorw,
-                btnColor1: ThemeCtrl.colors.coloricn,
-                btnColor2: ThemeCtrl.colors.colorbtn1,
+                icnColor: ThemeCtrl.colors.surfaceColor,
+                btnColor1: ThemeCtrl.colors.iconPrimary,
+                btnColor2: ThemeCtrl.colors.buttonPrimary,
                 destination: navigationDestination,
                 notificationCount: notificationCount ?? 0,
               ),

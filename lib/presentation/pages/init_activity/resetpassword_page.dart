@@ -62,13 +62,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       fontFamily: 'Pacifico',
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: ThemeCtrl.colors.colortxt1,
+                      color: ThemeCtrl.colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "Recover your account",
-                    style: TextStyle(color: ThemeCtrl.colors.color6),
+                    style: TextStyle(color: ThemeCtrl.colors.textMuted),
                   ),
                   const SizedBox(height: 24),
 
@@ -88,7 +88,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: ThemeCtrl.colors.colorbtn1,
+                        backgroundColor: ThemeCtrl.colors.buttonPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -99,7 +99,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: ThemeCtrl.colors.colorw,
+                          color: ThemeCtrl.colors.surfaceColor,
                         ),
                       ),
                     ),

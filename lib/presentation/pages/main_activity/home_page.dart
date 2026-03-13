@@ -4,6 +4,7 @@ import 'package:timesheet_project/presentation/pages/drawer_activity/notificatio
 import 'package:timesheet_project/presentation/pages/drawer_activity/policies_page.dart';
 import 'package:timesheet_project/presentation/pages/drawer_activity/profile_page.dart';
 import 'package:timesheet_project/presentation/pages/side_activity/notifications_page.dart';
+import '../../../../controllers/home_controller.dart';
 
 import '../../../shared/components/curvednavbar/navbar.dart';
 import '../../../shared/img_constant.dart';
@@ -26,8 +27,7 @@ class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
-  // To contain data gotten from API;
-  List<dynamic> _gottenData = [];
+  final HomeController _homeController = Get.find<HomeController>();
 
   // List of Pages for Buttom Navigation;
   final List<Widget> _pages = [
@@ -80,18 +80,21 @@ class _HomePageState extends State<HomePage> {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
       // Appbar Section
-      appBar: CustomAppBar1(
-        notificationCount: _gottenData.length,
-        height: 85,
-        navigationDestination: const NotificationsPage(),
-        title: _titles[_currentIndex],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(85),
+        child: Obx(() => CustomAppBar1(
+          notificationCount: _homeController.unreadNotificationCount.value,
+          height: 85,
+          navigationDestination: const NotificationsPage(),
+          title: _titles[_currentIndex],
+        )),
       ),
-      backgroundColor: ThemeCtrl.colors.colorbg,
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
 
       // Right-side Drawer Section
       endDrawer: Drawer(
         width: screen.width * 0.7,
-        backgroundColor: ThemeCtrl.colors.colorbg,
+        backgroundColor: ThemeCtrl.colors.backgroundColor,
         child: Column(
           children: [
             // Drawer Header
@@ -108,8 +111,8 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    ThemeCtrl.colors.coloricn,
-                    ThemeCtrl.colors.colorbtn1
+                    ThemeCtrl.colors.iconPrimary,
+                    ThemeCtrl.colors.buttonPrimary
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomCenter,
@@ -163,7 +166,7 @@ class _HomePageState extends State<HomePage> {
                   // Handle logout
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ThemeCtrl.colors.colorbtn1,
+                  backgroundColor: ThemeCtrl.colors.buttonPrimary,
                   minimumSize: const Size(double.infinity, 48),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -195,11 +198,11 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: CustomNavBar(
         items: _navigationItems,
         height: 60,
-        color: ThemeCtrl.colors.coloricn,
-        selectedIconColor: ThemeCtrl.colors.coloricn,
-        unselectedIconColor: ThemeCtrl.colors.colorw,
+        color: ThemeCtrl.colors.iconPrimary,
+        selectedIconColor: ThemeCtrl.colors.iconPrimary,
+        unselectedIconColor: ThemeCtrl.colors.surfaceColor,
         backgroundColor: const Color.fromARGB(0, 4, 51, 160),
-        buttonBackgroundColor: ThemeCtrl.colors.color3,
+        buttonBackgroundColor: ThemeCtrl.colors.highlightLight,
         animationDuration: const Duration(milliseconds: 300),
         index: _currentIndex,
         onTap: _onNavBarTap,

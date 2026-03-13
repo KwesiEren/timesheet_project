@@ -29,7 +29,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: ThemeCtrl.colors.colorbg,
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -44,7 +44,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                     height: screen.height * 0.45, // 45% of screen height
                     decoration: BoxDecoration(
-                        color: ThemeCtrl.colors.colorw,
+                        color: ThemeCtrl.colors.surfaceColor,
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: const [
                           BoxShadow(
@@ -71,7 +71,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     style: TextStyle(
                                       fontSize: screen.width *
                                           0.08, // 8% of screen width
-                                      color: ThemeCtrl.colors.color2,
+                                      color: ThemeCtrl.colors.textDark,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Comfortaa',
                                     ),
@@ -80,7 +80,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     'Today\'s in time',
                                     style: TextStyle(
                                       fontSize: screen.width *
-                                          0.05, // 5% of screen width                                      color: ThemeCtrl.colors.color5,
+                                          0.05, // 5% of screen width                                      color: ThemeCtrl.colors.textSecondary,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Comfortaa',
                                     ),
@@ -89,9 +89,9 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                               CircleButton1(
                                 icon: Icons.work_outline,
-                                btnColor1: ThemeCtrl.colors.color3,
-                                btnColor2: ThemeCtrl.colors.color3,
-                                icnColor: ThemeCtrl.colors.color2,
+                                btnColor1: ThemeCtrl.colors.highlightLight,
+                                btnColor2: ThemeCtrl.colors.highlightLight,
+                                icnColor: ThemeCtrl.colors.textDark,
                                 size: 40,
                               )
                             ],
@@ -128,7 +128,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         style: TextStyle(
                                           fontSize: screen.width *
                                               0.08, // 8% of screen width
-                                          color: ThemeCtrl.colors.color2,
+                                          color: ThemeCtrl.colors.textDark,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Comfortaa',
                                         ),
@@ -137,7 +137,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         'Activites\nCompleted',
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: ThemeCtrl.colors.color5,
+                                          color: ThemeCtrl.colors.textSecondary,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Comfortaa',
                                         ),
@@ -146,9 +146,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ),
                                   CircleButton1(
                                     icon: Icons.task_alt_sharp,
-                                    btnColor1: ThemeCtrl.colors.color3,
-                                    btnColor2: ThemeCtrl.colors.color3,
-                                    icnColor: ThemeCtrl.colors.color2,
+                                    btnColor1: ThemeCtrl.colors.highlightLight,
+                                    btnColor2: ThemeCtrl.colors.highlightLight,
+                                    icnColor: ThemeCtrl.colors.textDark,
                                     size: 40,
                                   )
                                 ],
@@ -179,7 +179,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         style: TextStyle(
                                           fontSize: screen.width *
                                               0.08, // 8% of screen width
-                                          color: ThemeCtrl.colors.color2,
+                                          color: ThemeCtrl.colors.textDark,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Comfortaa',
                                         ),
@@ -188,7 +188,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         'Activities\nLeft',
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: ThemeCtrl.colors.color5,
+                                          color: ThemeCtrl.colors.textSecondary,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Comfortaa',
                                         ),
@@ -197,9 +197,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ),
                                   CircleButton1(
                                     icon: Icons.notes_outlined,
-                                    btnColor1: ThemeCtrl.colors.color3,
-                                    btnColor2: ThemeCtrl.colors.color3,
-                                    icnColor: ThemeCtrl.colors.color2,
+                                    btnColor1: ThemeCtrl.colors.highlightLight,
+                                    btnColor2: ThemeCtrl.colors.highlightLight,
+                                    icnColor: ThemeCtrl.colors.textDark,
                                     size: 40,
                                   )
                                 ],
@@ -232,7 +232,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     style: TextStyle(
                                       fontSize: screen.width *
                                           0.08, // 8% of screen width
-                                      color: ThemeCtrl.colors.color2,
+                                      color: ThemeCtrl.colors.textDark,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Comfortaa',
                                     ),
@@ -241,7 +241,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     'Work Hours',
                                     style: TextStyle(
                                       fontSize: screen.width *
-                                          0.05, // 5% of screen width                                      color: ThemeCtrl.colors.color5,
+                                          0.05, // 5% of screen width                                      color: ThemeCtrl.colors.textSecondary,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Comfortaa',
                                     ),
@@ -250,9 +250,9 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                               CircleButton1(
                                 icon: Icons.work_history_outlined,
-                                btnColor1: ThemeCtrl.colors.color3,
-                                btnColor2: ThemeCtrl.colors.color3,
-                                icnColor: ThemeCtrl.colors.color2,
+                                btnColor1: ThemeCtrl.colors.highlightLight,
+                                btnColor2: ThemeCtrl.colors.highlightLight,
+                                icnColor: ThemeCtrl.colors.textDark,
                                 size: 40,
                               )
                             ],
