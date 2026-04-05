@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import '../data/models/user_model.dart';
+import '../data/services/auth_api_service.dart';
+import '../data/providers/local_storage_provider.dart';
 import '../routes/app_pages.dart';
 import 'package:flutter/material.dart';
 
@@ -11,6 +13,8 @@ class AuthController extends GetxController {
   bool get isAuthenticated => _currentUser.value != null;
 
   final RxBool isLoading = false.obs;
+  final AuthApiService _authService = AuthApiService();
+  final LocalStorageProvider _localStorage = LocalStorageProvider();
 
   @override
   void onInit() {
@@ -19,24 +23,30 @@ class AuthController extends GetxController {
   }
 
   void _checkLoginStatus() {
-    // TODO: In Phase 3, check local storage / secure storage for token
-    // For now we assume the user is not logged in.
+    final cachedUser = _localStorage.getUser();
+    if (cachedUser != null) {
+      _currentUser.value = UserModel.fromJson(cachedUser);
+      Get.offAllNamed(Routes.HOME);
+    }
   }
 
   Future<void> login(String email, String password, bool rememberMe) async {
     try {
       isLoading.value = true;
       
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Dummy authentication logic - replace in Phase 3
       if (email.isNotEmpty && password.isNotEmpty) {
-        _currentUser.value = UserModel(
-          id: 'usr_123',
-          name: 'Kwesi Eren',
-          email: email,
+        final response = await _authService.login(email);
+        final userData = response['user'];
+
+        final userModel = UserModel(
+          id: userData['id'],
+          name: userData['name'],
+          email: userData['email'],
         );
+        _currentUser.value = userModel;
+        
+        // Cache the user data
+        _localStorage.saveUser(userModel.toJson());
 
         Get.snackbar(
           'Success', 
@@ -71,7 +81,8 @@ class AuthController extends GetxController {
 
   void logout() {
     _currentUser.value = null;
-    // TODO: Clear local token in Phase 3
+    _localStorage.clearUser();
+    _localStorage.clearTimesheets(); // Also clear timesheets on logout
     Get.offAllNamed(Routes.LOGIN);
   }
 }
