@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
-import 'presentation/pages/splash_page.dart';
+import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:get_storage/get_storage.dart';
+import 'routes/app_pages.dart';
+import 'controllers/initial_binding.dart';
+import 'shared/theme_control.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
+
+  final loc = await Permission.location.status;
+
+  if (!loc.isGranted) {
+    await Permission.location.request();
+  }
   runApp(const MyApp());
 }
 
@@ -12,9 +24,11 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return const GetMaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SplashPage(),
+      initialBinding: InitialBinding(),
+      initialRoute: AppPages.INITIAL,
+      getPages: AppPages.routes,
     );
   }
 }

@@ -1,0 +1,212 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:timesheet_project/presentation/pages/drawer_activity/notificationsettings_page.dart';
+import 'package:timesheet_project/presentation/pages/drawer_activity/policies_page.dart';
+import 'package:timesheet_project/presentation/pages/drawer_activity/profile_page.dart';
+import 'package:timesheet_project/presentation/pages/side_activity/notifications_page.dart';
+import '../../../../controllers/home_controller.dart';
+
+import '../../../shared/components/curvednavbar/navbar.dart';
+import '../../../shared/img_constant.dart';
+import '../../../shared/theme_control.dart';
+import '../../../shared/components/appbar/appbar1.dart';
+import 'activities_page.dart';
+import 'announcement_page.dart';
+import 'calendar_page.dart';
+import 'timecard_page.dart';
+import 'dashboard_page.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+
+  final HomeController _homeController = Get.find<HomeController>();
+
+  // List of Pages for Buttom Navigation;
+  final List<Widget> _pages = [
+    const DashboardPage(),
+    const PunchInPage(),
+    const ActivitiesPage(),
+    const AnnouncementPage(),
+    const CalendarPage()
+  ];
+
+  final List<String> _titles = [
+    'Dashboard',
+    'TimeCard',
+    'Activities',
+    'Announcements',
+    'Calendar',
+  ];
+
+  // List of Icons for Buttom Navigation;
+  final List<IconData> _navigationItems = [
+    Icons.home_outlined,
+    Icons.alarm_add_outlined,
+    Icons.task_outlined,
+    Icons.campaign_outlined,
+    Icons.calendar_month_outlined,
+  ];
+
+  // Method for Page Navigation control;
+  void _onNavBarTap(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    _pageController
+        .jumpToPage(index); // Optionally use animateToPage for animations
+  }
+
+  // Method to navigate to the next screen
+  void _toNextScreen(Widget destination) async {
+    Get.to(() => destination);
+  }
+
+  // Method to navigate to the previous screen
+  void _toPreviousScreen() async {
+    Get.back();
+  }
+
+  // UI code block;
+  @override
+  Widget build(BuildContext context) {
+    var screen = MediaQuery.of(context).size;
+    return Scaffold(
+      // Appbar Section
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(85),
+        child: Obx(() => CustomAppBar1(
+          notificationCount: _homeController.unreadNotificationCount.value,
+          height: 85,
+          navigationDestination: const NotificationsPage(),
+          title: _titles[_currentIndex],
+        )),
+      ),
+      backgroundColor: ThemeCtrl.colors.backgroundColor,
+
+      // Right-side Drawer Section
+      endDrawer: Drawer(
+        width: screen.width * 0.7,
+        backgroundColor: ThemeCtrl.colors.backgroundColor,
+        child: Column(
+          children: [
+            // Drawer Header
+            UserAccountsDrawerHeader(
+              accountName: const Text(
+                'Username',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              accountEmail: const Text('#402914244'),
+              currentAccountPicture: const CircleAvatar(
+                backgroundImage:
+                    AssetImage(ImgAssets.splashBg), // Replace with your asset
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    ThemeCtrl.colors.iconPrimary,
+                    ThemeCtrl.colors.buttonPrimary
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+
+            // Drawer Options
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Profile'),
+              onTap: () {
+                // Handle Profile navigation
+                _toNextScreen(const ProfilePage());
+              },
+            ),
+            SizedBox(height: screen.height * 0.005),
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Notifications'),
+              onTap: () {
+                // Handle Notifications navigation
+                _toNextScreen(const NotificationSettingsPage());
+              },
+            ),
+            SizedBox(height: screen.height * 0.005),
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Terms and Conditions'),
+              onTap: () {
+                // Handle Terms and Conditions navigation
+                _toNextScreen(const PoliciesPage());
+              },
+            ),
+            SizedBox(height: screen.height * 0.005),
+            ListTile(
+              leading: const Icon(Icons.phone_outlined),
+              title: const Text('Contact Us'),
+              onTap: () {
+                // Handle Contact Us navigation
+              },
+            ),
+
+            const Spacer(), // Pushes the logout button to the bottom
+
+            // Logout Button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  // Handle logout
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ThemeCtrl.colors.buttonPrimary,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Log Out',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // Body to display Pages from Buttom Navigation
+      body: PageView(
+        physics: const NeverScrollableScrollPhysics(),
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: _pages,
+      ),
+
+      // Bottom Navbar
+      bottomNavigationBar: CustomNavBar(
+        items: _navigationItems,
+        height: 60,
+        color: ThemeCtrl.colors.iconPrimary,
+        selectedIconColor: ThemeCtrl.colors.iconPrimary,
+        unselectedIconColor: ThemeCtrl.colors.surfaceColor,
+        backgroundColor: const Color.fromARGB(0, 4, 51, 160),
+        buttonBackgroundColor: ThemeCtrl.colors.highlightLight,
+        animationDuration: const Duration(milliseconds: 300),
+        index: _currentIndex,
+        onTap: _onNavBarTap,
+      ),
+    );
+  }
+}
