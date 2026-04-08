@@ -1,11 +1,20 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const timesheetRoutes = require('./routes/timesheet');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+
+if (missingEnvVars.length > 0) {
+    console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    process.exit(1);
+}
 
 // Middleware
 app.use(cors());

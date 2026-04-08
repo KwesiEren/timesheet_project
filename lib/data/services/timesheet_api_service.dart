@@ -6,9 +6,9 @@ import 'package:flutter/foundation.dart';
 class TimesheetApiService {
   final ApiClient _apiClient = ApiClient();
 
-  Future<List<TimesheetEntryModel>> getTimesheets(String userId) async {
+  Future<List<TimesheetEntryModel>> getTimesheets() async {
     try {
-      final response = await _apiClient.dio.get('/timesheets/\$userId');
+      final response = await _apiClient.dio.get('/timesheets');
       final List<dynamic> data = response.data;
       return data.map((json) {
         // Backend returns snake_case, need to map to the model's expected camelCase JSON
@@ -35,7 +35,6 @@ class TimesheetApiService {
         '/timesheets',
         data: {
           'id': entry.id,
-          'userId': entry.userId,
           'projectId': entry.projectId,
           'description': entry.description,
           'startTime': entry.startTime.toIso8601String(),

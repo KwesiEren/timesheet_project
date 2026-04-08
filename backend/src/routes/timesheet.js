@@ -1,27 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const { authenticateToken } = require('../middleware/auth');
 
-// Get all timesheets for a user
-router.get('/:userId', async (req, res) => {
-    const { userId } = req.params;
+router.use(authenticateToken);
+
+// Get all timesheets for authenticated user
+router.get('/', async (req, res) => {
     try {
         const result = await pool.query(
             'SELECT * FROM timesheet_entries WHERE user_id = $1 ORDER BY start_time DESC',
-            [userId]
+            [req.user.id]
         );
-        res.json(result.rows);
+        return res.json(result.rows);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 // Create a new timesheet entry
 router.post('/', async (req, res) => {
-    const { id, userId, projectId, description, startTime } = req.body;
+    const { id, projectId, description, startTime } = req.body;
 
-    if (!id || !userId || !projectId || !description || !startTime) {
+    if (!id || !projectId || !description || !startTime) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -31,12 +33,12 @@ router.post('/', async (req, res) => {
        (id, user_id, project_id, description, start_time) 
        VALUES ($1, $2, $3, $4, $5) 
        RETURNING *`,
-            [id, userId, projectId, description, startTime]
+            [id, req.user.id, projectId, description, startTime]
         );
-        res.status(201).json(result.rows[0]);
+        return res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -68,10 +70,13 @@ router.put('/:id', async (req, res) => {
             paramIndex++;
         }
 
-        // Remove trailing comma and space
+        if (queryParams.length === 0) {
+            return res.status(400).json({ error: 'No fields provided to update' });
+        }
+
         query = query.slice(0, -2);
-        query += ` WHERE id = $${paramIndex} RETURNING *`;
-        queryParams.push(id);
+        query += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`;
+        queryParams.push(id, req.user.id);
 
         const result = await pool.query(query, queryParams);
 
@@ -79,10 +84,10 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Timesheet entry not found' });
         }
 
-        res.json(result.rows[0]);
+        return res.json(result.rows[0]);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -90,14 +95,17 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query('DELETE FROM timesheet_entries WHERE id = $1 RETURNING id', [id]);
+        const result = await pool.query(
+            'DELETE FROM timesheet_entries WHERE id = $1 AND user_id = $2 RETURNING id',
+            [id, req.user.id]
+        );
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Timesheet entry not found' });
         }
-        res.json({ message: 'Entry deleted successfully', id });
+        return res.json({ message: 'Entry deleted successfully', id });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 

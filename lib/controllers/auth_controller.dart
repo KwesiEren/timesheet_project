@@ -24,7 +24,8 @@ class AuthController extends GetxController {
 
   void _checkLoginStatus() {
     final cachedUser = _localStorage.getUser();
-    if (cachedUser != null) {
+    final token = _localStorage.getAuthToken();
+    if (cachedUser != null && token != null && token.isNotEmpty) {
       _currentUser.value = UserModel.fromJson(cachedUser);
       Get.offAllNamed(Routes.HOME);
     }
@@ -35,17 +36,24 @@ class AuthController extends GetxController {
       isLoading.value = true;
       
       if (email.isNotEmpty && password.isNotEmpty) {
-        final response = await _authService.login(email);
+        final response = await _authService.login(email, password);
         final userData = response['user'];
+        final token = response['token'] as String?;
+
+        if (token == null || token.isEmpty) {
+          throw Exception('Login succeeded but token was missing');
+        }
 
         final userModel = UserModel(
           id: userData['id'],
           name: userData['name'],
           email: userData['email'],
+          avatarUrl: userData['avatarUrl'],
         );
         _currentUser.value = userModel;
         
-        // Cache the user data
+        // Cache auth state for future app launches
+        await _localStorage.saveAuthToken(token);
         _localStorage.saveUser(userModel.toJson());
 
         Get.snackbar(
@@ -82,6 +90,7 @@ class AuthController extends GetxController {
   void logout() {
     _currentUser.value = null;
     _localStorage.clearUser();
+    _localStorage.clearAuthToken();
     _localStorage.clearTimesheets(); // Also clear timesheets on logout
     Get.offAllNamed(Routes.LOGIN);
   }

@@ -5,6 +5,7 @@ class LocalStorageProvider {
   
   // Keys
   static const String keyUser = 'user';
+  static const String keyAuthToken = 'auth_token';
   static const String keyTimesheets = 'timesheets';
 
   // Auth User
@@ -18,6 +19,19 @@ class LocalStorageProvider {
 
   Future<void> clearUser() async {
     await _box.remove(keyUser);
+  }
+
+  // Auth token
+  Future<void> saveAuthToken(String token) async {
+    await _box.write(keyAuthToken, token);
+  }
+
+  String? getAuthToken() {
+    return _box.read(keyAuthToken);
+  }
+
+  Future<void> clearAuthToken() async {
+    await _box.remove(keyAuthToken);
   }
 
   // Timesheets

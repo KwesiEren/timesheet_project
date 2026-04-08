@@ -29,8 +29,7 @@ class TimesheetController extends GetxController {
         );
       }
 
-      // Hardcoding user ID for now since we don't have persistency
-      final fetchedEntries = await _apiService.getTimesheets('usr_123');
+      final fetchedEntries = await _apiService.getTimesheets();
       entries.assignAll(fetchedEntries);
       
       // Cache the fresh data
@@ -94,7 +93,7 @@ class TimesheetController extends GetxController {
     try {
       final newEntry = TimesheetEntryModel(
         id: _uuid.v4(),
-        userId: 'usr_123',
+        userId: '',
         projectId: projectId,
         description: description,
         startTime: DateTime.now(),

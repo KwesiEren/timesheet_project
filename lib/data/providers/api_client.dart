@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'local_storage_provider.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   late final Dio dio;
+  final LocalStorageProvider _localStorage = LocalStorageProvider();
 
   // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web/Desktop
   // Assuming a local environment for Phase 3.
@@ -31,11 +33,10 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Here you would inject the auth token when you have it
-          // final token = SharedPrefs.getToken();
-          // if (token != null) {
-          //   options.headers['Authorization'] = 'Bearer \$token';
-          // }
+          final token = _localStorage.getAuthToken();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
