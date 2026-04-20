@@ -19,21 +19,22 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Create a new timesheet entry
+// Create a new timesheet entry (Activity)
 router.post('/', async (req, res) => {
-    const { id, projectId, description, startTime } = req.body;
+    const { id, projectId, title, details, notes, startTime, isCompleted } = req.body;
 
-    if (!id || !projectId || !description || !startTime) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    // Use title as fallback for description logic if needed, but schema now has title
+    if (!id || !startTime) {
+        return res.status(400).json({ error: 'Missing required fields (id, startTime)' });
     }
 
     try {
         const result = await pool.query(
             `INSERT INTO timesheet_entries 
-       (id, user_id, project_id, description, start_time) 
-       VALUES ($1, $2, $3, $4, $5) 
+       (id, user_id, project_id, title, details, notes, start_time, is_completed) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
        RETURNING *`,
-            [id, req.user.id, projectId, description, startTime]
+            [id, req.user.id, projectId || null, title || req.body.description || null, details || null, notes || null, startTime, isCompleted || false]
         );
         return res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -42,10 +43,10 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Stop timer / Update end time and duration
+// Update timesheet entry / Stop timer
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
-    const { endTime, totalDurationSeconds, description } = req.body;
+    const { endTime, totalDurationSeconds, title, details, notes, isCompleted } = req.body;
 
     try {
         let query = 'UPDATE timesheet_entries SET ';
@@ -64,9 +65,27 @@ router.put('/:id', async (req, res) => {
             paramIndex++;
         }
 
-        if (description) {
-            query += `description = $${paramIndex}, `;
-            queryParams.push(description);
+        if (title) {
+            query += `title = $${paramIndex}, `;
+            queryParams.push(title);
+            paramIndex++;
+        }
+
+        if (details) {
+            query += `details = $${paramIndex}, `;
+            queryParams.push(details);
+            paramIndex++;
+        }
+
+        if (notes) {
+            query += `notes = $${paramIndex}, `;
+            queryParams.push(notes);
+            paramIndex++;
+        }
+
+        if (isCompleted !== undefined) {
+            query += `is_completed = $${paramIndex}, `;
+            queryParams.push(isCompleted);
             paramIndex++;
         }
 
@@ -90,6 +109,7 @@ router.put('/:id', async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
+
 
 // Delete timesheet entry
 router.delete('/:id', async (req, res) => {

@@ -4,6 +4,9 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const timesheetRoutes = require('./routes/timesheet');
+const notificationRoutes = require('./routes/notifications');
+const announcementRoutes = require('./routes/announcements');
+const employeeRoutes = require('./routes/employees');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -23,6 +26,11 @@ app.use(express.json());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/timesheets', timesheetRoutes);
+app.use('/activities', timesheetRoutes); // Alias for Flutter APIServices
+app.use('/notifications', notificationRoutes);
+app.use('/announcements', announcementRoutes);
+app.use('/employees', employeeRoutes);
+
 
 // Health check endpoint
 app.get('/health', (req, res) => {
