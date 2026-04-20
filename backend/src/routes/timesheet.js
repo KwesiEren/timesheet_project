@@ -9,8 +9,8 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT * FROM timesheet_entries WHERE user_id = $1 ORDER BY start_time DESC',
-            [req.user.id]
+            'SELECT * FROM timesheet_entries WHERE user_id = $1 AND organization_id = $2 ORDER BY start_time DESC',
+            [req.user.id, req.user.organizationId]
         );
         return res.json(result.rows);
     } catch (error) {
@@ -31,10 +31,10 @@ router.post('/', async (req, res) => {
     try {
         const result = await pool.query(
             `INSERT INTO timesheet_entries 
-       (id, user_id, project_id, title, details, notes, start_time, is_completed) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+       (id, user_id, organization_id, project_id, title, details, notes, start_time, is_completed) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
        RETURNING *`,
-            [id, req.user.id, projectId || null, title || req.body.description || null, details || null, notes || null, startTime, isCompleted || false]
+            [id, req.user.id, req.user.organizationId, projectId || null, title || req.body.description || null, details || null, notes || null, startTime, isCompleted || false]
         );
         return res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -94,8 +94,8 @@ router.put('/:id', async (req, res) => {
         }
 
         query = query.slice(0, -2);
-        query += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`;
-        queryParams.push(id, req.user.id);
+        query += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} AND organization_id = $${paramIndex + 2} RETURNING *`;
+        queryParams.push(id, req.user.id, req.user.organizationId);
 
         const result = await pool.query(query, queryParams);
 
@@ -116,8 +116,8 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
-            'DELETE FROM timesheet_entries WHERE id = $1 AND user_id = $2 RETURNING id',
-            [id, req.user.id]
+            'DELETE FROM timesheet_entries WHERE id = $1 AND user_id = $2 AND organization_id = $3 RETURNING id',
+            [id, req.user.id, req.user.organizationId]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Timesheet entry not found' });

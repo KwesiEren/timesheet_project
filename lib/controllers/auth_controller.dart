@@ -44,12 +44,7 @@ class AuthController extends GetxController {
           throw Exception('Login succeeded but token was missing');
         }
 
-        final userModel = UserModel(
-          id: userData['id'],
-          name: userData['name'],
-          email: userData['email'],
-          avatarUrl: userData['avatarUrl'],
-        );
+        final userModel = UserModel.fromJson(userData);
         _currentUser.value = userModel;
         
         // Cache auth state for future app launches

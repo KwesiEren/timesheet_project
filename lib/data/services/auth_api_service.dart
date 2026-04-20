@@ -45,15 +45,11 @@ class AuthApiService {
   Future<UserModel> getCurrentUserProfile() async {
     try {
       final response = await _apiClient.dio.get('/auth/me');
-      return UserModel(
-        id: response.data['id'],
-        name: response.data['name'],
-        email: response.data['email'],
-        avatarUrl: response.data['avatarUrl'],
-      );
+      return UserModel.fromJson(response.data);
     } on DioException catch (e) {
       debugPrint('Get User Profile Error: \${e.response?.data}');
       throw Exception(e.response?.data['error'] ?? 'Failed to get user profile');
     }
   }
+
 }

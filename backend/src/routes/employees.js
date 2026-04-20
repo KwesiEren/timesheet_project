@@ -13,20 +13,20 @@ router.get('/', async (req, res) => {
     try {
         // 1. Fetch daily logs (arrival/departure)
         const dailyLogsResult = await pool.query(
-            'SELECT * FROM daily_logs WHERE user_id = $1 ORDER BY date DESC',
-            [req.user.id]
+            'SELECT * FROM daily_logs WHERE user_id = $1 AND organization_id = $2 ORDER BY date DESC',
+            [req.user.id, req.user.organizationId]
         );
 
         // 2. Fetch all timesheet entries (activities)
         const activitiesResult = await pool.query(
-            'SELECT * FROM timesheet_entries WHERE user_id = $1 ORDER BY start_time DESC',
-            [req.user.id]
+            'SELECT * FROM timesheet_entries WHERE user_id = $1 AND organization_id = $2 ORDER BY start_time DESC',
+            [req.user.id, req.user.organizationId]
         );
 
         // 3. Fetch all breaks
         const breaksResult = await pool.query(
-            'SELECT * FROM breaks WHERE user_id = $1 ORDER BY start_time DESC',
-            [req.user.id]
+            'SELECT * FROM breaks WHERE user_id = $1 AND organization_id = $2 ORDER BY start_time DESC',
+            [req.user.id, req.user.organizationId]
         );
 
         // Group everything by day
@@ -73,11 +73,11 @@ router.post('/check-in', async (req, res) => {
     const { id, arrivalTime } = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO daily_logs (id, user_id, date, arrival_time) 
-             VALUES ($1, $2, CURRENT_DATE, $3) 
+            `INSERT INTO daily_logs (id, user_id, organization_id, date, arrival_time) 
+             VALUES ($1, $2, $3, CURRENT_DATE, $4) 
              ON CONFLICT (user_id, date) DO UPDATE SET arrival_time = EXCLUDED.arrival_time
              RETURNING *`,
-            [id || `log_${require('crypto').randomUUID()}`, req.user.id, arrivalTime || new Date()]
+            [id || `log_${require('crypto').randomUUID()}`, req.user.id, req.user.organizationId, arrivalTime || new Date()]
         );
         return res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -92,9 +92,9 @@ router.post('/check-out', async (req, res) => {
     try {
         const result = await pool.query(
             `UPDATE daily_logs SET departure_time = $1 
-             WHERE user_id = $2 AND date = CURRENT_DATE 
+             WHERE user_id = $2 AND organization_id = $3 AND date = CURRENT_DATE 
              RETURNING *`,
-            [departureTime || new Date(), req.user.id]
+            [departureTime || new Date(), req.user.id, req.user.organizationId]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Daily log not found for today. Did you check in?' });

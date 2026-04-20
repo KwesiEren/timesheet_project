@@ -10,8 +10,8 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC',
-            [req.user.id]
+            'SELECT * FROM notifications WHERE user_id = $1 AND organization_id = $2 ORDER BY created_at DESC',
+            [req.user.id, req.user.organizationId]
         );
         return res.json(result.rows);
     } catch (error) {
@@ -25,8 +25,8 @@ router.put('/:id/read', async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
-            'UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2 RETURNING *',
-            [id, req.user.id]
+            'UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2 AND organization_id = $3 RETURNING *',
+            [id, req.user.id, req.user.organizationId]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Notification not found' });
@@ -43,8 +43,8 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
-            'DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id',
-            [id, req.user.id]
+            'DELETE FROM notifications WHERE id = $1 AND user_id = $2 AND organization_id = $3 RETURNING id',
+            [id, req.user.id, req.user.organizationId]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Notification not found' });

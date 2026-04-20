@@ -12,7 +12,8 @@ function authenticateToken(req, res, next) {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         req.user = {
             id: payload.sub,
-            email: payload.email
+            email: payload.email,
+            organizationId: payload.org_id
         };
         return next();
     } catch (error) {

@@ -9,7 +9,8 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT * FROM announcements ORDER BY created_at DESC'
+            'SELECT * FROM announcements WHERE organization_id = $1 ORDER BY created_at DESC',
+            [req.user.organizationId]
         );
         return res.json(result.rows);
     } catch (error) {
@@ -29,8 +30,8 @@ router.post('/', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO announcements (id, title, content, author_id) VALUES ($1, $2, $3, $4) RETURNING *',
-            [id || `ann_${require('crypto').randomUUID()}`, title, content, req.user.id]
+            'INSERT INTO announcements (id, organization_id, title, content, author_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [id || `ann_${require('crypto').randomUUID()}`, req.user.organizationId, title, content, req.user.id]
         );
         return res.status(201).json(result.rows[0]);
     } catch (error) {
