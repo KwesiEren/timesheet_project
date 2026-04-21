@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Worktivo Web Portal — Design System
+   Midnight Navy base, Safety Orange action, status colors. All HSL. */
+
+@layer base {
+  :root {
+    /* Worktivo Mobile Sync: #0432A0 Base */
+    --background: 0 0% 100%;               /* #FFFFFF */
+    --foreground: 218 95% 15%;            /* #021C4B (Secondary) */
+
+    --card: 0 0% 100%;
+    --card-foreground: 218 95% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 218 95% 15%;
+
+    /* Primary: #0432A0 */
+    --primary: 222 95% 32%;               
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 218 18% 22%;             /* Slate variant */
+    --secondary-foreground: 218 95% 15%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 222 95% 32%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Status: Sync with mobile success #28CF36 and error #C52323 */
+    --success: 125 68% 48%;               
+    --success-foreground: 0 0% 100%;
+    --warning: 38 95% 55%;                
+    --warning-foreground: 222 95% 32%;
+    --destructive: 0 70% 45%;           
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 218 16% 26%;
+    --input: 218 16% 22%;
+    --ring: 33 100% 50%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 218 25% 11%;
+    --sidebar-foreground: 215 20% 80%;
+    --sidebar-primary: 33 100% 50%;
+    --sidebar-primary-foreground: 218 23% 10%;
+    --sidebar-accent: 218 20% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 218 16% 22%;
+    --sidebar-ring: 33 100% 50%;
+
+    /* Table zebra */
+    --row-stripe: 218 20% 16%;
+  }
+
+  .dark {
+    --background: 218 23% 14%;
+    --foreground: 0 0% 100%;
+    --card: 218 22% 17%;
+    --card-foreground: 0 0% 100%;
+    --popover: 218 22% 17%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 33 100% 50%;
+    --primary-foreground: 218 23% 10%;
+    --secondary: 218 18% 22%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 218 16% 20%;
+    --muted-foreground: 215 16% 70%;
+    --accent: 33 100% 50%;
+    --accent-foreground: 218 23% 10%;
+    --destructive: 350 80% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 218 16% 26%;
+    --input: 218 16% 22%;
+    --ring: 33 100% 50%;
+    --sidebar-background: 218 25% 11%;
+    --sidebar-foreground: 215 20% 80%;
+    --sidebar-primary: 33 100% 50%;
+    --sidebar-primary-foreground: 218 23% 10%;
+    --sidebar-accent: 218 20% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 218 16% 22%;
+    --sidebar-ring: 33 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body, #root {
+    @apply h-full;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, sans-serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-mono-data {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .zebra tbody tr:nth-child(even) {
+    background-color: hsl(var(--row-stripe));
+  }
+}
+
+/* Leaflet defaults look bad on dark — keep tiles but tweak controls */
+.leaflet-container {
+  background: hsl(var(--muted));
+  font-family: 'Inter', sans-serif;
+}
+.leaflet-control-attribution {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+.leaflet-control-attribution a {
+  color: hsl(var(--primary)) !important;
+}
