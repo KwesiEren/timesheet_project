@@ -24,6 +24,11 @@
 - [x] Missing Log Alert System
 - [x] Push Notification Hooks (FCM ready)
 
+## ⏳ Phase 5: Web Portal Integration (IN PROGRESS)
+- [/] **Worktivo Manager Hub**: Integrated React portal served by Node.js.
+- [x] **Branding Sync**: Mobile app color scheme synchronization.
+- [x] **Static Infrastructure**: Backend sub-path serving for `/manager`.
+
 ---
 
 ## 🚀 Future Roadmap (v2.0)
@@ -31,4 +36,3 @@
 - [ ] **WhatsApp/Email Integration**: Direct delivery of PDF reports and alerts.
 - [ ] **Offline History**: Full local caching of previous logs for offline viewing.
 - [ ] **Face Recognition**: Using ML for check-in verification.
-- [ ] **Web Dashboard**: Advanced analytics and management portal.

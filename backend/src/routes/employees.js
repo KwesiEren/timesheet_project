@@ -238,4 +238,79 @@ router.patch('/status/:id', authorize(['Owner', 'Manager']), async (req, res) =>
     }
 });
 
+/**
+ * GET /employees/history
+ * Returns filterable log history across the organization.
+ */
+router.get('/history', authenticateToken, authorize(['Owner', 'Manager']), async (req, res) => {
+    const { organization_id } = req.user;
+    const { from, to, site_id, status } = req.query;
+
+    try {
+        let query = `
+            SELECT dl.*, u.name as user_name, u.email as user_email, s.name as site_name
+            FROM daily_logs dl
+            JOIN users u ON dl.user_id = u.id
+            LEFT JOIN sites s ON dl.site_id = s.id
+            WHERE dl.organization_id = $1
+        `;
+        const params = [organization_id];
+
+        if (from) {
+            params.push(from);
+            query += ` AND dl.date >= $${params.length}`;
+        }
+        if (to) {
+            params.push(to);
+            query += ` AND dl.date <= $${params.length}`;
+        }
+        if (site_id) {
+            params.push(site_id);
+            query += ` AND dl.site_id = $${params.length}`;
+        }
+        if (status) {
+            params.push(status);
+            query += ` AND dl.status = $${params.length}`;
+        }
+
+        query += ` ORDER BY dl.date DESC, dl.arrival_time DESC`;
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch log history' });
+    }
+});
+
+/**
+ * POST /employees/approve
+ * Bulk approves a list of record IDs.
+ */
+router.post('/approve', authenticateToken, authorize(['Owner', 'Manager']), async (req, res) => {
+    const { organization_id } = req.user;
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'No IDs provided for approval' });
+    }
+
+    try {
+        // Only update logs that belong to the caller's organization
+        const result = await pool.query(
+            'UPDATE daily_logs SET status = $1 WHERE id = ANY($2) AND organization_id = $3',
+            ['Approved', ids, organization_id]
+        );
+
+        res.json({ 
+            success: true, 
+            message: `Successfully approved \${result.rowCount} logs`,
+            updatedCount: result.rowCount 
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to bulk approve logs' });
+    }
+});
+
 module.exports = router;

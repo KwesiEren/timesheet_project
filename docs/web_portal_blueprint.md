@@ -6,8 +6,9 @@ This document provides a complete technical blueprint for developing the **Workt
 
 ## 🏗️ 1. Architecture Overview
 
-The web portal functions as a **Single Page Application (SPA)** that consumes the existing Worktivo Node.js API.
+The web portal functions as a **Single Page Application (SPA)** that is served statically by the existing Worktivo Node.js API at the `/manager` sub-path.
 
+- **Location**: `backend/public/worktivo-manager-hub/`
 - **Framework**: [Vite](https://vitejs.dev/) + [React](https://react.dev/) (For speed and developer accuracy).
 - **Styling**: [TailwindCSS](https://tailwindcss.com/) (For premium, responsive layouts).
 - **State Management**: [Zustand](https://github.com/pmndrs/zustand) (Lighter and faster than Redux).
@@ -19,12 +20,11 @@ The web portal functions as a **Single Page Application (SPA)** that consumes th
 ## 🚀 2. Phase 1: Initialization (Start)
 
 ### 1.1 Project Setup
-Initialize the project in a new `web-portal/` directory:
+The project is initialized inside the backend's public directory to ensure seamless serving:
 ```bash
-npm create vite@latest web-portal -- --template react-ts
-cd web-portal
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
+cd backend/public
+npm create vite@latest worktivo-manager-hub -- --template react-ts
+cd worktivo-manager-hub
 ```
 
 ### 1.2 Core Dependencies
@@ -84,10 +84,8 @@ Ensure the production URL is configurable:
 
 ### 4.3 Deployment Pipeline
 1. **GitHub Actions**: Automated builds on every push to `main`.
-2. **Staging**: Deploy to Vercel or Netlify for QA.
-3. **Production**: 
-   - Build the static assets: `npm run build`.
-   - Serve via Nginx with SSL (Certbot) or deploy directly to Cloudflare Pages.
+2. **Build Process**: Run `npm run build` inside `backend/public/worktivo-manager-hub`. Output is directed to `dist/`.
+3. **Production Serving**: The Node.js backend serves the `dist/` folder via the `/manager` route using `express.static`.
 
 ---
 
