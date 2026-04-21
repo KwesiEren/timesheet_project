@@ -10,6 +10,7 @@ We have comprehensive documentation available to help you get started:
 - **[Feature List](docs/features.md)**: Overview of what's implemented and what's planned.
 - **[Developer Guide](docs/developer_guide.md)**: Technical details, architecture, and setup for Flutter developers.
 - **[Backend Documentation](docs/backend_documentation.md)**: API reference, database schema, and setup for the Node.js backend.
+- **[Web Portal Blueprint](docs/web_portal_blueprint.md)**: Complete guide for building the management dashboard.
 
 ## 🚀 Quick Start
 
