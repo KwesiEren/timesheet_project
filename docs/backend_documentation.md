@@ -1,102 +1,71 @@
-# Backend Documentation
+# Backend Documentation v1.0
 
-The Timesheet Backend is a Node.js Express application that provides a RESTful API for the Timesheet Flutter application. It uses PostgreSQL (Supabase) for data storage and JWT for authentication.
+The Timesheet Backend is a multi-tenant, Node.js Express application providing a scalable RESTful API for the Worktivo workforce platform. It features strict data isolation, role-based access control (RBAC), geofencing, and automated reporting.
 
 ## 🛠 Tech Stack
 
 - **Runtime**: [Node.js](https://nodejs.org/)
 - **Framework**: [Express.js](https://expressjs.com/)
-- **Database**: [PostgreSQL](https://www.postgresql.org/) (via [node-postgres](https://node-postgres.com/))
-- **Authentication**: [JSON Web Tokens (JWT)](https://jwt.io/)
-- **Password Hashing**: [bcryptjs](https://github.com/dcodeIO/bcrypt.js)
-- **Environment Variables**: [dotenv](https://github.com/motdotla/dotenv)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) (Supabase)
+- **Authentication**: JWT with Role & Org claims
+- **Reporting**: [pdfkit](https://github.com/foliojs/pdfkit)
+- **Hashing**: bcryptjs
 
 ## 📁 Project Structure
 
 ```text
 backend/
 ├── src/
-│   ├── middleware/      # Global and route-specific middleware (e.g., auth)
-│   ├── routes/          # API route definitions (auth, activities, employees, etc.)
-│   ├── db.js            # Database connection pool setup
-│   ├── index.js         # Main application entry point
-│   └── schema.sql       # Database schema and migrations
-├── .env                 # Environment secrets (locally)
-└── package.json         # Node.js dependencies and scripts
+│   ├── middleware/      # auth.js, rbac.js
+│   ├── routes/          # auth, timesheet, employees, sites, reports, etc.
+│   ├── services/         # notificationService.js
+│   ├── db.js            # Connection pool
+│   ├── index.js         # Entry point
+│   └── schema.sql       # Master Schema
+├── .env                 # Environment secrets
+└── package.json         # Dependencies
 ```
 
-## 🚀 Setting Up the Backend
+## 🔐 Multi-Tenancy & RBAC
 
-1. **Install Dependencies**:
-   ```bash
-   cd backend
-   npm install
-   ```
-
-2. **Database Setup**:
-   - Create a PostgreSQL database (e.g., a project on [Supabase](https://supabase.com/)).
-   - Run the SQL commands in `backend/src/schema.sql` using your database's SQL editor to create the necessary tables.
-
-3. **Environment Configuration**:
-   - Create a `.env` file in the `backend/` directory based on the following template:
-   ```text
-   PORT=3000
-   DATABASE_URL=postgres://postgres:[PASSWORD]@db.[PROJECT-ID].supabase.co:5432/postgres
-   JWT_SECRET=your_super_secret_key
-   JWT_EXPIRES_IN=1d
-   ```
-
-4. **Running the Server**:
-   ```bash
-   npm run dev    # For development (using nodemon)
-   npm start      # For production
-   ```
-
-## 🔐 Authentication
-
-Most endpoints require a valid JWT in the `Authorization` header:
-`Authorization: Bearer <your_jwt_token>`
-
-The `authenticateToken` middleware verifies the token and attaches the user object to `req.user`.
+The system enforces strict data isolation using `organization_id` on every table. User permissions are governed by three levels:
+1. **Owner**: Full access to organization settings, employees, sites, and financial reports.
+2. **Manager**: Can manage employees, approve logs, create sites, and edit timesheets (with audit trail).
+3. **Employee**: Can clock in/out, log activities, and view their own history.
 
 ## 📡 API Reference
 
-### Auth Routes (`/auth`)
-- `POST /register`: Create a new user account.
-- `POST /login`: Authenticate and receive a JWT.
-- `GET /me`: Retrieve the profile details of the currently logged-in user.
+### 👤 Authentication (`/auth`)
+- `POST /register`: Registers a new Organization and its Owner.
+- `POST /login`: Authenticates and returns a JWT containing `role` and `org_id`.
+- `POST /invite`: (Manager+) Generates a unique token for a specific role.
+- `POST /accept-invite`: Registers a new user via invitation.
 
-### Activities & Timesheets (`/activities` or `/timesheets`)
-- `GET /`: List all timesheet entries for the current user.
-- `POST /`: Create a new activity/timer entry.
-- `PUT /:id`: Update an entry (e.g., stop a timer, update description).
-- `DELETE /:id`: Remove a timesheet entry.
+### 📍 Sites & Geofencing (`/sites`)
+- `GET /`: List all active sites for the organization.
+- `POST /`: (Manager+) Create a site with GPS coordinates and radius.
+- `PUT /:id`: update site settings (including `photo_required`).
 
-### Employee Data (`/employees`)
-- `GET /`: Fetch aggregated daily logs (Check-in time, Check-out time, activity count, and specific activities) grouped by date.
-- `POST /check-in`: Log the start of a workday.
-- `POST /check-out`: Log the end of a workday.
+### 👷 Employee Management (`/employees`)
+- `GET /`: Aggregated history with `status` (Late, Approved, etc).
+- `POST /check-in`: Log arrival with `lat`, `lng`, and optional `photoUrl`.
+- `POST /approve`: (Manager+) Bulk approve daily logs.
+- `PATCH /status/:id`: (Manager+) Manually set status (e.g. Absent).
 
-### Notifications & Announcements
-- `GET /notifications`: Fetch user-specific alerts.
-- `PUT /notifications/:id/read`: Mark a specific notification as viewed.
-- `GET /announcements`: List company-wide news and updates.
+### 📝 Timesheet & Audit (`/timesheets`)
+- `PUT /:id`: Standard update. If a manager edits an employee's entry, it triggers the **Flagged Edit** audit trail (preserving original values).
 
-## 🗄 Database Schema Highlights
+### 📊 Reports (`/reports`)
+- `GET /payroll`: Generates a professional PDF work summary for a user/period.
 
-- **`users`**: Core user profiles and credentials.
-- **`timesheet_entries`**: Individual work tasks with duration and metadata.
-- **`daily_logs`**: Attendance tracking (arrival/departure) per user per day.
-- **`breaks`**: Tracking break times within shifts.
-- **`announcements`**: Broadcast messages for all users.
-- **`notifications`**: Private alerts for specific users.
+### 🔔 Notifications (`/notifications`)
+- `POST /missing-logs`: (Manager+) Finds employees who haven't checked in and sends alerts.
+- `PUT /:id/read`: Clears alerts.
 
 ---
 
-### Errors & Validation
-
-- **400 Bad Request**: Missing mandatory fields or malformed data.
-- **401 Unauthorized**: Missing or invalid `Authorization` header.
-- **404 Not Found**: Resource (e.g., employee log) does not exist.
-- **409 Conflict**: Trying to register an email that already exists.
-- **500 Internal Server Error**: Unexpected server or database issue.
+### 🚀 Developer Setup
+1. `npm install`
+2. Configure `.env` (DATABASE_URL, JWT_SECRET)
+3. Apply all `migration_v1_...` to `migration_v5_...` in order to a fresh Supabase instance.
+4. `npm run dev`

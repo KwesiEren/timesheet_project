@@ -4,6 +4,9 @@ const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { randomUUID } = require('crypto');
 
+const { authorize } = require('../middleware/rbac');
+const NotificationService = require('../services/notificationService');
+
 router.use(authenticateToken);
 
 // Get all notifications for the authenticated user
@@ -14,6 +17,46 @@ router.get('/', async (req, res) => {
             [req.user.id, req.user.organizationId]
         );
         return res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// TRIGGER: Missing Logs Notification (Manager only)
+router.post('/missing-logs', authorize(['Owner', 'Manager']), async (req, res) => {
+    const { date } = req.body;
+    const targetDate = date || new Date().toISOString().split('T')[0];
+
+    try {
+        // Find employees in this org who DON'T have a daily_log for the target date
+        const query = `
+            SELECT u.id, u.name 
+            FROM users u
+            LEFT JOIN daily_logs dl ON u.id = dl.user_id AND dl.date = $1
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE u.organization_id = $2 
+              AND r.name = 'Employee'
+              AND dl.id IS NULL
+        `;
+        
+        const result = await pool.query(query, [targetDate, req.user.organizationId]);
+        const userIds = result.rows.map(u => u.id);
+
+        if (userIds.length > 0) {
+            await NotificationService.notify({
+                userIds,
+                organizationId: req.user.organizationId,
+                title: 'Missing Timesheet Log',
+                message: `You forgot to log your attendance for \${targetDate}. Please update it now.`
+            });
+        }
+
+        return res.json({ 
+            message: `Scanned for missing logs. Notified \${userIds.length} employees.`,
+            notifiedUserIds: userIds
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Internal server error' });

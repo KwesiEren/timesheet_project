@@ -1,52 +1,34 @@
-# Project Features
+# Feature Roadmap - Current Status (v1.0)
 
-This document provides a comprehensive overview of the features implemented in the Timesheet Application, categorized by their completion status.
+## ✅ Phase 1: Foundation & Roles (COMPLETED)
+- [x] Multi-Organization Architecture (Data Isolation)
+- [x] Hierarchical RBAC (Owner, Manager, Employee)
+- [x] Secure Invitation Workflow (Token-based)
+- [x] Database Schema Migration for SaaS model
 
-## 🚀 Completed Features
+## ✅ Phase 2: Core Timesheet Enhancements (COMPLETED)
+- [x] Flagged Edit System (Manager correction audit trail)
+- [x] Daily Log Status (Pending, Present, Late, Absent, Approved)
+- [x] Single & Bulk Approval Flow
+- [x] Original Data Preservation (for transparency)
 
-### 1. Authentication System
-- **Secure Registration**: Users can create accounts with name, email, password, and optional avatar.
-- **JWT-Based Login**: Token-based authentication for secure session management.
-- **Persistent Sessions**: User remains logged in across app launches using local storage.
-- **Password Reset**: Support for password reset workflow.
+## ✅ Phase 3: Sites, Geofencing & Photo Proofs (COMPLETED)
+- [x] Project-Site Management (Flexible linking)
+- [x] Geofencing Validation (Lat/Lng radius check on check-in)
+- [x] Optional Photo Proofing for high-security sites
+- [x] Offline Sync Engine (Buffered check-ins when no signal)
 
-### 2. Daily Time Tracking (Check-In/Out)
-- **Attendance Logging**: Manual arrival and departure tracking.
-- **Real-time Status**: Dashboard updates immediately when the user is "On Duty".
-- **History**: Weekly view of check-in and check-out times.
-
-### 3. Activity & Timesheet Management
-- **Detailed Activities**: Log specific tasks with title, details, and notes.
-- **Timer Integration**: Start and stop activity timers to calculate duration.
-- **Completion Tracking**: Mark activities as completed for reporting.
-- **Project Association**: Categorize activities under specific project IDs.
-
-### 4. Announcements & Notifications
-- **System Announcements**: View company-wide news and updates with rich text content.
-- **User Notifications**: Real-time alerts for system events or reminders.
-- **Read Status**: Track which notifications have been viewed.
-
-### 5. Dashboard & Analytics
-- **Summary Widgets**: Interactive cards showing daily totals, active tasks, and recent announcements.
-- **Dynamic Charts**: Visual representation of weekly effort and activities.
-- **Weekly Overview**: Calendar-based view of overall performance.
+## ✅ Phase 4: Reporting & Alerts (COMPLETED)
+- [x] Payroll PDF Generation (Table-based hours summary)
+- [x] Automated Announcement Notifications
+- [x] Missing Log Alert System
+- [x] Push Notification Hooks (FCM ready)
 
 ---
 
-### 🌗 Partial / In-Progress Features
-
-### 1. PDF Report Generation
-- **Status**: Backend ready for data extraction; Frontend integration with `pdfx` library started.
-- **Goal**: Allow users to export weekly/monthly timesheets as formatted PDF documents.
-
-### 2. Location Tracking
-- **Status**: `geolocator` and `flutter_map` dependencies integrated.
-- **Goal**: Verify arrival/departure locations to ensure compliance with site-based work.
-
-### 3. Calendar View Enhancements
-- **Status**: `table_calendar` integration complete.
-- **Goal**: Add rich event details and historical data navigation directly from the calendar interface.
-
-### 4. Profile Management
-- **Status**: Backend `/auth/me` endpoint ready.
-- **Goal**: Full UI for updating name, email, and uploading/changing profile avatars.
+## 🚀 Future Roadmap (v2.0)
+- [ ] **Advanced Payroll**: Integration with Ghanaian local payroll systems.
+- [ ] **WhatsApp/Email Integration**: Direct delivery of PDF reports and alerts.
+- [ ] **Offline History**: Full local caching of previous logs for offline viewing.
+- [ ] **Face Recognition**: Using ML for check-in verification.
+- [ ] **Web Dashboard**: Advanced analytics and management portal.

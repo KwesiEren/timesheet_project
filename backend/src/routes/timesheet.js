@@ -49,6 +49,19 @@ router.put('/:id', async (req, res) => {
     const { endTime, totalDurationSeconds, title, details, notes, isCompleted } = req.body;
 
     try {
+        // Fetch current entry to check ownership and for audit trail
+        const currentResult = await pool.query(
+            'SELECT * FROM timesheet_entries WHERE id = $1 AND organization_id = $2',
+            [id, req.user.organizationId]
+        );
+
+        if (currentResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Timesheet entry not found' });
+        }
+
+        const currentEntry = currentResult.rows[0];
+        const isManagerEditing = currentEntry.user_id !== req.user.id;
+
         let query = 'UPDATE timesheet_entries SET ';
         const queryParams = [];
         let paramIndex = 1;
@@ -89,19 +102,37 @@ router.put('/:id', async (req, res) => {
             paramIndex++;
         }
 
+        // Audit Trail Logic for Manager Edits
+        if (isManagerEditing) {
+            query += `is_flagged = true, last_edited_by = $${paramIndex}, `;
+            queryParams.push(req.user.id);
+            paramIndex++;
+
+            // Only snapshot original_data if it hasn't been done yet
+            if (!currentEntry.original_data) {
+                const originalData = {
+                    title: currentEntry.title,
+                    details: currentEntry.details,
+                    notes: currentEntry.notes,
+                    start_time: currentEntry.start_time,
+                    end_time: currentEntry.end_time,
+                    total_duration_seconds: currentEntry.total_duration_seconds
+                };
+                query += `original_data = $${paramIndex}, `;
+                queryParams.push(JSON.stringify(originalData));
+                paramIndex++;
+            }
+        }
+
         if (queryParams.length === 0) {
             return res.status(400).json({ error: 'No fields provided to update' });
         }
 
         query = query.slice(0, -2);
-        query += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} AND organization_id = $${paramIndex + 2} RETURNING *`;
-        queryParams.push(id, req.user.id, req.user.organizationId);
+        query += ` WHERE id = $${paramIndex} AND organization_id = $${paramIndex + 1} RETURNING *`;
+        queryParams.push(id, req.user.organizationId);
 
         const result = await pool.query(query, queryParams);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Timesheet entry not found' });
-        }
 
         return res.json(result.rows[0]);
     } catch (error) {

@@ -7,6 +7,8 @@ const timesheetRoutes = require('./routes/timesheet');
 const notificationRoutes = require('./routes/notifications');
 const announcementRoutes = require('./routes/announcements');
 const employeeRoutes = require('./routes/employees');
+const sitesRoutes = require('./routes/sites');
+const reportsRoutes = require('./routes/reports');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -30,6 +32,8 @@ app.use('/activities', timesheetRoutes); // Alias for Flutter APIServices
 app.use('/notifications', notificationRoutes);
 app.use('/announcements', announcementRoutes);
 app.use('/employees', employeeRoutes);
+app.use('/sites', sitesRoutes);
+app.use('/reports', reportsRoutes);
 
 
 // Health check endpoint

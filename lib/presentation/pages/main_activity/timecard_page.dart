@@ -5,6 +5,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:timesheet_project/presentation/pages/side_activity/checkin_page.dart';
 import 'package:timesheet_project/shared/components/button_1.dart';
 import 'package:timesheet_project/shared/theme_control.dart';
+import 'package:timesheet_project/controllers/auth_controller.dart';
+import 'package:timesheet_project/controllers/report_controller.dart';
 
 import '../../../services/api.dart';
 
@@ -16,6 +18,9 @@ class PunchInPage extends StatefulWidget {
 }
 
 class _PunchInPageState extends State<PunchInPage> {
+  final AuthController authController = Get.find<AuthController>();
+  final ReportController reportController = Get.put(ReportController());
+  
   int _currentIndex = 1;
   bool inWork = false;
   // Work coordinates = 5.6513043230251565, -0.18293191893145516
@@ -221,9 +226,34 @@ class _PunchInPageState extends State<PunchInPage> {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'History',
-                    style: TextStyle(fontSize: 25),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'History',
+                        style: TextStyle(fontSize: 25),
+                      ),
+                      if (authController.isManagement) ...[
+                        const SizedBox(width: 10),
+                        Obx(() => reportController.isLoading.value 
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : IconButton(
+                              icon: const Icon(Icons.picture_as_pdf, color: Colors.redAccent),
+                              onPressed: () {
+                                final now = DateTime.now();
+                                final firstDayOfMonth = DateTime(now.year, now.month, 1);
+                                reportController.exportAndShare(
+                                  userId: authController.currentUser?.id ?? '',
+                                  userName: authController.currentUser?.name ?? 'User',
+                                  startDate: firstDayOfMonth,
+                                  endDate: now,
+                                );
+                              },
+                              tooltip: 'Export Payroll PDF',
+                            ),
+                        ),
+                      ],
+                    ],
                   ),
                   Divider(
                     indent: screen.width * 0.06, // 3% of screen width

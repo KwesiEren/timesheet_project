@@ -12,6 +12,11 @@ class AuthController extends GetxController {
   UserModel? get currentUser => _currentUser.value;
   bool get isAuthenticated => _currentUser.value != null;
 
+  bool get isOwner => _currentUser.value?.role == 'Owner';
+  bool get isManager => _currentUser.value?.role == 'Manager';
+  bool get isEmployee => _currentUser.value?.role == 'Employee';
+  bool get isManagement => isOwner || isManager;
+
   final RxBool isLoading = false.obs;
   final AuthApiService _authService = AuthApiService();
   final LocalStorageProvider _localStorage = LocalStorageProvider();

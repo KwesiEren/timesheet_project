@@ -13,7 +13,8 @@ function authenticateToken(req, res, next) {
         req.user = {
             id: payload.sub,
             email: payload.email,
-            organizationId: payload.org_id
+            organizationId: payload.org_id,
+            role: payload.role
         };
         return next();
     } catch (error) {
