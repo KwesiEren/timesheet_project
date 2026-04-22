@@ -18,6 +18,17 @@ Worktivo is a multi-tenant SaaS platform for construction and field teams. It fa
 - **NotificationService**: Handles database notifications and logs push-notification hooks for external providers (e.g. FCM).
 - **SyncService (Flutter)**: Buffered queue for offline-productivity.
 
+## 📂 Monorepo Architecture
+Worktivo is organized as a unified monorepo:
+- **Root**: Flutter mobile application code.
+- **`/backend`**: Node.js Express server.
+- **`/backend/public/worktivo-manager-hub`**: React management portal.
+
+## 🚀 Web Portal Workflow
+1. **Develop**: Run `npm run dev` inside the portal directory.
+2. **Build**: Run `npm run build` to generate the `dist` folder.
+3. **Serve**: The backend automatically serves the portal at `http://localhost:3000/manager`.
+
 ## 🚀 Development Workflow
 1. Apply the migration scripts (`v1` to `v5`) in order.
 2. Ensure your `.env` specifies a unique `JWT_SECRET`.

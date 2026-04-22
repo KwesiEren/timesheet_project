@@ -32,28 +32,23 @@ router.get('/kpis', authenticateToken, authorize(['Owner', 'Manager']), async (r
             [organization_id, today, 'Late']
         );
 
-        // 4. Monthly Trend Data (Last 30 Days)
-        const monthlyTrendRes = await pool.query(
-            `SELECT date, COUNT(*) as count 
-             FROM daily_logs 
-             WHERE organization_id = $1 AND date >= $2 
-             GROUP BY date ORDER BY date ASC`,
-            [organization_id, firstDayOfMonth]
+        // 5. Pending Approvals
+        const pendingRes = await pool.query(
+            "SELECT COUNT(*) FROM daily_logs WHERE organization_id = $1 AND status = 'Present'",
+            [organization_id]
+        );
+
+        // 6. Open Alerts (Geofence violations or Manual edits)
+        const alertsRes = await pool.query(
+            "SELECT COUNT(*) FROM notifications WHERE organization_id = $1 AND read = false",
+            [organization_id]
         );
 
         res.json({
-            today: {
-                totalEmployees: parseInt(totalEmployeesRes.rows[0].count),
-                clockedIn: parseInt(clockedInTodayRes.rows[0].count),
-                late: parseInt(lateTodayRes.rows[0].count),
-                presentPercentage: totalEmployeesRes.rows[0].count > 0 
-                    ? Math.round((clockedInTodayRes.rows[0].count / totalEmployeesRes.rows[0].count) * 100) 
-                    : 0
-            },
-            monthlyTrend: monthlyTrendRes.rows.map(row => ({
-                date: row.date.toISOString().split('T')[0],
-                count: parseInt(row.count)
-            }))
+            clocked_in_now: parseInt(clockedInTodayRes.rows[0].count),
+            late_today: parseInt(lateTodayRes.rows[0].count),
+            pending_approvals: parseInt(pendingRes.rows[0].count),
+            open_alerts: parseInt(alertsRes.rows[0].count)
         });
     } catch (err) {
         console.error(err);
@@ -73,8 +68,8 @@ router.get('/employees', authenticateToken, authorize(['Owner', 'Manager']), asy
         const result = await pool.query(
             `SELECT u.id, u.name, u.email, 
                     dl.status as current_status, 
-                    dl.arrival_time, dl.departure_time,
-                    s.name as current_site
+                    dl.arrival_time, dl.departure_time, dl.site_id,
+                    s.name as current_site_name
              FROM users u
              LEFT JOIN daily_logs dl ON u.id = dl.user_id AND dl.date = $1
              LEFT JOIN sites s ON dl.site_id = s.id
@@ -83,15 +78,27 @@ router.get('/employees', authenticateToken, authorize(['Owner', 'Manager']), asy
             [today, organization_id, 'Employee']
         );
 
-        res.json(result.rows.map(row => ({
-            id: row.id,
-            name: row.name,
-            email: row.email,
-            status: row.current_status || 'Offline',
-            arrivalTime: row.arrival_time,
-            departureTime: row.departure_time,
-            site: row.current_site || 'N/A'
-        })));
+        res.json(result.rows.map(row => {
+            // Map backend status to frontend EmployeeStatus type
+            let displayStatus = 'clocked_out';
+            if (row.current_status === 'Present' || row.current_status === 'Late') {
+                displayStatus = 'clocked_in';
+            } else if (row.current_status === 'Approved') {
+                displayStatus = 'approved';
+            } else if (row.current_status === 'Absent') {
+                displayStatus = 'absent';
+            }
+
+            return {
+                id: row.id,
+                name: row.name,
+                email: row.email,
+                status: displayStatus,
+                clocked_in_at: row.arrival_time,
+                current_site_id: row.site_id,
+                site_name: row.current_site_name
+            };
+        }));
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch dashboard employee list' });

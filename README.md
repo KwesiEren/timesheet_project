@@ -1,16 +1,16 @@
 # Timesheet Application
 
-A modern, cross-platform timesheet and attendance tracking application built with Flutter and Node.js.
+A modern, cross-platform workforce management ecosystem built with Flutter, Node.js, and React.
+
+## 🌐 The Ecosystem
+- **Mobile App**: Clock-in/out, Geofencing, Photo Proofs, and Timesheet management for employees.
+- **Web Manager Hub**: Advanced analytics, site management, and bulk payroll approval for Owners/Managers (Accessible at `/manager`).
 
 ## 📚 Documentation
-
-We have comprehensive documentation available to help you get started:
-
+- **[Web Manager Hub Guide](docs/web_portal_blueprint.md)**: Complete guide for the administration dashboard.
 - **[User Guide](docs/user_guide.md)**: How to use the app as an employee.
-- **[Feature List](docs/features.md)**: Overview of what's implemented and what's planned.
-- **[Developer Guide](docs/developer_guide.md)**: Technical details, architecture, and setup for Flutter developers.
-- **[Backend Documentation](docs/backend_documentation.md)**: API reference, database schema, and setup for the Node.js backend.
-- **[Web Portal Blueprint](docs/web_portal_blueprint.md)**: Complete guide for building the management dashboard.
+- **[Backend Documentation](docs/backend_documentation.md)**: API reference and Node.js setup.
+- **[Feature List](docs/features.md)**: Project status and roadmap.
 
 ## 🚀 Quick Start
 

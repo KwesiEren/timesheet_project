@@ -11,7 +11,10 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT * FROM sites WHERE organization_id = $1 AND is_active = true ORDER BY name ASC',
+            `SELECT id, organization_id, project_id, name, 
+                    latitude as lat, longitude as lng, radius_meters as radius, 
+                    photo_required, is_active, created_at 
+             FROM sites WHERE organization_id = $1 AND is_active = true ORDER BY name ASC`,
             [req.user.organizationId]
         );
         return res.json(result.rows);
@@ -23,27 +26,27 @@ router.get('/', async (req, res) => {
 
 // 2. Create a new site (Manager/Owner only)
 router.post('/', authorize(['Owner', 'Manager']), async (req, res) => {
-    const { name, projectId, latitude, longitude, radiusMeters, photoRequired } = req.body;
+    const { name, projectId, lat, lng, radius, photo_required } = req.body;
 
-    if (!name || latitude === undefined || longitude === undefined) {
-        return res.status(400).json({ error: 'Missing required fields (name, latitude, longitude)' });
+    if (!name || lat === undefined || lng === undefined) {
+        return res.status(400).json({ error: 'Missing required fields (name, lat, lng)' });
     }
 
     try {
-        const id = `site_\${randomUUID()}`;
+        const id = `site_${randomUUID()}`;
         const result = await pool.query(
             `INSERT INTO sites (id, organization_id, project_id, name, latitude, longitude, radius_meters, photo_required)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING *`,
+             RETURNING id, organization_id, project_id, name, latitude as lat, longitude as lng, radius_meters as radius, photo_required`,
             [
                 id, 
                 req.user.organizationId, 
                 projectId || null, 
                 name, 
-                latitude, 
-                longitude, 
-                radiusMeters || 100, 
-                photoRequired || false
+                lat, 
+                lng, 
+                radius || 100, 
+                photo_required || false
             ]
         );
         return res.status(201).json(result.rows[0]);
@@ -56,7 +59,7 @@ router.post('/', authorize(['Owner', 'Manager']), async (req, res) => {
 // 3. Update a site (Manager/Owner only)
 router.put('/:id', authorize(['Owner', 'Manager']), async (req, res) => {
     const { id } = req.params;
-    const { name, projectId, latitude, longitude, radiusMeters, photoRequired, isActive } = req.body;
+    const { name, projectId, lat, lng, radius, photo_required, isActive } = req.body;
 
     try {
         const result = await pool.query(
@@ -69,8 +72,8 @@ router.put('/:id', authorize(['Owner', 'Manager']), async (req, res) => {
                  photo_required = COALESCE($6, photo_required),
                  is_active = COALESCE($7, is_active)
              WHERE id = $8 AND organization_id = $9
-             RETURNING *`,
-            [name, projectId, latitude, longitude, radiusMeters, photoRequired, isActive, id, req.user.organizationId]
+             RETURNING id, organization_id, project_id, name, latitude as lat, longitude as lng, radius_meters as radius, photo_required`,
+            [name, projectId, lat, lng, radius, photo_required, isActive, id, req.user.organizationId]
         );
 
         if (result.rows.length === 0) {

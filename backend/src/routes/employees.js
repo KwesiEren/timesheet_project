@@ -170,85 +170,21 @@ router.post('/check-out', async (req, res) => {
 
 // --- Managerial Routes ---
 
-// Bulk Approve Logs
-router.post('/approve', authorize(['Owner', 'Manager']), async (req, res) => {
-    const { ids, userId, startDate, endDate } = req.body;
-
-    if (!ids && (!userId || !startDate || !endDate)) {
-        return res.status(400).json({ error: 'Provide ids[] OR userId + startDate + endDate' });
-    }
-
-    try {
-        let query;
-        let params;
-
-        if (ids && ids.length > 0) {
-            query = `
-                UPDATE daily_logs 
-                SET status = 'approved', approved_by = $1, approved_at = NOW() 
-                WHERE id = ANY($2) AND organization_id = $3
-                RETURNING id`;
-            params = [req.user.id, ids, req.user.organizationId];
-        } else {
-            query = `
-                UPDATE daily_logs 
-                SET status = 'approved', approved_by = $1, approved_at = NOW() 
-                WHERE user_id = $2 AND date BETWEEN $3 AND $4 AND organization_id = $5
-                RETURNING id`;
-            params = [req.user.id, userId, startDate, endDate, req.user.organizationId];
-        }
-
-        const result = await pool.query(query, params);
-        return res.json({ 
-            message: `Successfully approved \${result.rows.length} logs`,
-            approvedIds: result.rows.map(r => r.id)
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Update Log Status (Manual Late/Absent marking)
-router.patch('/status/:id', authorize(['Owner', 'Manager']), async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['pending', 'present', 'late', 'absent'].includes(status)) {
-        return res.status(400).json({ error: 'Invalid status' });
-    }
-
-    try {
-        const result = await pool.query(
-            `UPDATE daily_logs 
-             SET status = $1 
-             WHERE id = $2 AND organization_id = $3 
-             RETURNING *`,
-            [status, id, req.user.organizationId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Log not found' });
-        }
-
-        return res.json(result.rows[0]);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 /**
  * GET /employees/history
  * Returns filterable log history across the organization.
+ * Aligned with frontend TimeEntry type.
  */
-router.get('/history', authenticateToken, authorize(['Owner', 'Manager']), async (req, res) => {
+router.get('/history', authorize(['Owner', 'Manager']), async (req, res) => {
     const { organization_id } = req.user;
     const { from, to, site_id, status } = req.query;
 
     try {
         let query = `
-            SELECT dl.*, u.name as user_name, u.email as user_email, s.name as site_name
+            SELECT dl.id, dl.user_id as employee_id, u.name as employee_name, 
+                   dl.site_id, s.name as site_name, 
+                   dl.arrival_time as clock_in, dl.departure_time as clock_out,
+                   dl.status, dl.is_within_geofence as geofence_violation
             FROM daily_logs dl
             JOIN users u ON dl.user_id = u.id
             LEFT JOIN sites s ON dl.site_id = s.id
@@ -276,7 +212,14 @@ router.get('/history', authenticateToken, authorize(['Owner', 'Manager']), async
         query += ` ORDER BY dl.date DESC, dl.arrival_time DESC`;
 
         const result = await pool.query(query, params);
-        res.json(result.rows);
+        
+        // Map raw database status to frontend formats if needed
+        const mappedRows = result.rows.map(row => ({
+            ...row,
+            status: row.status ? row.status.toLowerCase() : 'pending'
+        }));
+
+        res.json(mappedRows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch log history' });
@@ -287,7 +230,7 @@ router.get('/history', authenticateToken, authorize(['Owner', 'Manager']), async
  * POST /employees/approve
  * Bulk approves a list of record IDs.
  */
-router.post('/approve', authenticateToken, authorize(['Owner', 'Manager']), async (req, res) => {
+router.post('/approve', authorize(['Owner', 'Manager']), async (req, res) => {
     const { organization_id } = req.user;
     const { ids } = req.body;
 
@@ -296,10 +239,9 @@ router.post('/approve', authenticateToken, authorize(['Owner', 'Manager']), asyn
     }
 
     try {
-        // Only update logs that belong to the caller's organization
         const result = await pool.query(
-            'UPDATE daily_logs SET status = $1 WHERE id = ANY($2) AND organization_id = $3',
-            ['Approved', ids, organization_id]
+            "UPDATE daily_logs SET status = 'Approved', approved_by = $1, approved_at = NOW() WHERE id = ANY($2) AND organization_id = $3",
+            [req.user.id, ids, organization_id]
         );
 
         res.json({ 
@@ -310,6 +252,31 @@ router.post('/approve', authenticateToken, authorize(['Owner', 'Manager']), asyn
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to bulk approve logs' });
+    }
+});
+
+/**
+ * PATCH /employees/status/:id
+ * Manual status update for a single log.
+ */
+router.patch('/status/:id', authorize(['Owner', 'Manager']), async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+        const result = await pool.query(
+            `UPDATE daily_logs SET status = $1 WHERE id = $2 AND organization_id = $3 RETURNING *`,
+            [status, id, req.user.organizationId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Log not found' });
+        }
+
+        return res.json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
