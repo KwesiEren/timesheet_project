@@ -1,64 +1,80 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
-const { authenticateToken } = require('../middleware/auth');
-const { randomUUID } = require('crypto');
-
-const { authorize } = require('../middleware/rbac');
+const { userClient, adminClient } = require('../lib/supabase');
+const { requireAuth } = require('../middleware/auth');
+const { requireOrgRole } = require('../middleware/rbac');
 const NotificationService = require('../services/notificationService');
 
-router.use(authenticateToken);
+router.use(requireAuth);
 
 // Get all notifications for the authenticated user
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM notifications WHERE user_id = $1 AND organization_id = $2 ORDER BY created_at DESC',
-            [req.user.id, req.user.organizationId]
-        );
-        return res.json(result.rows);
+        const sb = userClient(req.auth.token);
+        const { data, error } = await sb
+            .from('notifications')
+            .select('*')
+            .eq('user_id', req.auth.userId)
+            .eq('organization_id', req.orgId)
+            .order('created_at', { ascending: false });
+
+        if (error) return res.status(500).json({ error: error.message });
+        return res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Fetch Notifications Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 // TRIGGER: Missing Logs Notification (Manager only)
-router.post('/missing-logs', authorize(['Owner', 'Manager']), async (req, res) => {
+router.post('/missing-logs', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { date } = req.body;
     const targetDate = date || new Date().toISOString().split('T')[0];
 
     try {
-        // Find employees in this org who DON'T have a daily_log for the target date
-        const query = `
-            SELECT u.id, u.name 
-            FROM users u
-            LEFT JOIN daily_logs dl ON u.id = dl.user_id AND dl.date = $1
-            JOIN user_roles ur ON u.id = ur.user_id
-            JOIN roles r ON ur.role_id = r.id
-            WHERE u.organization_id = $2 
-              AND r.name = 'Employee'
-              AND dl.id IS NULL
-        `;
-        
-        const result = await pool.query(query, [targetDate, req.user.organizationId]);
-        const userIds = result.rows.map(u => u.id);
+        const sb = adminClient;
 
-        if (userIds.length > 0) {
+        // 1. Find employees who DON'T have a daily_log for the target date
+        // This is a complex query, we can use a subquery or RPC.
+        // For now, let's use a two-step approach or a raw filter if possible.
+        
+        // Better: Fetch all employees and all logs for today, then diff in JS
+        const { data: employees, error: e1 } = await sb
+            .from('user_roles')
+            .select('user_id, profiles:users(name)')
+            .eq('organization_id', req.orgId)
+            .eq('role', 'employee');
+
+        if (e1) return res.status(500).json({ error: e1.message });
+
+        const { data: logs, error: e2 } = await sb
+            .from('daily_logs')
+            .select('user_id')
+            .eq('organization_id', req.orgId)
+            .eq('date', targetDate);
+
+        if (e2) return res.status(500).json({ error: e2.message });
+
+        const loggedUserIds = new Set(logs.map(l => l.user_id));
+        const missingUserIds = employees
+            .filter(e => !loggedUserIds.has(e.user_id))
+            .map(e => e.user_id);
+
+        if (missingUserIds.length > 0) {
             await NotificationService.notify({
-                userIds,
-                organizationId: req.user.organizationId,
+                userIds: missingUserIds,
+                organizationId: req.orgId,
                 title: 'Missing Timesheet Log',
                 message: `You forgot to log your attendance for \${targetDate}. Please update it now.`
             });
         }
 
         return res.json({ 
-            message: `Scanned for missing logs. Notified \${userIds.length} employees.`,
-            notifiedUserIds: userIds
+            message: `Scanned for missing logs. Notified \${missingUserIds.length} employees.`,
+            notifiedUserIds: missingUserIds
         });
     } catch (error) {
-        console.error(error);
+        console.error('Missing Logs Notification Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -67,16 +83,23 @@ router.post('/missing-logs', authorize(['Owner', 'Manager']), async (req, res) =
 router.put('/:id/read', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query(
-            'UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2 AND organization_id = $3 RETURNING *',
-            [id, req.user.id, req.user.organizationId]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Notification not found' });
+        const sb = userClient(req.auth.token);
+        const { data, error } = await sb
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', id)
+            .eq('user_id', req.auth.userId)
+            .eq('organization_id', req.orgId)
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return res.status(404).json({ error: 'Notification not found' });
+            return res.status(500).json({ error: error.message });
         }
-        return res.json(result.rows[0]);
+        return res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Mark Read Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -85,16 +108,18 @@ router.put('/:id/read', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query(
-            'DELETE FROM notifications WHERE id = $1 AND user_id = $2 AND organization_id = $3 RETURNING id',
-            [id, req.user.id, req.user.organizationId]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Notification not found' });
-        }
+        const sb = userClient(req.auth.token);
+        const { error } = await sb
+            .from('notifications')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', req.auth.userId)
+            .eq('organization_id', req.orgId);
+
+        if (error) return res.status(500).json({ error: error.message });
         return res.json({ message: 'Notification deleted', id });
     } catch (error) {
-        console.error(error);
+        console.error('Delete Notification Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });

@@ -1,297 +1,166 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { userClient, adminClient } = require('../lib/supabase');
+const { requireAuth } = require('../middleware/auth');
 const { randomUUID } = require('crypto');
-const pool = require('../db');
-const { authenticateToken } = require('../middleware/auth');
-const { authorize } = require('../middleware/rbac');
 
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
-const SALT_ROUNDS = 10;
-
-function signToken(user) {
-    return jwt.sign(
-        { 
-            email: user.email,
-            org_id: user.organization_id,
-            role: user.role
-        },
-        process.env.JWT_SECRET,
-        { subject: user.id, expiresIn: JWT_EXPIRES_IN }
-    );
-}
-
-router.post('/register', async (req, res) => {
-    const { name, email, password, avatarUrl, organizationName } = req.body;
-
-    if (!name || !email || !password) {
-        return res.status(400).json({ error: 'Name, email, and password are required' });
-    }
-
-    const client = await pool.connect();
+/**
+ * GET /auth/me
+ * Returns current user profile and organization details
+ */
+router.get('/me', requireAuth, async (req, res) => {
     try {
-        await client.query('BEGIN');
+        const sb = adminClient; // Use adminClient to fetch combined profile/org data
+        const { data, error } = await sb
+            .from('users')
+            .select('id, name, email, avatar_url, organization_id, organizations(name)')
+            .eq('id', req.auth.userId)
+            .single();
 
-        const existing = await client.query('SELECT id FROM users WHERE email = $1', [email]);
-        if (existing.rows.length > 0) {
-            await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Email already in use' });
-        }
+        if (error) return res.status(500).json({ error: error.message });
+        if (!data) return res.status(404).json({ error: 'User profile not found' });
+
+        return res.json({
+            id: data.id,
+            name: data.name,
+            email: data.email,
+            avatarUrl: data.avatar_url,
+            organizationId: data.organization_id,
+            organizationName: data.organizations?.name
+        });
+    } catch (error) {
+        console.error('Fetch Me Error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+/**
+ * POST /auth/onboarding/create-org
+ * Creates a new organization and assigns the current user as Owner.
+ */
+router.post('/onboarding/create-org', requireAuth, async (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Organization name is required' });
+
+    try {
+        const sb = adminClient;
 
         // 1. Create Organization
-        const orgResult = await client.query(
-            'INSERT INTO organizations (name) VALUES ($1) RETURNING id, name',
-            [organizationName || `${name}'s Organization`]
-        );
-        const organization = orgResult.rows[0];
+        const { data: org, error: orgErr } = await sb
+            .from('organizations')
+            .insert({ name })
+            .select()
+            .single();
 
-        // 2. Create User
-        const userId = `usr_${randomUUID()}`;
-        const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        if (orgErr) return res.status(500).json({ error: orgErr.message });
 
-        const result = await client.query(
-            `INSERT INTO users (id, name, email, password_hash, avatar_url, organization_id)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING id, name, email, avatar_url, organization_id`,
-            [userId, name, email, passwordHash, avatarUrl || null, organization.id]
-        );
+        // 2. Link User to Organization and assign Owner role
+        const { error: roleErr } = await sb
+            .from('user_roles')
+            .insert({
+                user_id: req.auth.userId,
+                organization_id: org.id,
+                role: 'owner',
+                is_default: true
+            });
 
-        const user = result.rows[0];
-        
-        // 3. Assign Owner Role
-        await client.query(
-            'INSERT INTO user_roles (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
-            [user.id, organization.id, 1] // 1 = Owner
-        );
-        user.role = 'Owner';
+        if (roleErr) return res.status(500).json({ error: roleErr.message });
 
-        await client.query('COMMIT');
-        
-        const token = signToken(user);
+        // 3. Update User's profile organization_id (optional, depends on schema)
+        await sb.from('users').update({ organization_id: org.id }).eq('id', req.auth.userId);
 
         return res.status(201).json({
-            message: 'Registration successful',
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                avatarUrl: user.avatar_url,
-                organizationId: user.organization_id,
-                organizationName: organization.name,
-                role: user.role
-            },
-            token
+            message: 'Organization created successfully',
+            organization: org
         });
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
-    } finally {
-        client.release();
-    }
-});
-
-router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    try {
-        const result = await pool.query(
-            `SELECT u.id, u.name, u.email, u.avatar_url, u.password_hash, u.organization_id, o.name as organization_name, r.name as role
-             FROM users u
-             JOIN organizations o ON u.organization_id = o.id
-             JOIN user_roles ur ON u.id = ur.user_id
-             JOIN roles r ON ur.role_id = r.id
-             WHERE u.email = $1`,
-            [email]
-        );
-        if (result.rows.length === 0) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        const user = result.rows[0];
-        const isValid = await bcrypt.compare(password, user.password_hash);
-        if (!isValid) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        const token = signToken(user);
-
-        return res.json({
-            message: 'Login successful',
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                avatarUrl: user.avatar_url,
-                organizationId: user.organization_id,
-                organizationName: user.organization_name
-            },
-            token
-        });
-    } catch (error) {
-        console.error(error);
+        console.error('Onboarding Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
-
-router.get('/me', authenticateToken, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT u.id, u.name, u.email, u.avatar_url, u.organization_id, o.name as organization_name, r.name as role
-             FROM users u
-             JOIN organizations o ON u.organization_id = o.id
-             JOIN user_roles ur ON u.id = ur.user_id
-             JOIN roles r ON ur.role_id = r.id
-             WHERE u.id = $1`,
-            [req.user.id]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        return res.json({
-            id: result.rows[0].id,
-            name: result.rows[0].name,
-            email: result.rows[0].email,
-            avatarUrl: result.rows[0].avatar_url,
-            organizationId: result.rows[0].organization_id,
-            organizationName: result.rows[0].organization_name
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 
 // Invitation Routes
 
-// 1. Generate an invite (Owner/Manager only)
-router.post('/invite', authenticateToken, authorize(['Owner', 'Manager']), async (req, res) => {
-    const { email, roleId } = req.body;
-    
-    if (!email || !roleId) {
-        return res.status(400).json({ error: 'Email and roleId are required' });
-    }
+/**
+ * POST /auth/invite
+ */
+router.post('/invite', requireAuth, async (req, res) => {
+    const { email, role } = req.body;
+    if (!email || !role) return res.status(400).json({ error: 'Email and role are required' });
 
     try {
+        const sb = adminClient;
         const token = randomUUID();
         const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+        expiresAt.setDate(expiresAt.getDate() + 7);
 
-        const result = await pool.query(
-            `INSERT INTO invites (organization_id, inviter_id, email, role_id, token, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING *`,
-            [req.user.organizationId, req.user.id, email, roleId, token, expiresAt]
-        );
+        const { data, error } = await sb
+            .from('invites')
+            .insert({
+                organization_id: req.orgId,
+                inviter_id: req.auth.userId,
+                email,
+                role,
+                token,
+                expires_at: expiresAt,
+                status: 'pending'
+            })
+            .select()
+            .single();
 
-        // In Phase 6, we would send an email here.
-        // For Phase 1, we return the token for manual testing.
+        if (error) return res.status(500).json({ error: error.message });
+
         return res.status(201).json({
             message: 'Invite generated successfully',
-            invite: result.rows[0],
-            token: token // Explicitly return token for manual distribution
+            invite: data,
+            token
         });
     } catch (error) {
-        console.error(error);
+        console.error('Invite Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// 2. Accept an invite (User registration via invite)
-router.post('/accept-invite', async (req, res) => {
-    const { token, name, password, avatarUrl } = req.body;
+/**
+ * POST /auth/accept-invite
+ */
+router.post('/accept-invite', requireAuth, async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token is required' });
 
-    if (!token || !name || !password) {
-        return res.status(400).json({ error: 'Token, name, and password are required' });
-    }
-
-    const client = await pool.connect();
     try {
-        await client.query('BEGIN');
+        const sb = adminClient;
 
-        // Verify invite
-        const inviteResult = await client.query(
-            'SELECT * FROM invites WHERE token = $1 AND status = $2 AND expires_at > NOW()',
-            [token, 'pending']
-        );
+        // 1. Verify invite
+        const { data: invite, error: inviteErr } = await sb
+            .from('invites')
+            .select('*')
+            .eq('token', token)
+            .eq('status', 'pending')
+            .gt('expires_at', new Date().toISOString())
+            .single();
 
-        if (inviteResult.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Invalid or expired invite token' });
-        }
+        if (inviteErr || !invite) return res.status(400).json({ error: 'Invalid or expired invite' });
 
-        const invite = inviteResult.rows[0];
+        // 2. Link user to organization
+        const { error: roleErr } = await sb
+            .from('user_roles')
+            .insert({
+                user_id: req.auth.userId,
+                organization_id: invite.organization_id,
+                role: invite.role,
+                is_default: true
+            });
 
-        // Check if user already exists
-        const existing = await client.query('SELECT id FROM users WHERE email = $1', [invite.email]);
-        if (existing.rows.length > 0) {
-            await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'A user with this email already exists' });
-        }
+        if (roleErr) return res.status(500).json({ error: roleErr.message });
 
-        // Create User
-        const userId = `usr_${randomUUID()}`;
-        const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        // 3. Update invite status
+        await sb.from('invites').update({ status: 'accepted' }).eq('id', invite.id);
 
-        const userResult = await client.query(
-            `INSERT INTO users (id, name, email, password_hash, avatar_url, organization_id)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING id, name, email, avatar_url, organization_id`,
-            [userId, name, invite.email, passwordHash, avatarUrl || null, invite.organization_id]
-        );
-
-        const user = userResult.rows[0];
-
-        // Assign Role from Invite
-        await client.query(
-            'INSERT INTO user_roles (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
-            [user.id, invite.organization_id, invite.role_id]
-        );
-
-        // Update Invite Status
-        await client.query(
-            'UPDATE invites SET status = $1, updated_at = NOW() WHERE id = $2',
-            ['accepted', invite.id]
-        );
-
-        // Fetch user with role name for token signing
-        const fullUserResult = await client.query(
-            `SELECT u.*, r.name as role 
-             FROM users u 
-             JOIN user_roles ur ON u.id = ur.user_id 
-             JOIN roles r ON ur.role_id = r.id 
-             WHERE u.id = $1`,
-            [user.id]
-        );
-        const fullUser = fullUserResult.rows[0];
-
-        await client.query('COMMIT');
-
-        const jwtToken = signToken(fullUser);
-
-        return res.status(201).json({
-            message: 'Invite accepted and registration successful',
-            user: {
-                id: fullUser.id,
-                name: fullUser.name,
-                email: fullUser.email,
-                avatarUrl: fullUser.avatar_url,
-                organizationId: fullUser.organization_id,
-                role: fullUser.role
-            },
-            token: jwtToken
-        });
+        return res.json({ message: 'Invite accepted successfully' });
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error(error);
+        console.error('Accept Invite Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
-    } finally {
-        client.release();
     }
 });
 

@@ -1,18 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
-const { authenticateToken } = require('../middleware/auth');
-const { authorize } = require('../middleware/rbac');
-// Expecting 'npm install pdfkit'
+const { userClient, adminClient } = require('../lib/supabase');
+const { requireAuth } = require('../middleware/auth');
+const { requireOrgRole } = require('../middleware/rbac');
 const PDFDocument = require('pdfkit'); 
 
-router.use(authenticateToken);
+router.use(requireAuth);
 
 /**
  * Generate Payroll Report PDF
  * GET /reports/payroll?userId=...&startDate=...&endDate=...
  */
-router.get('/payroll', authorize(['Owner', 'Manager']), async (req, res) => {
+router.get('/payroll', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { userId, startDate, endDate } = req.query;
 
     if (!userId || !startDate || !endDate) {
@@ -20,33 +19,48 @@ router.get('/payroll', authorize(['Owner', 'Manager']), async (req, res) => {
     }
 
     try {
+        const sb = adminClient;
+
         // 1. Fetch User and Organization Details
-        const userResult = await pool.query('SELECT u.name, u.email, o.name as org_name FROM users u JOIN organizations o ON u.organization_id = o.id WHERE u.id = $1', [userId]);
-        if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+        const { data: userData, error: userErr } = await sb
+            .from('users')
+            .select('name, email, organizations(name)')
+            .eq('id', userId)
+            .single();
+
+        if (userErr || !userData) return res.status(404).json({ error: 'User not found' });
         
-        const userInfo = userResult.rows[0];
+        const userInfo = {
+            name: userData.name,
+            email: userData.email,
+            org_name: userData.organizations?.name
+        };
 
-        // 2. Fetch Timesheet and Break Data
-        const logsResult = await pool.query(
-            `SELECT date, status, arrival_time, departure_time 
-             FROM daily_logs 
-             WHERE user_id = $1 AND date BETWEEN $2 AND $3 
-             ORDER BY date ASC`,
-            [userId, startDate, endDate]
-        );
+        // 2. Fetch Daily Logs
+        const { data: logs, error: logsErr } = await sb
+            .from('daily_logs')
+            .select('date, status, arrival_time, departure_time')
+            .eq('user_id', userId)
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .order('date', { ascending: true });
 
-        const activitiesResult = await pool.query(
-            `SELECT title, start_time, end_time, total_duration_seconds, is_flagged 
-             FROM timesheet_entries 
-             WHERE user_id = $1 AND start_time::date BETWEEN $2 AND $3 
-             ORDER BY start_time ASC`,
-            [userId, startDate, endDate]
-        );
+        if (logsErr) throw logsErr;
 
-        // 3. Create PDF
+        // 3. Fetch Activities for flagging and duration
+        const { data: activities, error: actErr } = await sb
+            .from('timesheet_entries')
+            .select('title, start_time, end_time, total_duration_seconds, is_flagged')
+            .eq('user_id', userId)
+            .gte('start_time', `\${startDate}T00:00:00Z`)
+            .lte('start_time', `\${endDate}T23:59:59Z`)
+            .order('start_time', { ascending: true });
+
+        if (actErr) throw actErr;
+
+        // 4. Create PDF
         const doc = new PDFDocument({ margin: 50 });
         
-        // Set response headers
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=payroll_\${userId}_\${startDate}.pdf`);
         
@@ -75,13 +89,12 @@ router.get('/payroll', authorize(['Owner', 'Manager']), async (req, res) => {
         let totalSeconds = 0;
 
         // Daily Rows
-        logsResult.rows.forEach(log => {
+        logs.forEach(log => {
             const dateStr = new Date(log.date).toLocaleDateString();
             const arrStr = log.arrival_time ? new Date(log.arrival_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
             const depStr = log.departure_time ? new Date(log.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
             
-            // Calculate Day Total (Simplified for report)
-            const dayActivities = activitiesResult.rows.filter(a => new Date(a.start_time).toISOString().split('T')[0] === new Date(log.date).toISOString().split('T')[0]);
+            const dayActivities = activities.filter(a => new Date(a.start_time).toISOString().split('T')[0] === log.date);
             const daySeconds = dayActivities.reduce((acc, curr) => acc + (curr.total_duration_seconds || 0), 0);
             totalSeconds += daySeconds;
             const hrs = (daySeconds / 3600).toFixed(2);
@@ -102,8 +115,7 @@ router.get('/payroll', authorize(['Owner', 'Manager']), async (req, res) => {
         doc.fontSize(14).font('Helvetica-Bold');
         doc.text(`Total Period Hours: \${(totalSeconds / 3600).toFixed(2)}`, { align: 'right' });
         
-        // Audit Notes
-        const flaggedCount = activitiesResult.rows.filter(a => a.is_flagged).length;
+        const flaggedCount = activities.filter(a => a.is_flagged).length;
         if (flaggedCount > 0) {
             doc.moveDown();
             doc.fontSize(10).font('Helvetica-Oblique').fillColor('red');

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
-const { authenticateToken } = require('../middleware/auth');
-const { authorize } = require('../middleware/rbac');
+const { userClient, adminClient } = require('../lib/supabase');
+const { requireAuth } = require('../middleware/auth');
+const { requireOrgRole } = require('../middleware/rbac');
 
-router.use(authenticateToken);
+router.use(requireAuth);
 
 /**
  * Get employee daily logs (for the EmployeeDay model)
@@ -12,33 +12,47 @@ router.use(authenticateToken);
  */
 router.get('/', async (req, res) => {
     try {
-        // 1. Fetch daily logs (arrival/departure)
-        const dailyLogsResult = await pool.query(
-            'SELECT * FROM daily_logs WHERE user_id = $1 AND organization_id = $2 ORDER BY date DESC',
-            [req.user.id, req.user.organizationId]
-        );
+        const sb = userClient(req.auth.token);
 
-        // 2. Fetch all timesheet entries (activities)
-        const activitiesResult = await pool.query(
-            'SELECT * FROM timesheet_entries WHERE user_id = $1 AND organization_id = $2 ORDER BY start_time DESC',
-            [req.user.id, req.user.organizationId]
-        );
+        // 1. Fetch daily logs
+        const { data: logs, error: e1 } = await sb
+            .from('daily_logs')
+            .select('*')
+            .eq('user_id', req.auth.userId)
+            .eq('organization_id', req.orgId)
+            .order('date', { ascending: false });
+
+        if (e1) return res.status(500).json({ error: e1.message });
+
+        // 2. Fetch all activities
+        const { data: activities, error: e2 } = await sb
+            .from('timesheet_entries')
+            .select('*')
+            .eq('user_id', req.auth.userId)
+            .eq('organization_id', req.orgId)
+            .order('start_time', { ascending: false });
+
+        if (e2) return res.status(500).json({ error: e2.message });
 
         // 3. Fetch all breaks
-        const breaksResult = await pool.query(
-            'SELECT * FROM breaks WHERE user_id = $1 AND organization_id = $2 ORDER BY start_time DESC',
-            [req.user.id, req.user.organizationId]
-        );
+        const { data: breaks, error: e3 } = await sb
+            .from('breaks')
+            .select('*')
+            .eq('user_id', req.auth.userId)
+            .eq('organization_id', req.orgId)
+            .order('start_time', { ascending: false });
+
+        if (e3) return res.status(500).json({ error: e3.message });
 
         // Group everything by day
-        const days = dailyLogsResult.rows.map(log => {
-            const dateStr = new Date(log.date).toISOString().split('T')[0];
+        const days = logs.map(log => {
+            const dateStr = log.date;
             
-            const dayActivities = activitiesResult.rows.filter(a => 
+            const dayActivities = activities.filter(a => 
                 new Date(a.start_time).toISOString().split('T')[0] === dateStr
             );
 
-            const dayBreaks = breaksResult.rows.filter(b => 
+            const dayBreaks = breaks.filter(b => 
                 new Date(b.start_time).toISOString().split('T')[0] === dateStr
             );
 
@@ -71,17 +85,14 @@ router.get('/', async (req, res) => {
 
         return res.json(days);
     } catch (error) {
-        console.error(error);
+        console.error('Fetch Logs Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-/**
- * Haversine Formula for distance calculation
- * @returns distance in meters
- */
+// Helper for geofence check
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Earth radius in meters
+    const R = 6371e3;
     const phi1 = lat1 * Math.PI / 180;
     const phi2 = lat2 * Math.PI / 180;
     const dPhi = (lat2 - lat1) * Math.PI / 180;
@@ -98,52 +109,49 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // Check-in (Arrival)
 router.post('/check-in', async (req, res) => {
     const { id, arrivalTime, lat, lng, siteId, photoUrl } = req.body;
+    const sb = userClient(req.auth.token);
     
     try {
         let isWithinGeofence = null;
         
-        // 1. If siteId is provided, validate geofence
         if (siteId && lat && lng) {
-            const siteResult = await pool.query('SELECT * FROM sites WHERE id = $1', [siteId]);
-            if (siteResult.rows.length > 0) {
-                const site = siteResult.rows[0];
-                
-                // Photo requirement check
+            const { data: site, error: siteErr } = await sb
+                .from('sites')
+                .select('*')
+                .eq('id', siteId)
+                .single();
+
+            if (siteErr) return res.status(500).json({ error: siteErr.message });
+            if (site) {
                 if (site.photo_required && !photoUrl) {
                     return res.status(400).json({ error: 'Photo proof is required for this site' });
                 }
-
                 const distance = calculateDistance(lat, lng, site.latitude, site.longitude);
                 isWithinGeofence = distance <= site.radius_meters;
             }
         }
 
-        const result = await pool.query(
-            `INSERT INTO daily_logs (id, user_id, organization_id, date, arrival_time, site_id, check_in_lat, check_in_lng, check_in_photo_url, is_within_geofence) 
-             VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9) 
-             ON CONFLICT (user_id, date) DO UPDATE SET 
-                arrival_time = EXCLUDED.arrival_time, 
-                site_id = EXCLUDED.site_id,
-                check_in_lat = EXCLUDED.check_in_lat,
-                check_in_lng = EXCLUDED.check_in_lng,
-                check_in_photo_url = EXCLUDED.check_in_photo_url,
-                is_within_geofence = EXCLUDED.is_within_geofence
-             RETURNING *`,
-            [
-                id || `log_${require('crypto').randomUUID()}`, 
-                req.user.id, 
-                req.user.organizationId, 
-                arrivalTime || new Date(),
-                siteId || null,
-                lat || null,
-                lng || null,
-                photoUrl || null,
-                isWithinGeofence
-            ]
-        );
-        return res.status(201).json(result.rows[0]);
+        const { data, error } = await sb
+            .from('daily_logs')
+            .upsert({
+                id: id || `log_${require('crypto').randomUUID()}`,
+                user_id: req.auth.userId,
+                organization_id: req.orgId,
+                date: new Date().toISOString().split('T')[0],
+                arrival_time: arrivalTime || new Date(),
+                site_id: siteId || null,
+                check_in_lat: lat || null,
+                check_in_lng: lng || null,
+                check_in_photo_url: photoUrl || null,
+                is_within_geofence: isWithinGeofence
+            }, { onConflict: 'user_id, date' })
+            .select()
+            .single();
+
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(201).json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Check-in Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -151,19 +159,26 @@ router.post('/check-in', async (req, res) => {
 // Check-out (Departure)
 router.post('/check-out', async (req, res) => {
     const { departureTime } = req.body;
+    const sb = userClient(req.auth.token);
+    const today = new Date().toISOString().split('T')[0];
+
     try {
-        const result = await pool.query(
-            `UPDATE daily_logs SET departure_time = $1 
-             WHERE user_id = $2 AND organization_id = $3 AND date = CURRENT_DATE 
-             RETURNING *`,
-            [departureTime || new Date(), req.user.id, req.user.organizationId]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Daily log not found for today. Did you check in?' });
+        const { data, error } = await sb
+            .from('daily_logs')
+            .update({ departure_time: departureTime || new Date() })
+            .eq('user_id', req.auth.userId)
+            .eq('organization_id', req.orgId)
+            .eq('date', today)
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return res.status(404).json({ error: 'Daily log not found for today' });
+            return res.status(500).json({ error: error.message });
         }
-        return res.json(result.rows[0]);
+        return res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Check-out Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -172,110 +187,104 @@ router.post('/check-out', async (req, res) => {
 
 /**
  * GET /employees/history
- * Returns filterable log history across the organization.
- * Aligned with frontend TimeEntry type.
  */
-router.get('/history', authorize(['Owner', 'Manager']), async (req, res) => {
-    const { organization_id } = req.user;
+router.get('/history', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { from, to, site_id, status } = req.query;
+    const sb = userClient(req.auth.token);
 
     try {
-        let query = `
-            SELECT dl.id, dl.user_id as employee_id, u.name as employee_name, 
-                   dl.site_id, s.name as site_name, 
-                   dl.arrival_time as clock_in, dl.departure_time as clock_out,
-                   dl.status, dl.is_within_geofence as geofence_violation
-            FROM daily_logs dl
-            JOIN users u ON dl.user_id = u.id
-            LEFT JOIN sites s ON dl.site_id = s.id
-            WHERE dl.organization_id = $1
-        `;
-        const params = [organization_id];
+        let query = sb
+            .from('daily_logs')
+            .select(`
+                *,
+                employee_name:users(name),
+                site_name:sites(name)
+            `)
+            .eq('organization_id', req.orgId);
 
-        if (from) {
-            params.push(from);
-            query += ` AND dl.date >= $${params.length}`;
-        }
-        if (to) {
-            params.push(to);
-            query += ` AND dl.date <= $${params.length}`;
-        }
-        if (site_id) {
-            params.push(site_id);
-            query += ` AND dl.site_id = $${params.length}`;
-        }
-        if (status) {
-            params.push(status);
-            query += ` AND dl.status = $${params.length}`;
-        }
+        if (from) query = query.gte('date', from);
+        if (to) query = query.lte('date', to);
+        if (site_id) query = query.eq('site_id', site_id);
+        if (status) query = query.eq('status', status);
 
-        query += ` ORDER BY dl.date DESC, dl.arrival_time DESC`;
+        const { data, error } = await query.order('date', { ascending: false });
 
-        const result = await pool.query(query, params);
+        if (error) return res.status(500).json({ error: error.message });
         
-        // Map raw database status to frontend formats if needed
-        const mappedRows = result.rows.map(row => ({
+        const mappedRows = data.map(row => ({
             ...row,
-            status: row.status ? row.status.toLowerCase() : 'pending'
+            employee_name: row.employee_name?.name,
+            site_name: row.site_name?.name,
+            clock_in: row.arrival_time,
+            clock_out: row.departure_time,
+            status: row.status ? row.status.toLowerCase() : 'pending',
+            geofence_violation: row.is_within_geofence === false
         }));
 
         res.json(mappedRows);
     } catch (err) {
-        console.error(err);
+        console.error('History Fetch Error:', err);
         res.status(500).json({ error: 'Failed to fetch log history' });
     }
 });
 
 /**
  * POST /employees/approve
- * Bulk approves a list of record IDs.
  */
-router.post('/approve', authorize(['Owner', 'Manager']), async (req, res) => {
-    const { organization_id } = req.user;
+router.post('/approve', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { ids } = req.body;
+    const sb = adminClient; // Use adminClient for bulk updates to ensure override if needed
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ error: 'No IDs provided for approval' });
+        return res.status(400).json({ error: 'No IDs provided' });
     }
 
     try {
-        const result = await pool.query(
-            "UPDATE daily_logs SET status = 'Approved', approved_by = $1, approved_at = NOW() WHERE id = ANY($2) AND organization_id = $3",
-            [req.user.id, ids, organization_id]
-        );
+        const { data, error, count } = await sb
+            .from('daily_logs')
+            .update({ 
+                status: 'Approved', 
+                approved_by: req.auth.userId, 
+                approved_at: new Date() 
+            })
+            .in('id', ids)
+            .eq('organization_id', req.orgId)
+            .select('id');
+
+        if (error) return res.status(500).json({ error: error.message });
 
         res.json({ 
             success: true, 
-            message: `Successfully approved \${result.rowCount} logs`,
-            updatedCount: result.rowCount 
+            message: `Successfully approved \${data.length} logs`,
+            updatedCount: data.length 
         });
     } catch (err) {
-        console.error(err);
+        console.error('Bulk Approve Error:', err);
         res.status(500).json({ error: 'Failed to bulk approve logs' });
     }
 });
 
 /**
  * PATCH /employees/status/:id
- * Manual status update for a single log.
  */
-router.patch('/status/:id', authorize(['Owner', 'Manager']), async (req, res) => {
+router.patch('/status/:id', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
+    const sb = adminClient;
 
     try {
-        const result = await pool.query(
-            `UPDATE daily_logs SET status = $1 WHERE id = $2 AND organization_id = $3 RETURNING *`,
-            [status, id, req.user.organizationId]
-        );
+        const { data, error } = await sb
+            .from('daily_logs')
+            .update({ status })
+            .eq('id', id)
+            .eq('organization_id', req.orgId)
+            .select()
+            .single();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Log not found' });
-        }
-
-        return res.json(result.rows[0]);
+        if (error) return res.status(500).json({ error: error.message });
+        return res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Status Update Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });

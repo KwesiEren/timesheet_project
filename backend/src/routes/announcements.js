@@ -1,29 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
-const { authenticateToken } = require('../middleware/auth');
-
-const { authorize } = require('../middleware/rbac');
+const { userClient, adminClient } = require('../lib/supabase');
+const { requireAuth } = require('../middleware/auth');
+const { requireOrgRole } = require('../middleware/rbac');
 const NotificationService = require('../services/notificationService');
 
-router.use(authenticateToken);
+router.use(requireAuth);
 
 // Get all announcements
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM announcements WHERE organization_id = $1 ORDER BY created_at DESC',
-            [req.user.organizationId]
-        );
-        return res.json(result.rows);
+        const sb = userClient(req.auth.token);
+        const { data, error } = await sb
+            .from('announcements')
+            .select('*')
+            .eq('organization_id', req.orgId)
+            .order('created_at', { ascending: false });
+
+        if (error) return res.status(500).json({ error: error.message });
+        return res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Fetch Announcements Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 // Create an announcement (Manager/Owner only)
-router.post('/', authorize(['Owner', 'Manager']), async (req, res) => {
+router.post('/', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { id, title, content } = req.body;
 
     if (!title || !content) {
@@ -31,32 +34,47 @@ router.post('/', authorize(['Owner', 'Manager']), async (req, res) => {
     }
 
     try {
-        // 1. Create the Announcement record
-        const result = await pool.query(
-            'INSERT INTO announcements (id, organization_id, title, content, author_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [id || `ann_\${require('crypto').randomUUID()}`, req.user.organizationId, title, content, req.user.id]
-        );
-        const announcement = result.rows[0];
+        const sb = adminClient;
 
-        // 2. Notify all employees in the organization
-        const usersResult = await pool.query(
-            'SELECT id FROM users WHERE organization_id = $1 AND id != $2',
-            [req.user.organizationId, req.user.id]
-        );
+        // 1. Create the Announcement record
+        const { data: announcement, error: insErr } = await sb
+            .from('announcements')
+            .insert({
+                id: id || `ann_\${require('crypto').randomUUID()}`,
+                organization_id: req.orgId,
+                title,
+                content,
+                author_id: req.auth.userId
+            })
+            .select()
+            .single();
+
+        if (insErr) return res.status(500).json({ error: insErr.message });
+
+        // 2. Notify all users in the organization (except author)
+        const { data: users, error: userErr } = await sb
+            .from('user_roles')
+            .select('user_id')
+            .eq('organization_id', req.orgId)
+            .neq('user_id', req.auth.userId);
         
-        const userIds = usersResult.rows.map(u => u.id);
-        if (userIds.length > 0) {
-            await NotificationService.notify({
-                userIds,
-                organizationId: req.user.organizationId,
-                title: 'New Company Announcement',
-                message: title // Use the announcement title as the notification message
-            });
+        if (userErr) {
+            console.error('Fetch Users for Notification Error:', userErr.message);
+        } else {
+            const userIds = users.map(u => u.user_id);
+            if (userIds.length > 0) {
+                await NotificationService.notify({
+                    userIds,
+                    organizationId: req.orgId,
+                    title: 'New Company Announcement',
+                    message: title
+                });
+            }
         }
 
         return res.status(201).json(announcement);
     } catch (error) {
-        console.error(error);
+        console.error('Create Announcement Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });

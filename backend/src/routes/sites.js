@@ -1,31 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
-const { authenticateToken } = require('../middleware/auth');
-const { authorize } = require('../middleware/rbac');
+const { userClient, adminClient } = require('../lib/supabase');
+const { requireAuth } = require('../middleware/auth');
+const { requireOrgRole } = require('../middleware/rbac');
 const { randomUUID } = require('crypto');
 
-router.use(authenticateToken);
+router.use(requireAuth);
 
 // 1. Get all sites for the organization
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT id, organization_id, project_id, name, 
-                    latitude as lat, longitude as lng, radius_meters as radius, 
-                    photo_required, is_active, created_at 
-             FROM sites WHERE organization_id = $1 AND is_active = true ORDER BY name ASC`,
-            [req.user.organizationId]
-        );
-        return res.json(result.rows);
+        const sb = userClient(req.auth.token);
+        const { data, error } = await sb
+            .from('sites')
+            .select(`
+                id, organization_id, project_id, name, 
+                lat:latitude, lng:longitude, radius:radius_meters, 
+                photo_required, is_active, created_at
+            `)
+            .eq('organization_id', req.orgId)
+            .eq('is_active', true)
+            .order('name', { ascending: true });
+
+        if (error) return res.status(500).json({ error: error.message });
+        return res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Fetch Sites Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 // 2. Create a new site (Manager/Owner only)
-router.post('/', authorize(['Owner', 'Manager']), async (req, res) => {
+router.post('/', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { name, projectId, lat, lng, radius, photo_required } = req.body;
 
     if (!name || lat === undefined || lng === undefined) {
@@ -33,74 +39,94 @@ router.post('/', authorize(['Owner', 'Manager']), async (req, res) => {
     }
 
     try {
+        const sb = adminClient;
         const id = `site_${randomUUID()}`;
-        const result = await pool.query(
-            `INSERT INTO sites (id, organization_id, project_id, name, latitude, longitude, radius_meters, photo_required)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING id, organization_id, project_id, name, latitude as lat, longitude as lng, radius_meters as radius, photo_required`,
-            [
-                id, 
-                req.user.organizationId, 
-                projectId || null, 
-                name, 
-                lat, 
-                lng, 
-                radius || 100, 
-                photo_required || false
-            ]
-        );
-        return res.status(201).json(result.rows[0]);
+        const { data, error } = await sb
+            .from('sites')
+            .insert({
+                id,
+                organization_id: req.orgId,
+                project_id: projectId || null,
+                name,
+                latitude: lat,
+                longitude: lng,
+                radius_meters: radius || 100,
+                photo_required: photo_required || false
+            })
+            .select(`
+                id, organization_id, project_id, name, 
+                lat:latitude, lng:longitude, radius:radius_meters, 
+                photo_required
+            `)
+            .single();
+
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(201).json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Create Site Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 // 3. Update a site (Manager/Owner only)
-router.put('/:id', authorize(['Owner', 'Manager']), async (req, res) => {
+router.put('/:id', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { id } = req.params;
     const { name, projectId, lat, lng, radius, photo_required, isActive } = req.body;
 
     try {
-        const result = await pool.query(
-            `UPDATE sites 
-             SET name = COALESCE($1, name),
-                 project_id = COALESCE($2, project_id),
-                 latitude = COALESCE($3, latitude),
-                 longitude = COALESCE($4, longitude),
-                 radius_meters = COALESCE($5, radius_meters),
-                 photo_required = COALESCE($6, photo_required),
-                 is_active = COALESCE($7, is_active)
-             WHERE id = $8 AND organization_id = $9
-             RETURNING id, organization_id, project_id, name, latitude as lat, longitude as lng, radius_meters as radius, photo_required`,
-            [name, projectId, lat, lng, radius, photo_required, isActive, id, req.user.organizationId]
-        );
+        const sb = adminClient;
+        const { data, error } = await sb
+            .from('sites')
+            .update({
+                name,
+                project_id: projectId,
+                latitude: lat,
+                longitude: lng,
+                radius_meters: radius,
+                photo_required: photo_required,
+                is_active: isActive
+            })
+            .eq('id', id)
+            .eq('organization_id', req.orgId)
+            .select(`
+                id, organization_id, project_id, name, 
+                lat:latitude, lng:longitude, radius:radius_meters, 
+                photo_required
+            `)
+            .single();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Site not found' });
+        if (error) {
+            if (error.code === 'PGRST116') return res.status(404).json({ error: 'Site not found' });
+            return res.status(500).json({ error: error.message });
         }
 
-        return res.json(result.rows[0]);
+        return res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Update Site Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 // 4. Archive a site (Soft Delete)
-router.delete('/:id', authorize(['Owner', 'Manager']), async (req, res) => {
+router.delete('/:id', requireOrgRole(['owner', 'manager']), async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query(
-            'UPDATE sites SET is_active = false WHERE id = $1 AND organization_id = $2 RETURNING id',
-            [id, req.user.organizationId]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Site not found' });
+        const sb = adminClient;
+        const { data, error } = await sb
+            .from('sites')
+            .update({ is_active: false })
+            .eq('id', id)
+            .eq('organization_id', req.orgId)
+            .select('id')
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return res.status(404).json({ error: 'Site not found' });
+            return res.status(500).json({ error: error.message });
         }
         return res.json({ message: 'Site archived successfully', id });
     } catch (error) {
-        console.error(error);
+        console.error('Delete Site Error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });

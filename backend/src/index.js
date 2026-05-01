@@ -15,12 +15,17 @@ const dashboardRoutes = require('./routes/dashboard');
 const app = express();
 const port = process.env.PORT || 3000;
 
-const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const requiredEnvVars = [
+    'SUPABASE_URL', 
+    'SUPABASE_ANON_KEY', 
+    'SUPABASE_SERVICE_ROLE_KEY', 
+    'SUPABASE_JWT_SECRET'
+];
 const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
 
 if (missingEnvVars.length > 0) {
-    console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
-    process.exit(1);
+    console.warn(`⚠️  Missing Supabase environment variables: \${missingEnvVars.join(', ')}`);
+    console.warn(`The API may fail to authenticate users or access the database.`);
 }
 
 // Middleware
