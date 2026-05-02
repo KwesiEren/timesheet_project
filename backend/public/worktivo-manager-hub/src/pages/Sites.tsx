@@ -19,10 +19,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, AlertCircle, Zap } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Zap, FolderKanban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { Site } from "@/types/api";
+import { getProjects } from "@/lib/services";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 
@@ -32,6 +40,7 @@ interface FormState {
   lng: number;
   radius: number;
   photo_required: boolean;
+  project_id?: string;
 }
 
 function PickLocation({ value, onChange }: { value: [number, number]; onChange: (p: [number, number]) => void }) {
@@ -52,12 +61,14 @@ function SiteForm({
   onSubmit: (v: FormState) => void;
   submitting: boolean;
 }) {
+  const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
   const [form, setForm] = useState<FormState>({
     name: initial?.name ?? "",
     lat: initial?.lat ?? 5.6037,
     lng: initial?.lng ?? -0.187,
     radius: initial?.radius ?? 100,
     photo_required: initial?.photo_required ?? false,
+    project_id: initial?.project_id ?? "",
   });
 
   return (
@@ -71,6 +82,20 @@ function SiteForm({
       <div className="space-y-1.5">
         <Label htmlFor="name">Site name</Label>
         <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Associated Project</Label>
+        <Select value={form.project_id} onValueChange={(v) => setForm({ ...form, project_id: v })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a project (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No Project</SelectItem>
+            {projects.map((p) => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
@@ -247,8 +272,19 @@ export default function Sites() {
               <div key={s.id} className="flex items-center justify-between rounded-md border border-border bg-secondary/30 p-3">
                 <div className="min-w-0">
                   <div className="truncate font-medium text-foreground">{s.name}</div>
-                  <div className="font-mono-data text-xs text-muted-foreground">
-                    {s.lat.toFixed(4)}, {s.lng.toFixed(4)} · {s.radius}m
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="font-mono-data">
+                      {s.lat.toFixed(4)}, {s.lng.toFixed(4)} · {s.radius}m
+                    </span>
+                    {s.project_id && (
+                      <>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <FolderKanban size={10} />
+                          {projects.find(p => p.id === s.project_id)?.name || 'Project'}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-1">

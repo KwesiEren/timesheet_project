@@ -106,12 +106,13 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* Live Status Table */}
         <Card className="border-border bg-card xl:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Activity className="h-4 w-4 text-primary" /> Live employees
+              <Activity className="h-4 w-4 text-primary" /> Workforce status
             </CardTitle>
-            <span className="text-xs text-muted-foreground font-mono-data">{employees.length} total</span>
+            <span className="text-xs text-muted-foreground font-mono-data">{employees.length} active</span>
           </CardHeader>
           <CardContent className="p-0">
             <div className="zebra max-h-[480px] overflow-auto">
@@ -132,7 +133,7 @@ export default function Dashboard() {
                         <TableCell className="py-2 font-medium">{e.name}</TableCell>
                         <TableCell className="py-2"><StatusPill status={e.status ?? "clocked_out"} /></TableCell>
                         <TableCell className="py-2 text-muted-foreground">{site?.name ?? "—"}</TableCell>
-                        <TableCell className="py-2 text-right font-mono-data text-muted-foreground">
+                        <TableCell className="py-2 text-right font-mono-data text-muted-foreground text-xs">
                           {e.clocked_in_at ? format(new Date(e.clocked_in_at), "HH:mm") : "—"}
                         </TableCell>
                       </TableRow>
@@ -141,7 +142,7 @@ export default function Dashboard() {
                   {employees.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                        No employees yet.
+                        No employees currently clocked in.
                       </TableCell>
                     </TableRow>
                   )}
@@ -151,35 +152,63 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
-          <CardHeader>
-            <CardTitle className="text-base">Sites map</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="h-[480px] w-full overflow-hidden rounded-b-lg">
-              <MapContainer center={center} zoom={12} className="h-full w-full">
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution="&copy; OpenStreetMap"
-                />
-                {sites.map((s) => (
-                  <Circle
-                    key={s.id}
-                    center={[s.lat, s.lng]}
-                    radius={s.radius}
-                    pathOptions={{ color: "hsl(33 100% 50%)", fillColor: "hsl(33 100% 50%)", fillOpacity: 0.15, weight: 2 }}
-                  >
-                    <Tooltip>
-                      <strong>{s.name}</strong>
-                      <br />
-                      Clocked in: {counts[s.id] ?? 0}
-                    </Tooltip>
-                  </Circle>
+        {/* Right Sidebar: Activity & Map */}
+        <div className="space-y-6">
+          <Card className="border-border bg-card">
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Recent Logs
+              </CardTitle>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold tracking-tight" onClick={() => navigate("/timesheets")}>
+                History <ArrowRight size={10} className="ml-1" />
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border">
+                {employees.slice(0, 4).map((e) => (
+                  <div key={e.id} className="p-3 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-1.5 w-1.5 rounded-full ${e.status === 'clocked_in' ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                      <div>
+                        <div className="text-xs font-medium">{e.name}</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-mono-data">
+                          {e.status === 'clocked_in' ? 'Joined' : 'Left'} · {e.clocked_in_at ? format(new Date(e.clocked_in_at), "HH:mm") : '—'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </MapContainer>
-            </div>
-          </CardContent>
-        </Card>
+                {employees.length === 0 && (
+                  <div className="p-8 text-center text-[10px] text-muted-foreground">No recent log activity.</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border bg-card overflow-hidden">
+            <CardHeader className="py-3 px-4 border-b border-border bg-secondary/10">
+              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Sites Map</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[220px] w-full">
+                <MapContainer center={center} zoom={11} className="h-full w-full" zoomControl={false}>
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  {sites.map((s) => (
+                    <Circle
+                      key={s.id}
+                      center={[s.lat, s.lng]}
+                      radius={s.radius}
+                      pathOptions={{ color: "hsl(var(--primary))", fillColor: "hsl(var(--primary))", fillOpacity: 0.1, weight: 1 }}
+                    />
+                  ))}
+                </MapContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -17,6 +17,10 @@ const Timesheets = lazy(() => import("./pages/Timesheets"));
 const EmployeesHistory = lazy(() => import("./pages/Employees")); // This is history
 const Payroll = lazy(() => import("./pages/Payroll"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ActivityTypes = lazy(() => import("./pages/ActivityTypes"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Subscription = lazy(() => import("./pages/Subscription"));
 
 // Admin
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -58,6 +62,10 @@ const App = () => (
               <Route path="/timesheets" element={<Timesheets />} />
               <Route path="/payroll" element={<Payroll />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/activities" element={<ActivityTypes />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/subscription" element={<Subscription />} />
               
               {/* Super Admin Routes */}
               <Route path="/admin" element={<SuperAdminRoute><AdminDashboard /></SuperAdminRoute>} />

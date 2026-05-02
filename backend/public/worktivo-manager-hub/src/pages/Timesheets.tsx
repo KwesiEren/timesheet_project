@@ -7,7 +7,13 @@ import { StatusPill } from "@/components/StatusPill";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Pencil, Save } from "lucide-react";
+import { Pencil, Save, CheckCircle2, XCircle, Info, ExternalLink } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -34,15 +40,20 @@ export default function Timesheets() {
     queryFn: () => getTimesheets({ from: from || undefined, to: to || undefined }),
   });
 
-  const mut = useMutation({
-    mutationFn: (payload: { id: string; clock_in: string; clock_out: string }) =>
-      updateTimesheet(payload.id, { clock_in: payload.clock_in, clock_out: payload.clock_out }),
+  const approveMut = useMutation({
+    mutationFn: approveTimesheet,
     onSuccess: () => {
-      toast({ title: "Timesheet updated", description: "Manual edit logged to audit trail." });
-      setEditing(null);
+      toast({ title: "Approved", description: "Entry has been marked as approved." });
       qc.invalidateQueries({ queryKey: ["timesheets"] });
     },
-    onError: (e: Error) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
+  });
+
+  const rejectMut = useMutation({
+    mutationFn: rejectTimesheet,
+    onSuccess: () => {
+      toast({ title: "Rejected", description: "Entry has been marked as rejected." });
+      qc.invalidateQueries({ queryKey: ["timesheets"] });
+    },
   });
 
   const openEdit = (r: TimeEntry) => {
@@ -84,41 +95,56 @@ export default function Timesheets() {
                   <TableHead>Clock in</TableHead>
                   <TableHead>Clock out</TableHead>
                   <TableHead className="text-right">Hours</TableHead>
-                  <TableHead>Flags</TableHead>
-                  <TableHead className="w-10" />
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((r) => (
-                  <TableRow key={r.id} className="border-border">
-                    <TableCell className="py-2 font-medium">{r.employee_name}</TableCell>
+                  <TableRow key={r.id} className="border-border group">
+                    <TableCell className="py-2">
+                      <div className="font-medium">{r.employee_name}</div>
+                      {r.geofence_violation && <div className="text-[9px] text-destructive uppercase font-bold tracking-tighter">Geofence Violation</div>}
+                    </TableCell>
                     <TableCell className="py-2 text-muted-foreground">{r.site_name}</TableCell>
                     <TableCell className="py-2 font-mono-data text-sm">
                       {format(new Date(r.clock_in), "MMM d HH:mm")}
-                      {r.original?.clock_in && (
-                        <div className="text-[11px] text-warning">
-                          was {format(new Date(r.original.clock_in), "MMM d HH:mm")}
-                        </div>
-                      )}
                     </TableCell>
                     <TableCell className="py-2 font-mono-data text-sm">
                       {r.clock_out ? format(new Date(r.clock_out), "MMM d HH:mm") : "—"}
-                      {r.original?.clock_out && (
-                        <div className="text-[11px] text-warning">
-                          was {format(new Date(r.original.clock_out), "MMM d HH:mm")}
-                        </div>
-                      )}
                     </TableCell>
                     <TableCell className="py-2 text-right font-mono-data">{r.hours?.toFixed(2) ?? "—"}</TableCell>
-                    <TableCell className="py-2 space-x-1">
-                      {r.manual_edit && <StatusPill status="manual_edit" />}
-                      {r.geofence_violation && <StatusPill status="geofence_violation" />}
-                      {!r.manual_edit && !r.geofence_violation && <span className="text-xs text-muted-foreground">—</span>}
-                    </TableCell>
                     <TableCell className="py-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(r)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <StatusPill status={r.status || "pending"} />
+                    </TableCell>
+                    <TableCell className="py-2 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {r.status === 'pending' && (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-success hover:bg-success/10"
+                              onClick={() => approveMut.mutate(r.id)}
+                              disabled={approveMut.isPending}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => rejectMut.mutate(r.id)}
+                              disabled={rejectMut.isPending}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(r)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

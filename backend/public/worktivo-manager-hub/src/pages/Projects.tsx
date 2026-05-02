@@ -1,0 +1,224 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getProjects, createProject, updateProject, deleteProject } from "@/lib/services";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, FolderKanban, AlertCircle, Zap } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import type { Project } from "@/types/api";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/auth";
+
+interface ProjectFormProps {
+  initial?: Project;
+  onSubmit: (v: Partial<Project>) => void;
+  submitting: boolean;
+}
+
+function ProjectForm({ initial, onSubmit, submitting }: ProjectFormProps) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [isActive, setIsActive] = useState(initial?.is_active ?? true);
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({ name, description, is_active: isActive });
+      }}
+    >
+      <div className="space-y-1.5">
+        <Label htmlFor="name">Project name</Label>
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Skyline Apartments" />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="description">Description (optional)</Label>
+        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief project overview..." />
+      </div>
+      <div className="flex items-center justify-between rounded-md border border-border bg-secondary/40 p-3">
+        <div>
+          <Label className="text-sm">Active</Label>
+          <p className="text-xs text-muted-foreground">Inactive projects are hidden from selection.</p>
+        </div>
+        <Switch checked={isActive} onCheckedChange={setIsActive} />
+      </div>
+      <DialogFooter>
+        <Button type="submit" disabled={submitting}>{initial ? "Save changes" : "Create project"}</Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+export default function Projects() {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const user = useAuthStore((s) => s.user);
+  const { isPaid, isAtProjectLimit, limits, usage } = useSubscription();
+  const { data: projects = [], isLoading } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
+  
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<Project | null>(null);
+
+  const createMut = useMutation({
+    mutationFn: (p: Partial<Project>) => createProject({ ...p, organization_id: user?.organizationId }),
+    onSuccess: () => {
+      toast({ title: "Project created" });
+      setCreateOpen(false);
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["org-usage"] });
+    },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<Project> }) => updateProject(id, payload),
+    onSuccess: () => {
+      toast({ title: "Project updated" });
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: deleteProject,
+    onSuccess: () => {
+      toast({ title: "Project deleted" });
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["org-usage"] });
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Projects</h1>
+          <p className="text-sm text-muted-foreground">Manage your high-level work projects.</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {!isPaid && (
+            <div className="hidden text-right sm:block">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Usage</div>
+              <div className="text-sm font-mono-data font-bold">
+                {usage?.projects || 0} / {limits.projects}
+              </div>
+            </div>
+          )}
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2" disabled={isAtProjectLimit}>
+                <Plus className="h-4 w-4" /> New Project
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create project</DialogTitle>
+                <DialogDescription>Add a new project to group your sites and activities.</DialogDescription>
+              </DialogHeader>
+              <ProjectForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </header>
+
+      {isAtProjectLimit && !isPaid && (
+        <Alert variant="destructive" className="border-primary/20 bg-primary/5">
+          <AlertCircle className="h-4 w-4 text-primary" />
+          <AlertTitle className="text-primary font-bold">Project Limit Reached</AlertTitle>
+          <AlertDescription className="flex items-center justify-between text-foreground">
+            <span>You’ve reached your limit of {limits.projects} projects on the Free plan. Upgrade to add more.</span>
+            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/subscription")}>
+              <Zap className="h-3 w-3 fill-current" /> Upgrade Now
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {projects.map((p) => (
+          <Card key={p.id} className="border-border bg-card hover:border-primary/30 transition-colors">
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FolderKanban className="h-5 w-5 text-primary" />
+                  {p.name}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${p.is_active ? 'bg-success' : 'bg-muted'}`} />
+                  <span className="text-xs text-muted-foreground">{p.is_active ? 'Active' : 'Inactive'}</span>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    if (confirm(`Delete project "${p.name}"? This will affect sites linked to it.`)) deleteMut.mutate(p.id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+                {p.description || "No description provided."}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+
+        {projects.length === 0 && !isLoading && (
+          <Card className="col-span-full border-dashed border-2 bg-transparent">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <FolderKanban className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              <h3 className="text-lg font-medium">No projects yet</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto mt-1">
+                Projects allow you to group multiple work sites and activities under one umbrella.
+              </p>
+              <Button variant="outline" className="mt-6" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" /> Create First Project
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit project</DialogTitle>
+            <DialogDescription>Modify project details or status.</DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <ProjectForm
+              initial={editing}
+              submitting={updateMut.isPending}
+              onSubmit={(v) => updateMut.mutate({ id: editing.id, payload: v })}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

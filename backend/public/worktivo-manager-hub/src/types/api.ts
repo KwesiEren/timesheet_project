@@ -3,11 +3,29 @@ export type EmployeeStatus = "approved" | "pending" | "late" | "absent" | "clock
 export interface Site {
   id: string;
   org_id: string;
+  project_id?: string;
   name: string;
   lat: number;
   lng: number;
   radius: number;
   photo_required?: boolean;
+  created_at?: string;
+}
+
+export interface Project {
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface ActivityType {
+  id: string;
+  organization_id: string;
+  name: string;
+  is_active: boolean;
   created_at?: string;
 }
 
@@ -17,6 +35,8 @@ export interface Employee {
   name: string;
   email?: string;
   role: string;
+  department?: string;
+  primary_site_id?: string;
   status?: EmployeeStatus;
   current_site_id?: string | null;
   clocked_in_at?: string | null;

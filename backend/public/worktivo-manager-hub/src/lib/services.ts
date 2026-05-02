@@ -1,8 +1,10 @@
 import { api } from "@/lib/api";
 import type {
+  ActivityType,
   DashboardKpis,
   Employee,
   Notification,
+  Project,
   Site,
   TimeEntry,
 } from "@/types/api";
@@ -50,7 +52,12 @@ export async function approveEmployees(ids: string[]): Promise<void> {
 export async function setEmployeeStatus(id: string, status: string): Promise<void> {
   await api.patch(`/employees/status/${id}`, { status });
 }
-export async function inviteEmployee(payload: { email: string; role: string }): Promise<void> {
+export async function inviteEmployee(payload: { 
+  email: string; 
+  role: string;
+  department?: string;
+  primary_site_id?: string;
+}): Promise<void> {
   await api.post("/auth/invite", payload);
 }
 
@@ -71,6 +78,78 @@ export async function deleteSite(id: string): Promise<void> {
   await api.delete(`/sites/${id}`);
 }
 
+// ---- Projects ----
+export async function getProjects(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function createProject(payload: Partial<Project>): Promise<Project> {
+  const { data, error } = await supabase
+    .from("projects")
+    .insert([payload])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateProject(id: string, payload: Partial<Project>): Promise<Project> {
+  const { data, error } = await supabase
+    .from("projects")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const { error } = await supabase.from("projects").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---- Activity Types ----
+export async function getActivityTypes(): Promise<ActivityType[]> {
+  const { data, error } = await supabase
+    .from("activity_types")
+    .select("*")
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function createActivityType(payload: Partial<ActivityType>): Promise<ActivityType> {
+  const { data, error } = await supabase
+    .from("activity_types")
+    .insert([payload])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateActivityType(id: string, payload: Partial<ActivityType>): Promise<ActivityType> {
+  const { data, error } = await supabase
+    .from("activity_types")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteActivityType(id: string): Promise<void> {
+  const { error } = await supabase.from("activity_types").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // ---- Timesheets ----
 export async function getTimesheets(params?: { from?: string; to?: string }): Promise<TimeEntry[]> {
   const { data } = await api.get("/timesheets", { params });
@@ -79,6 +158,14 @@ export async function getTimesheets(params?: { from?: string; to?: string }): Pr
 export async function updateTimesheet(id: string, payload: Partial<TimeEntry>): Promise<TimeEntry> {
   const { data } = await api.patch(`/timesheets/${id}`, payload);
   return data;
+}
+
+export async function approveTimesheet(id: string): Promise<void> {
+  await api.patch(`/timesheets/${id}/approve`);
+}
+
+export async function rejectTimesheet(id: string): Promise<void> {
+  await api.patch(`/timesheets/${id}/reject`);
 }
 
 // ---- Reports ----
@@ -233,3 +320,23 @@ export async function getBillingOverview() {
     past_due: Number(pastDueCount) || 0
   };
 }
+
+// ---- Organization Settings ----
+export async function getOrganizationSettings(id: string) {
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateOrganizationSettings(id: string, payload: any) {
+  const { error } = await supabase
+    .from("organizations")
+    .update(payload)
+    .eq("id", id);
+  if (error) throw error;
+}
+

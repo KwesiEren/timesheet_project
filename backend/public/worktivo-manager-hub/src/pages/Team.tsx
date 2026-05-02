@@ -39,6 +39,10 @@ export default function Team() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("employee");
+  const [department, setDepartment] = useState("");
+  const [siteId, setSiteId] = useState("");
+
+  const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["org-members", user?.organizationId],
@@ -49,6 +53,8 @@ export default function Team() {
           id,
           name,
           email,
+          department,
+          primary_site_id,
           user_roles!inner (
             role
           )
@@ -128,10 +134,41 @@ export default function Team() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department (optional)</Label>
+                  <Input 
+                    id="department" 
+                    placeholder="e.g. Operations" 
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Primary Site (optional)</Label>
+                  <Select value={siteId} onValueChange={setSiteId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a site" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {sites.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
-                <Button onClick={() => inviteMut.mutate({ email, role })} disabled={inviteMut.isPending}>
+                <Button 
+                  onClick={() => inviteMut.mutate({ 
+                    email, 
+                    role, 
+                    department: department || undefined, 
+                    primary_site_id: siteId === "none" ? undefined : siteId 
+                  })} 
+                  disabled={inviteMut.isPending}
+                >
                   Send Invite
                 </Button>
               </DialogFooter>
@@ -162,21 +199,30 @@ export default function Team() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>Department</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Site</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {members.map((m) => (
                 <TableRow key={m.id}>
-                  <TableCell className="font-medium">{m.name || "Pending..."}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.email}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1.5 capitalize">
+                    <div className="font-medium text-foreground">{m.name || "Pending..."}</div>
+                    <div className="text-xs text-muted-foreground">{m.email}</div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground italic">
+                    {m.department || "—"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 capitalize text-xs">
                       {m.role === "owner" ? <Shield className="h-3.5 w-3.5 text-primary" /> : <Mail className="h-3.5 w-3.5 text-muted-foreground" />}
                       {m.role}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {sites.find(s => s.id === m.primary_site_id)?.name || "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">

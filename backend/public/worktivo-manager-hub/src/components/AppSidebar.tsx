@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, MapPinned, ClipboardList, FileBarChart, Bell, HardHat, ShieldCheck, History, Settings, CreditCard, BarChart3, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, MapPinned, ClipboardList, FileBarChart, Bell, HardHat, ShieldCheck, History, Settings, CreditCard, BarChart3, Building2, FolderKanban } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuthStore } from "@/store/auth";
 import {
@@ -24,18 +24,25 @@ const groups = [
   {
     label: "Workforce",
     items: [
-      { title: "Employees", url: "/employees", icon: Users },
+      { title: "Team", url: "/employees", icon: Users },
       { title: "Timesheets", url: "/timesheets", icon: ClipboardList },
-      { title: "Attendance History", url: "/history", icon: History },
+      { title: "Activity Types", url: "/activities", icon: HardHat },
     ],
   },
   {
-    label: "Sites",
-    items: [{ title: "Sites & Geofences", url: "/sites", icon: MapPinned }],
+    label: "Infrastructure",
+    items: [
+      { title: "Projects", url: "/projects", icon: FolderKanban },
+      { title: "Sites & Geofences", url: "/sites", icon: MapPinned },
+    ],
   },
   {
-    label: "Reports",
-    items: [{ title: "Payroll", url: "/payroll", icon: FileBarChart }],
+    label: "Organization",
+    items: [
+      { title: "Payroll Reports", url: "/payroll", icon: FileBarChart },
+      { title: "Subscription", url: "/subscription", icon: CreditCard },
+      { title: "Settings", url: "/settings", icon: Settings },
+    ],
   },
 ];
 
