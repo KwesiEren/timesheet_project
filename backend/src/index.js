@@ -54,7 +54,7 @@ app.get('/health', (req, res) => {
 });
 
 // SPA Fallback for Web Portal
-app.get('/manager/:path*', (req, res) => {
+app.get(/^\/manager\/.*/, (req, res) => {
     res.sendFile(path.join(portalPath, 'index.html'));
 });
 

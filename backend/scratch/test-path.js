@@ -9,16 +9,8 @@ function test(pattern, url) {
   }
 }
 
-console.log('--- TESTING /manager/(.*) ---');
-test('/manager/(.*)', '/manager/index.html');
-
-console.log('--- TESTING /manager/(.*)? ---');
-test('/manager/(.*)?', '/manager');
-
-console.log('--- TESTING /manager/(.*)? with curly ---');
-test('/manager/{(.*)}?', '/manager');
-test('/manager/{(.*)}?', '/manager/foo');
-
-console.log('--- TESTING /manager{:path(.*)} ---');
-test('/manager{:path(.*)}', '/manager');
-test('/manager{:path(.*)}', '/manager/foo');
+console.log('--- TESTING /manager/(:path)* ---');
+test('/manager/(:path)*', '/manager');
+test('/manager/(:path)*', '/manager/');
+test('/manager/(:path)*', '/manager/index.html');
+test('/manager/(:path)*', '/manager/assets/main.js');
