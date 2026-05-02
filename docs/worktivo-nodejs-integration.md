@@ -148,12 +148,30 @@ function requireOrgRole(roles = ['owner', 'manager']) {
   };
 }
 
-module.exports = { requireOrgRole };
+/**
+ * Super Admin Guard
+ */
+function requireSuperAdmin(req, res, next) {
+  // Check if user is in super_admins table
+  // This logic can be implemented here or using Supabase RPC
+  next();
+}
+
+module.exports = { requireOrgRole, requireSuperAdmin };
 ```
 
 ---
 
-## 7. Example route — list employees of an org
+## 7. Subscription & Billing Operations
+
+The Node.js backend can handle sensitive subscription-related tasks using the `adminClient`:
+- **Upgrade/Downgrade Plan**: `adminClient.from('organizations').update({ plan: 'Paid' }).eq('id', orgId)`
+- **Suspension**: `adminClient.from('organizations').update({ status: 'suspended' }).eq('id', orgId)`
+- **Bulk Usage Reports**: Aggregating data across multiple tenants for platform analytics.
+
+---
+
+## 8. Example route — list employees of an org
 
 ```js
 // src/routes/employees.js
@@ -183,7 +201,7 @@ rows — defense in depth.
 
 ---
 
-## 8. Bootstrapping the first user (owner of a new org)
+## 9. Bootstrapping the first user (owner of a new org)
 
 Supabase Auth signup only creates the `auth.users` row + `profiles` row (via the
 `handle_new_user` trigger). It does **not** create an organization or assign a role.
@@ -215,7 +233,7 @@ router.post('/create-org', requireAuth, async (req, res) => {
 
 ---
 
-## 9. Inviting users (manager/owner only)
+## 10. Inviting users (manager/owner only)
 
 1. Insert a row into `invites` with a random `token` and an `expires_at`.
 2. Email the user `https://yourapp.com/invite/<token>`.
@@ -237,7 +255,7 @@ and create the `user_roles` row.
 
 ---
 
-## 10. File uploads (check-in photos)
+## 11. File uploads (check-in photos)
 
 The bucket `check-in-photos` is private. Path convention:
 
@@ -257,7 +275,7 @@ const { data, error } = await adminClient
 
 ---
 
-## 11. Realtime / push notifications
+## 12. Realtime / push notifications
 
 - Insert into `public.notifications` from any service-role context.
 - The portal can subscribe with:
@@ -273,7 +291,7 @@ const { data, error } = await adminClient
 
 ---
 
-## 12. Google OAuth — one-time setup in Supabase
+## 13. Google OAuth — one-time setup in Supabase
 
 The portal already calls `supabase.auth.signInWithOAuth({ provider: 'google' })`.
 For it to actually work you must enable Google in Supabase:
@@ -295,14 +313,14 @@ Without step 6 the OAuth callback returns "requested path is invalid".
 
 ---
 
-## 13. Email confirmations during development
+## 14. Email confirmations during development
 
 In **Authentication → Providers → Email**, you can disable
 *Confirm email* for faster local testing. Re-enable it for production.
 
 ---
 
-## 14. Security checklist
+## 15. Security checklist
 
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` is **only** in your Node server's environment, never
       committed to git, never sent to a browser.
@@ -313,7 +331,7 @@ In **Authentication → Providers → Email**, you can disable
 
 ---
 
-## 15. Quick request flow (end to end)
+## 16. Quick request flow (end to end)
 
 ```
 [Portal browser]

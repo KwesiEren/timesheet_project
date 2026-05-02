@@ -29,6 +29,14 @@
 - [x] **Branding Sync**: Mobile app color scheme synchronization (HSL mapping).
 - [x] **Static Infrastructure**: Backend sub-path serving for `/manager`.
 - [x] **Analytics Engine**: Real-time KPI aggregation and trend reporting.
+- [x] **Super Admin Portal**: Centralized management for all tenants, billing, and platform-wide analytics.
+
+## ✅ Phase 6: Subscription & Billing (COMPLETED)
+- [x] **Tiered Pricing Model**: Multi-tier structure (Free vs Paid).
+- [x] **Usage Enforcement**: Database triggers to enforce project (max 2) and employee (max 5) limits on the Free plan.
+- [x] **Automated Suspension**: Logic to block access for suspended organizations.
+- [x] **Admin Billing Controls**: Dashboard for platform administrators to manage subscription states and usage.
+- [x] **Upgrade Workflows**: Integrated CTAs and reactive UI for plan upgrades.
 
 ---
 

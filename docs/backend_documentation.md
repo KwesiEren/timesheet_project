@@ -60,6 +60,25 @@ The system enforces strict data isolation using `organization_id` on every table
 
 ---
 
+## 💳 Subscription & Usage Enforcement
+
+The platform implements a tiered SaaS model (Free/Paid) with enforcement at the database layer using Postgres triggers:
+- **Free Plan Limits**: Maximum of 2 projects (`sites` table) and 5 employees (`users` table).
+- **Triggers**: `check_project_limit` and `check_employee_limit` prevent data entry exceeding these quotas.
+- **Suspension**: Organizations marked as `suspended` are blocked from accessing the API (managed via `auth/login` and `AppLayout` checks).
+
+---
+
+## 👑 Super Admin Portal
+
+The Super Admin Portal is a restricted dashboard for platform administrators (`role = super_admin` in `super_admins` table).
+- **Path**: `/admin` (accessible via sidebar for authorized users).
+- **Tenant Management**: View all organizations, their usage statistics, and subscription status.
+- **Subscription Controls**: Manually upgrade/downgrade plans or suspend/reactivate organizations.
+- **Platform Analytics**: Aggregate KPIs across all tenants (total organizations, growth, active users).
+
+---
+
 ## 🌐 Serving the Management Hub
 The backend serves the compiled React Manager Portal statically:
 - **Route**: `/manager`

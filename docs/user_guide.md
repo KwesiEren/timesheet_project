@@ -6,6 +6,11 @@ Welcome to Worktivo, your mobile-first workforce management platform.
 - **Organization Setup**: When you register, you create a private workspace for your company.
 - **Onboarding**: Go to the Dashboard to create "Sites" (locations) and then "Invite" your staff via their email.
 - **Approvals**: In the History tab, you can view employee logs. Daily logs remain "Pending" until you Review and Approve them.
+- **Team Management**: Use the **Team** tab to invite new staff and manage existing members. Note that the Free plan allows up to 5 employees.
+- **Subscription Plans**: Worktivo offers two tiers:
+    - **Free**: Up to 2 sites and 5 employees.
+    - **Paid**: Unlimited sites and employees.
+- **Upgrading**: If you reach your limit, click the "Upgrade" banner on your Dashboard to transition to the Paid tier.
 - **Corrections**: If an employee makes a mistake, you can edit their entry. The system will record the change as a "Flagged Edit" for audit compliance.
 - **Reporting**: Export your weekly or monthly payroll summary as a PDF directly from the app.
 

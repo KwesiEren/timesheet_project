@@ -12,10 +12,12 @@ Worktivo is a multi-tenant SaaS platform for construction and field teams. It fa
 ## 💾 Database Logic
 - Every entity has `organization_id`. Cross-org queries are prevented at the middleware and route levels.
 - Roles: `1=Owner`, `2=Manager`, `3=Employee`.
+- **Subscription Enforcement**: Postgres triggers (`check_project_limit`, `check_employee_limit`) enforce SaaS quotas at the schema level.
 - Audit: Manager edits to timesheets are stored in `original_data` for audit transparency.
 
 ## 📡 Key Services
 - **NotificationService**: Handles database notifications and logs push-notification hooks for external providers (e.g. FCM).
+- **Subscription Service**: Logic in `useSubscription` hook and `auth` store for reactive UI enforcements based on `plan` and `status`.
 - **SyncService (Flutter)**: Buffered queue for offline-productivity.
 
 ## 📂 Monorepo Architecture
@@ -30,7 +32,9 @@ Worktivo is organized as a unified monorepo:
 3. **Serve**: The backend automatically serves the portal at `http://localhost:3000/manager`.
 
 ## 🚀 Development Workflow
-1. Apply the migration scripts (`v1` to `v5`) in order.
+1. Apply the migration scripts (`v1` to `v7`) in order.
 2. Ensure your `.env` specifies a unique `JWT_SECRET`.
 3. Use the `auth/register` endpoint to create a new organization and its first Owner account.
 4. Use the `auth/invite` endpoint to add Managers or Employees.
+5. For **Super Admin** access, add your email to the `super_admins` table manually in the database.
+

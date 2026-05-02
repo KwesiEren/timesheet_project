@@ -62,16 +62,32 @@ Standardized property names (e.g., `lat`, `lng`, `clock_in`) across the API to e
 
 ---
 
-## 🚢 5. Phase 4: Production Readiness (IN PROGRESS)
+---
 
-### 4.1 Deployment Pipeline
+## 🏗️ 5. Phase 5: Super Admin & Subscription Logic (COMPLETED)
+
+### 5.1 Super Admin Portal
+- **Centralized Console**: A platform-level dashboard for managing all organizations.
+- **Tenant Lifecycle**: Actions to upgrade/downgrade plans and suspend/reactivate accounts.
+- **Global Analytics**: Cross-tenant KPI tracking.
+
+### 5.2 Subscription Enforcement
+- **Reactive UI**: Custom `useSubscription` hook that monitors usage against plan limits.
+- **Upgrade CTAs**: Integrated banners and modal triggers across the dashboard, sites, and team pages.
+- **Real-time Protection**: Header badges and layout-level suspension checks.
+
+---
+
+## 🚢 6. Phase 6: Production Readiness (IN PROGRESS)
+
+### 6.1 Deployment Pipeline
 1. **Build Process**: Run `npm run build` inside `backend/public/worktivo-manager-hub`.
 2. **Commit**: Consolidate `dist/` or source code into the main repository for zero-config deployment.
 3. **Serving**: Ensure `NODE_ENV=production` correctly maps the static paths.
 
 ---
 
-## 📈 Next Steps (v1.1)
+## 📈 Next Steps (v1.2)
+- **Automated Billing Integration**: Connecting the "Upgrade" workflow to a payment provider (Stripe/Paystack).
 - **Advanced Payroll Logic**: Integrating automatic hour calculations with Ghanaian tax/SSS localizations.
 - **Announcement Broadcasting**: A web-based interface for sending push notifications directly from the dashboard.
-- **Photo Proof Gallery**: A dedicated view for managers to review clock-in photos for high-security sites.
