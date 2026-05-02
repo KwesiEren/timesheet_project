@@ -35,7 +35,7 @@ class NotificationService {
 
             // 2. Trigger Push Notifications (Hooks)
             const { data: profiles, error: profErr } = await sb
-                .from('profiles')
+                .from('users')
                 .select('fcm_token')
                 .in('id', userIds)
                 .not('fcm_token', 'is', null);

@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
+import '../providers/api_client.dart';
 
 class PendingAction {
   final String id;
@@ -37,12 +38,11 @@ class PendingAction {
   );
 }
 
+
+
 class SyncService extends GetxService {
   final _storage = GetStorage();
-  final _dio = Dio(BaseOptions(
-    baseUrl: 'YOUR_API_BASE_URL', // Should be injected or fetched from config
-    connectTimeout: const Duration(seconds: 5),
-  ));
+  final _dio = ApiClient().dio;
   
   final _pendingActions = <PendingAction>[].obs;
   StreamSubscription? _connectivitySubscription;

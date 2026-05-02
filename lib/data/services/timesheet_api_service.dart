@@ -24,7 +24,7 @@ class TimesheetApiService {
         );
       }).toList();
     } on DioException catch (e) {
-      debugPrint('Get Timesheets Error: \${e.response?.data}');
+      debugPrint('Get Timesheets Error: ${e.response?.data}');
       throw Exception(e.response?.data['error'] ?? 'Failed to fetch timesheets');
     }
   }
@@ -49,7 +49,7 @@ class TimesheetApiService {
         startTime: DateTime.parse(json['start_time']),
       );
     } on DioException catch (e) {
-      debugPrint('Create Timesheet Error: \${e.response?.data}');
+      debugPrint('Create Timesheet Error: ${e.response?.data}');
       throw Exception(e.response?.data['error'] ?? 'Failed to create timesheet');
     }
   }
@@ -57,7 +57,7 @@ class TimesheetApiService {
   Future<TimesheetEntryModel> updateTimesheet(TimesheetEntryModel entry) async {
     try {
       final response = await _apiClient.dio.put(
-        '/timesheets/\${entry.id}',
+        '/timesheets/${entry.id}',
         data: {
           'endTime': entry.endTime?.toIso8601String(),
           'totalDurationSeconds': entry.totalDuration?.inSeconds,
@@ -75,17 +75,17 @@ class TimesheetApiService {
         totalDuration: json['total_duration_seconds'] != null ? Duration(seconds: json['total_duration_seconds']) : null,
       );
     } on DioException catch (e) {
-      debugPrint('Update Timesheet Error: \${e.response?.data}');
+      debugPrint('Update Timesheet Error: ${e.response?.data}');
       throw Exception(e.response?.data['error'] ?? 'Failed to update timesheet');
     }
   }
 
   Future<String> deleteTimesheet(String id) async {
     try {
-      final response = await _apiClient.dio.delete('/timesheets/\$id');
+      final response = await _apiClient.dio.delete('/timesheets/$id');
       return response.data['id'] ?? id;
     } on DioException catch (e) {
-      debugPrint('Delete Timesheet Error: \${e.response?.data}');
+      debugPrint('Delete Timesheet Error: ${e.response?.data}');
       throw Exception(e.response?.data['error'] ?? 'Failed to delete timesheet');
     }
   }

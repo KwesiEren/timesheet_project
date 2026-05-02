@@ -30,7 +30,7 @@ class ReportApiService {
         ),
       );
     } on DioException catch (e) {
-      debugPrint('Download Payroll Report Error: \${e.response?.data}');
+      debugPrint('Download Payroll Report Error: ${e.response?.data}');
       throw Exception(e.response?.data['error'] ?? 'Failed to download report');
     }
   }

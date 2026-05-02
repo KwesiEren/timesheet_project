@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'local_storage_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
@@ -33,9 +34,14 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final token = _localStorage.getAuthToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+          final session = Supabase.instance.client.auth.currentSession;
+          if (session != null) {
+            options.headers['Authorization'] = 'Bearer ${session.accessToken}';
+          }
+          
+          final user = _localStorage.getUser();
+          if (user != null && user['organizationId'] != null) {
+            options.headers['X-Organization-Id'] = user['organizationId'];
           }
           return handler.next(options);
         },

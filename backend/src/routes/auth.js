@@ -13,7 +13,7 @@ router.get('/me', requireAuth, async (req, res) => {
         const sb = adminClient; // Use adminClient to fetch combined profile/org data
         const { data, error } = await sb
             .from('users')
-            .select('id, name, email, avatar_url, organization_id, organizations(name)')
+            .select('id, name, email, avatar_url, organization_id, organizations(name), user_roles(role)')
             .eq('id', req.auth.userId)
             .single();
 
@@ -26,7 +26,8 @@ router.get('/me', requireAuth, async (req, res) => {
             email: data.email,
             avatarUrl: data.avatar_url,
             organizationId: data.organization_id,
-            organizationName: data.organizations?.name
+            organizationName: data.organizations?.name,
+            role: data.user_roles?.[0]?.role
         });
     } catch (error) {
         console.error('Fetch Me Error:', error);

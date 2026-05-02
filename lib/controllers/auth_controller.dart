@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/models/user_model.dart';
 import '../data/services/auth_api_service.dart';
 import '../data/providers/local_storage_provider.dart';
@@ -6,33 +7,56 @@ import '../routes/app_pages.dart';
 import 'package:flutter/material.dart';
 
 class AuthController extends GetxController {
-  // Using Rxn so it can be null initially
   final Rxn<UserModel> _currentUser = Rxn<UserModel>();
 
   UserModel? get currentUser => _currentUser.value;
   bool get isAuthenticated => _currentUser.value != null;
 
-  bool get isOwner => _currentUser.value?.role == 'Owner';
-  bool get isManager => _currentUser.value?.role == 'Manager';
-  bool get isEmployee => _currentUser.value?.role == 'Employee';
+  bool get isOwner => _currentUser.value?.role == 'Owner' || _currentUser.value?.role == 'owner';
+  bool get isManager => _currentUser.value?.role == 'Manager' || _currentUser.value?.role == 'manager';
+  bool get isEmployee => _currentUser.value?.role == 'Employee' || _currentUser.value?.role == 'employee';
   bool get isManagement => isOwner || isManager;
 
   final RxBool isLoading = false.obs;
   final AuthApiService _authService = AuthApiService();
   final LocalStorageProvider _localStorage = LocalStorageProvider();
+  final _supabase = Supabase.instance.client;
 
   @override
   void onInit() {
     super.onInit();
     _checkLoginStatus();
+    
+    // Listen to auth state changes
+    _supabase.auth.onAuthStateChange.listen((data) {
+      final AuthChangeEvent event = data.event;
+      if (event == AuthChangeEvent.signedOut) {
+        _currentUser.value = null;
+        _localStorage.clearUser();
+        Get.offAllNamed(Routes.LOGIN);
+      }
+    });
   }
 
   void _checkLoginStatus() {
     final cachedUser = _localStorage.getUser();
-    final token = _localStorage.getAuthToken();
-    if (cachedUser != null && token != null && token.isNotEmpty) {
+    final session = _supabase.auth.currentSession;
+    
+    if (session != null && cachedUser != null) {
       _currentUser.value = UserModel.fromJson(cachedUser);
+      // Optional: Refresh profile from backend to ensure roles are up to date
+      _refreshProfile();
       Get.offAllNamed(Routes.HOME);
+    }
+  }
+
+  Future<void> _refreshProfile() async {
+    try {
+      final userModel = await _authService.getCurrentUserProfile();
+      _currentUser.value = userModel;
+      _localStorage.saveUser(userModel.toJson());
+    } catch (e) {
+      debugPrint('Error refreshing profile: $e');
     }
   }
 
@@ -41,19 +65,15 @@ class AuthController extends GetxController {
       isLoading.value = true;
       
       if (email.isNotEmpty && password.isNotEmpty) {
-        final response = await _authService.login(email, password);
-        final userData = response['user'];
-        final token = response['token'] as String?;
-
-        if (token == null || token.isEmpty) {
-          throw Exception('Login succeeded but token was missing');
-        }
-
-        final userModel = UserModel.fromJson(userData);
+        // 1. Supabase Auth Login
+        await _authService.login(email, password);
+        
+        // 2. Fetch Profile from Node Backend (to get Organization and Role)
+        final userModel = await _authService.getCurrentUserProfile();
+        
         _currentUser.value = userModel;
         
-        // Cache auth state for future app launches
-        await _localStorage.saveAuthToken(token);
+        // 3. Cache user model for role-based UI access
         _localStorage.saveUser(userModel.toJson());
 
         Get.snackbar(
@@ -76,7 +96,7 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       Get.snackbar(
-        'Error', 
+        'Login Failed', 
         e.toString(),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
@@ -87,11 +107,11 @@ class AuthController extends GetxController {
     }
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await _supabase.auth.signOut();
     _currentUser.value = null;
     _localStorage.clearUser();
-    _localStorage.clearAuthToken();
-    _localStorage.clearTimesheets(); // Also clear timesheets on logout
+    _localStorage.clearTimesheets();
     Get.offAllNamed(Routes.LOGIN);
   }
 }
