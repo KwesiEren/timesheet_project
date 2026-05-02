@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { login } from "@/lib/services";
+import { login, getMe } from "@/lib/services";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const setToken = useAuthStore((s) => s.setToken);
+  const setUser = useAuthStore((s) => s.setUser);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -21,15 +22,28 @@ export default function Login() {
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname || "/";
 
   const mut = useMutation({
-    mutationFn: () => login(email, password),
-    onSuccess: (data) => {
-      setToken(data.token);
-      const user = useAuthStore.getState().user;
-      if (!user) {
-        toast({ title: "Invalid token returned", variant: "destructive" });
-        return;
+    mutationFn: async () => {
+      // 1. Supabase Auth
+      const { session } = await login(email, password);
+      if (!session) throw new Error("No session returned");
+      
+      // Save token temporarily so getMe() can use it in interceptor
+      setToken(session.access_token);
+      
+      // 2. Sync Profile from Backend
+      try {
+        const userProfile = await getMe();
+        return { session, userProfile };
+      } catch (err) {
+        // If profile fetch fails, logout to be safe
+        useAuthStore.getState().logout();
+        throw err;
       }
-      if (user.role === "employee") {
+    },
+    onSuccess: ({ session, userProfile }) => {
+      setUser(userProfile);
+      
+      if (userProfile.role === "employee") {
         toast({
           title: "Access denied",
           description: "The web portal is for Owners and Managers only.",
@@ -38,12 +52,14 @@ export default function Login() {
         useAuthStore.getState().logout();
         return;
       }
+      
+      toast({ title: "Welcome back!", description: `Logged in as ${userProfile.name}` });
       navigate(from, { replace: true });
     },
-    onError: (err: Error & { response?: { data?: { message?: string } } }) => {
+    onError: (err: any) => {
       toast({
         title: "Login failed",
-        description: err?.response?.data?.message || err.message || "Check your credentials and try again.",
+        description: err.message || "Check your credentials and try again.",
         variant: "destructive",
       });
     },

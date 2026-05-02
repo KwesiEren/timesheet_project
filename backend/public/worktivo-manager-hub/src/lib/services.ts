@@ -7,9 +7,20 @@ import type {
   TimeEntry,
 } from "@/types/api";
 
+import { supabase } from "./supabase";
+
 // ---- Auth ----
-export async function login(email: string, password: string): Promise<{ token: string }> {
-  const { data } = await api.post("/auth/login", { email, password });
+export async function login(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function getMe() {
+  const { data } = await api.get("/auth/me");
   return data;
 }
 

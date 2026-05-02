@@ -9,9 +9,12 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
+  const { token, user } = useAuthStore.getState();
   if (token && config.headers) {
     config.headers.set("Authorization", `Bearer ${token}`);
+  }
+  if (user?.organizationId && config.headers) {
+    config.headers.set("X-Organization-Id", user.organizationId);
   }
   return config;
 });
