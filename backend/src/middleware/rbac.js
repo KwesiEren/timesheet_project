@@ -30,7 +30,7 @@ function requireOrgRole(roles = ['owner', 'manager']) {
             if (!data || !roles.includes(data.role)) {
                 return res.status(403).json({ 
                     error: 'forbidden', 
-                    message: `Requires one of the following roles: \${roles.join(', ')}` 
+                    message: `Requires one of the following roles: ${roles.join(', ')}`,
                 });
             }
 

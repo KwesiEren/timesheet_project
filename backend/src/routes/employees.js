@@ -197,8 +197,8 @@ router.get('/history', requireOrgRole(['owner', 'manager']), async (req, res) =>
             .from('daily_logs')
             .select(`
                 *,
-                employee_name:users(name),
-                site_name:sites(name)
+                profiles ( name ),
+                sites ( name )
             `)
             .eq('organization_id', req.orgId);
 
@@ -213,8 +213,8 @@ router.get('/history', requireOrgRole(['owner', 'manager']), async (req, res) =>
         
         const mappedRows = data.map(row => ({
             ...row,
-            employee_name: row.employee_name?.name,
-            site_name: row.site_name?.name,
+            employee_name: row.profiles?.name,
+            site_name: row.sites?.name,
             clock_in: row.arrival_time,
             clock_out: row.departure_time,
             status: row.status ? row.status.toLowerCase() : 'pending',
@@ -242,10 +242,10 @@ router.post('/approve', requireOrgRole(['owner', 'manager']), async (req, res) =
     try {
         const { data, error, count } = await sb
             .from('daily_logs')
-            .update({ 
-                status: 'Approved', 
-                approved_by: req.auth.userId, 
-                approved_at: new Date() 
+            .update({
+                status: 'approved',
+                approved_by: req.auth.userId,
+                approved_at: new Date(),
             })
             .in('id', ids)
             .eq('organization_id', req.orgId)
@@ -255,7 +255,7 @@ router.post('/approve', requireOrgRole(['owner', 'manager']), async (req, res) =
 
         res.json({ 
             success: true, 
-            message: `Successfully approved \${data.length} logs`,
+            message: `Successfully approved ${data.length} logs`,
             updatedCount: data.length 
         });
     } catch (err) {

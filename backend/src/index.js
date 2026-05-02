@@ -24,7 +24,7 @@ const requiredEnvVars = [
 const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
 
 if (missingEnvVars.length > 0) {
-    console.warn(`⚠️  Missing Supabase environment variables: \${missingEnvVars.join(', ')}`);
+    console.warn(`⚠️  Missing Supabase environment variables: ${missingEnvVars.join(', ')}`);
     console.warn(`The API may fail to authenticate users or access the database.`);
 }
 

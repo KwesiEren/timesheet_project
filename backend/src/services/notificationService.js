@@ -19,7 +19,7 @@ class NotificationService {
 
             // 1. Create DB records for in-app history
             const records = userIds.map((uid) => ({
-                id: `ntf_\${randomUUID()}`,
+                id: `ntf_${randomUUID()}`,
                 user_id: uid,
                 organization_id: organizationId,
                 title,
@@ -35,7 +35,7 @@ class NotificationService {
 
             // 2. Trigger Push Notifications (Hooks)
             const { data: profiles, error: profErr } = await sb
-                .from('users')
+                .from('profiles')
                 .select('fcm_token')
                 .in('id', userIds)
                 .not('fcm_token', 'is', null);
@@ -47,7 +47,7 @@ class NotificationService {
                 this._sendPushNotifications(tokens, title, message);
             }
 
-            console.log(`[NotificationService] Notified \${userIds.length} users: "\${title}"`);
+            console.log(`[NotificationService] Notified ${userIds.length} users: "${title}"`);
         } catch (error) {
             console.error('[NotificationService] Error:', error);
         }
@@ -57,9 +57,9 @@ class NotificationService {
      * PRIVATE: Logic to call FCM or similar service
      */
     static async _sendPushNotifications(tokens, title, message) {
-        console.log(`[PUSH HOOK] Sending real-time alert to \${tokens.length} devices:`);
+        console.log(`[PUSH HOOK] Sending real-time alert to ${tokens.length} devices:`);
         tokens.forEach(token => {
-            console.log(`  -> Token: \${token.substring(0, 10)}... | Body: \${title}`);
+            console.log(`  -> Token: ${token.substring(0, 10)}... | Body: ${title}`);
         });
     }
 }

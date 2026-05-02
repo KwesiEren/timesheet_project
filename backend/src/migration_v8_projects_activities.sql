@@ -1,5 +1,4 @@
 -- Migration V8: Projects & Activity Types (REVISED)
--- Target: Supabase SQL Editor
 
 -- 1. Create Projects table
 create table if not exists projects (
@@ -55,6 +54,7 @@ before update on projects
 for each row
 execute function update_updated_at_column();
 
+drop trigger if exists update_activity_types_updated_at on activity_types;
 create trigger update_activity_types_updated_at
 before update on activity_types
 for each row
@@ -65,10 +65,12 @@ execute function update_updated_at_column();
 -- Projects
 alter table projects enable row level security;
 
+drop policy if exists "Users can view projects in their organization" on projects;
 create policy "Users can view projects in their organization"
 on projects for select
 using (organization_id = (select organization_id from profiles where id = auth.uid()));
 
+drop policy if exists "Managers can insert projects in their organization" on projects;
 create policy "Managers can insert projects in their organization"
 on projects for insert
 with check (
@@ -81,6 +83,7 @@ with check (
     )
 );
 
+drop policy if exists "Managers can update projects in their organization" on projects;
 create policy "Managers can update projects in their organization"
 on projects for update
 using (
@@ -96,10 +99,12 @@ using (
 -- Activity Types
 alter table activity_types enable row level security;
 
+drop policy if exists "Users can view activity types in their organization" on activity_types;
 create policy "Users can view activity types in their organization"
 on activity_types for select
 using (organization_id = (select organization_id from profiles where id = auth.uid()));
 
+drop policy if exists "Managers can manage activity types in their organization" on activity_types;
 create policy "Managers can manage activity types in their organization"
 on activity_types for all
 using (

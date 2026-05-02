@@ -47,7 +47,7 @@ router.get('/employees', requireOrgRole(['owner', 'manager']), async (req, res) 
             .from('user_roles')
             .select(`
                 user_id,
-                profiles:users (
+                profiles (
                     id,
                     name,
                     email

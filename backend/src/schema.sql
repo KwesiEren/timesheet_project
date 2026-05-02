@@ -1,4 +1,5 @@
--- Run this in Supabase SQL editor for the Node backend schema.
+-- Deprecated: custom `users` table + password_hash model.
+-- Production schema: use Supabase Auth (auth.users) + public.profiles — see backend/supabase_setup.sql
 
 create table if not exists roles (
     id serial primary key,

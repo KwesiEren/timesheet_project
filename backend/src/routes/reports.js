@@ -23,7 +23,7 @@ router.get('/payroll', requireOrgRole(['owner', 'manager']), async (req, res) =>
 
         // 1. Fetch User and Organization Details
         const { data: userData, error: userErr } = await sb
-            .from('users')
+            .from('profiles')
             .select('name, email, organizations(name)')
             .eq('id', userId)
             .single();
@@ -52,8 +52,8 @@ router.get('/payroll', requireOrgRole(['owner', 'manager']), async (req, res) =>
             .from('timesheet_entries')
             .select('title, start_time, end_time, total_duration_seconds, is_flagged')
             .eq('user_id', userId)
-            .gte('start_time', `\${startDate}T00:00:00Z`)
-            .lte('start_time', `\${endDate}T23:59:59Z`)
+            .gte('start_time', `${startDate}T00:00:00Z`)
+            .lte('start_time', `${endDate}T23:59:59Z`)
             .order('start_time', { ascending: true });
 
         if (actErr) throw actErr;
@@ -62,16 +62,16 @@ router.get('/payroll', requireOrgRole(['owner', 'manager']), async (req, res) =>
         const doc = new PDFDocument({ margin: 50 });
         
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=payroll_\${userId}_\${startDate}.pdf`);
+        res.setHeader('Content-Disposition', `attachment; filename=payroll_${userId}_${startDate}.pdf`);
         
         doc.pipe(res);
 
         // Header
         doc.fontSize(20).text('Payroll Work Summary', { align: 'center' });
         doc.moveDown();
-        doc.fontSize(12).text(`Organization: \${userInfo.org_name}`);
-        doc.text(`Employee: \${userInfo.name} (\${userInfo.email})`);
-        doc.text(`Period: \${startDate} to \${endDate}`);
+        doc.fontSize(12).text(`Organization: ${userInfo.org_name}`);
+        doc.text(`Employee: ${userInfo.name} (${userInfo.email})`);
+        doc.text(`Period: ${startDate} to ${endDate}`);
         doc.moveDown();
         doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
         doc.moveDown();
@@ -113,13 +113,13 @@ router.get('/payroll', requireOrgRole(['owner', 'manager']), async (req, res) =>
 
         // Summary
         doc.fontSize(14).font('Helvetica-Bold');
-        doc.text(`Total Period Hours: \${(totalSeconds / 3600).toFixed(2)}`, { align: 'right' });
+        doc.text(`Total Period Hours: ${(totalSeconds / 3600).toFixed(2)}`, { align: 'right' });
         
         const flaggedCount = activities.filter(a => a.is_flagged).length;
         if (flaggedCount > 0) {
             doc.moveDown();
             doc.fontSize(10).font('Helvetica-Oblique').fillColor('red');
-            doc.text(`* Note: \${flaggedCount} entry(s) have been flagged for manager corrections.`);
+            doc.text(`* Note: ${flaggedCount} entry(s) have been flagged for manager corrections.`);
         }
 
         doc.end();

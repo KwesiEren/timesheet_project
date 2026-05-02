@@ -1,11 +1,10 @@
--- Phase 3: Sites, Geofencing & Photo Proofs Migration
--- Target: Supabase SQL Editor
+-- Migration V4: Sites, geofencing and photo proof
 
 -- 1. Create sites table
 create table if not exists sites (
     id text primary key,
     organization_id uuid not null references organizations(id) on delete cascade,
-    project_id text references projects(id) on delete set null,
+    project_id text,
     name text not null,
     latitude double precision not null,
     longitude double precision not null,
@@ -27,7 +26,6 @@ alter table daily_logs add column if not exists check_in_lng double precision;
 alter table daily_logs add column if not exists check_in_photo_url text;
 alter table daily_logs add column if not exists is_within_geofence boolean;
 
--- 3. Trigger for updated_at on sites
 create or replace function update_updated_at_column()
 returns trigger as $$
 begin
@@ -36,6 +34,7 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists update_sites_updated_at on sites;
 create trigger update_sites_updated_at
 before update on sites
 for each row

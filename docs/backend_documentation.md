@@ -88,6 +88,8 @@ The backend serves the compiled React Manager Portal statically:
 
 ### 🚀 Developer Setup
 1. `npm install`
-2. Configure `.env` (DATABASE_URL, JWT_SECRET)
-3. Apply all `migration_v1_...` to `migration_v5_...` in order to a fresh Supabase instance.
+2. Configure `.env` from `backend/.env.example` (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, optional `PORT`)
+3. In Supabase SQL Editor, run `backend/supabase_setup.sql` (creates app tables + `profiles` synced from `auth.users`)
 4. `npm run dev`
+
+**Note:** Older `migration_v*.sql` / `backend/src/schema.sql` files assumed a legacy `users` table. New installs should use **Supabase-native** identities only (`auth.users` + `profiles`).

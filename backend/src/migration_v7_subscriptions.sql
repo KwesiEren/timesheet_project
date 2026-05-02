@@ -1,5 +1,4 @@
 -- Migration V7: Subscription & Billing Enforcements
--- Target: Supabase SQL Editor
 
 -- 1. Add plan and status to organizations
 alter table organizations add column if not exists plan text not null default 'Free' check (plan in ('Free', 'Paid'));
@@ -76,8 +75,11 @@ begin
         return NEW;
     end if;
 
-    -- Get current count of users with role 'employee'
-    select count(*) into employee_count from users where organization_id = NEW.organization_id and role = 'employee';
+    -- Get current count of employees from user_roles
+    select count(*) into employee_count
+    from user_roles
+    where organization_id = NEW.organization_id
+      and role = 'employee';
     
     -- Get limit from platform_settings
     select (value->'Free'->>'max_employees')::int into max_employees from platform_settings where key = 'subscription_tiers';
@@ -96,7 +98,7 @@ create trigger trg_check_project_limit
 before insert on sites
 for each row execute function check_project_limit();
 
-drop trigger if exists trg_check_employee_limit on users;
+drop trigger if exists trg_check_employee_limit on profiles;
 create trigger trg_check_employee_limit
-before insert on users
+before insert on profiles
 for each row execute function check_employee_limit();

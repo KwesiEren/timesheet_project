@@ -40,7 +40,7 @@ router.post('/', requireOrgRole(['owner', 'manager']), async (req, res) => {
         const { data: announcement, error: insErr } = await sb
             .from('announcements')
             .insert({
-                id: id || `ann_\${require('crypto').randomUUID()}`,
+                id: id || `ann_${require('crypto').randomUUID()}`,
                 organization_id: req.orgId,
                 title,
                 content,

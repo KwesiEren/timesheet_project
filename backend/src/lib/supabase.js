@@ -12,7 +12,7 @@ function userClient(accessToken) {
         {
             global: {
                 headers: {
-                    Authorization: `Bearer \${accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
             },
             auth: {

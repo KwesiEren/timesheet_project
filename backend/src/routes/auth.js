@@ -12,13 +12,26 @@ router.get('/me', requireAuth, async (req, res) => {
     try {
         const sb = adminClient; // Use adminClient to fetch combined profile/org data
         const { data, error } = await sb
-            .from('users')
-            .select('id, name, email, avatar_url, organization_id, organizations(name), user_roles(role)')
+            .from('profiles')
+            .select(
+                'id, name, email, avatar_url, organization_id, organizations(name), user_roles(role, organization_id, is_default)'
+            )
             .eq('id', req.auth.userId)
             .single();
 
         if (error) return res.status(500).json({ error: error.message });
         if (!data) return res.status(404).json({ error: 'User profile not found' });
+
+        const roles = data.user_roles || [];
+        let role = null;
+        if (req.orgId) {
+            const match = roles.find((r) => r.organization_id === req.orgId);
+            role = match?.role ?? null;
+        }
+        if (!role) {
+            const def = roles.find((r) => r.is_default) || roles[0];
+            role = def?.role ?? null;
+        }
 
         return res.json({
             id: data.id,
@@ -27,7 +40,7 @@ router.get('/me', requireAuth, async (req, res) => {
             avatarUrl: data.avatar_url,
             organizationId: data.organization_id,
             organizationName: data.organizations?.name,
-            role: data.user_roles?.[0]?.role
+            role
         });
     } catch (error) {
         console.error('Fetch Me Error:', error);
@@ -68,7 +81,7 @@ router.post('/onboarding/create-org', requireAuth, async (req, res) => {
         if (roleErr) return res.status(500).json({ error: roleErr.message });
 
         // 3. Update User's profile organization_id (optional, depends on schema)
-        await sb.from('users').update({ organization_id: org.id }).eq('id', req.auth.userId);
+        await sb.from('profiles').update({ organization_id: org.id }).eq('id', req.auth.userId);
 
         return res.status(201).json({
             message: 'Organization created successfully',

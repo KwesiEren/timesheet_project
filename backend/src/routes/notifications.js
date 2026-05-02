@@ -41,7 +41,7 @@ router.post('/missing-logs', requireOrgRole(['owner', 'manager']), async (req, r
         // Better: Fetch all employees and all logs for today, then diff in JS
         const { data: employees, error: e1 } = await sb
             .from('user_roles')
-            .select('user_id, profiles:users(name)')
+            .select('user_id, profiles(name)')
             .eq('organization_id', req.orgId)
             .eq('role', 'employee');
 
@@ -65,12 +65,12 @@ router.post('/missing-logs', requireOrgRole(['owner', 'manager']), async (req, r
                 userIds: missingUserIds,
                 organizationId: req.orgId,
                 title: 'Missing Timesheet Log',
-                message: `You forgot to log your attendance for \${targetDate}. Please update it now.`
+                message: `You forgot to log your attendance for ${targetDate}. Please update it now.`,
             });
         }
 
         return res.json({ 
-            message: `Scanned for missing logs. Notified \${missingUserIds.length} employees.`,
+            message: `Scanned for missing logs. Notified ${missingUserIds.length} employees.`,
             notifiedUserIds: missingUserIds
         });
     } catch (error) {
