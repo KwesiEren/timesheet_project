@@ -7,8 +7,11 @@ import { getDashboardKpis, getLiveEmployees, getSites } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusPill } from "@/components/StatusPill";
-import { Activity, AlertTriangle, Clock, ClipboardCheck, Users } from "lucide-react";
+import { Activity, AlertTriangle, Clock, ClipboardCheck, Users, Zap, ArrowRight, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 function Kpi({ label, value, icon: Icon, tone }: { label: string; value: number | string; icon: React.ElementType; tone: string }) {
   return (
@@ -27,6 +30,8 @@ function Kpi({ label, value, icon: Icon, tone }: { label: string; value: number 
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { isPaid, usage, limits } = useSubscription();
   const { data: kpis } = useQuery({ queryKey: ["kpis"], queryFn: getDashboardKpis, refetchInterval: 30_000 });
   const { data: employees = [] } = useQuery({ queryKey: ["live-employees"], queryFn: getLiveEmployees, refetchInterval: 15_000 });
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
@@ -47,10 +52,51 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Live workforce overview · {format(new Date(), "EEE, MMM d · HH:mm")}</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Live workforce overview · {format(new Date(), "EEE, MMM d · HH:mm")}</p>
+        </div>
+        {!isPaid && (
+          <Button 
+            variant="outline" 
+            className="hidden border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 sm:flex"
+            onClick={() => navigate("/admin/subscriptions")}
+          >
+            <Zap className="mr-2 h-4 w-4 fill-current" /> Upgrade to Pro
+          </Button>
+        )}
       </header>
+
+      {!isPaid && (
+        <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-background p-6">
+          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-primary">
+                <ShieldCheck size={20} />
+                <h3 className="font-bold">Free Plan Active</h3>
+              </div>
+              <p className="text-sm text-muted-foreground max-w-xl">
+                You're currently using the Free plan. To manage more than {limits.projects} projects or {limits.employees} employees, upgrade to our Paid tier with unlimited capacity.
+              </p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Projects</div>
+                <div className="text-lg font-mono-data font-bold">{usage?.projects || 0} / {limits.projects}</div>
+              </div>
+              <div className="text-center border-l border-border pl-6">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Employees</div>
+                <div className="text-lg font-mono-data font-bold">{usage?.employees || 0} / {limits.employees}</div>
+              </div>
+              <Button className="gap-2" onClick={() => navigate("/admin/subscriptions")}>
+                Upgrade <ArrowRight size={16} />
+              </Button>
+            </div>
+          </div>
+          <Zap className="absolute -right-8 -top-8 h-48 w-48 text-primary/5 rotate-12" />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Clocked in now" value={kpis?.clocked_in_now ?? 0} icon={Users} tone="bg-success/15 text-success" />

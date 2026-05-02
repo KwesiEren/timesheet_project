@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { login, getMe } from "@/lib/services";
 import { useAuthStore } from "@/store/auth";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,17 +34,50 @@ export default function Login() {
       // 2. Sync Profile from Backend
       try {
         const userProfile = await getMe();
-        return { session, userProfile };
+        
+        // 3. Fetch Organization Details (Plan/Status)
+        const { data: orgData } = await supabase
+          .from("organizations")
+          .select("plan, status")
+          .eq("id", userProfile.organizationId)
+          .single();
+
+        // 4. Check Super Admin Status
+        const { data: adminData } = await supabase
+          .from("super_admins")
+          .select("user_id")
+          .eq("user_id", session.user.id)
+          .single();
+          
+        return { 
+          session, 
+          userProfile: { 
+            ...userProfile, 
+            organizationPlan: orgData?.plan || "Free",
+            organizationStatus: orgData?.status || "active"
+          }, 
+          isSuperAdmin: !!adminData 
+        };
       } catch (err) {
         // If profile fetch fails, logout to be safe
         useAuthStore.getState().logout();
         throw err;
       }
     },
-    onSuccess: ({ session, userProfile }) => {
-      setUser(userProfile);
+    onSuccess: ({ session, userProfile, isSuperAdmin }) => {
+      setUser({ ...userProfile, isSuperAdmin });
       
-      if (userProfile.role === "employee") {
+      if (userProfile.organizationStatus === "suspended" && !isSuperAdmin) {
+        toast({
+          title: "Account Suspended",
+          description: "Your organization's access has been suspended. Please contact support.",
+          variant: "destructive",
+        });
+        useAuthStore.getState().logout();
+        return;
+      }
+      
+      if (userProfile.role === "employee" && !isSuperAdmin) {
         toast({
           title: "Access denied",
           description: "The web portal is for Owners and Managers only.",
@@ -53,7 +87,11 @@ export default function Login() {
         return;
       }
       
-      toast({ title: "Welcome back!", description: `Logged in as ${userProfile.name}` });
+      if (isSuperAdmin) {
+        toast({ title: "Super Admin Access", description: `Logged in as ${userProfile.name} with platform privileges.` });
+      } else {
+        toast({ title: "Welcome back!", description: `Logged in as ${userProfile.name}` });
+      }
       navigate(from, { replace: true });
     },
     onError: (err: any) => {

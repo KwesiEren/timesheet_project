@@ -19,9 +19,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 import type { Site } from "@/types/api";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
 
 interface FormState {
   name: string;
@@ -137,7 +140,9 @@ function SiteForm({
 
 export default function Sites() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { isPaid, isAtProjectLimit, limits, usage } = useSubscription();
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Site | null>(null);
@@ -148,6 +153,7 @@ export default function Sites() {
       toast({ title: "Site created" });
       setCreateOpen(false);
       qc.invalidateQueries({ queryKey: ["sites"] });
+      qc.invalidateQueries({ queryKey: ["org-usage"] });
     },
   });
   const updateMut = useMutation({
@@ -175,19 +181,44 @@ export default function Sites() {
           <h1 className="text-2xl font-bold text-foreground">Sites & Geofences</h1>
           <p className="text-sm text-muted-foreground">Define work sites and clock-in radii.</p>
         </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" /> New site</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create site</DialogTitle>
-              <DialogDescription>Place the marker and set the geofence radius.</DialogDescription>
-            </DialogHeader>
-            <SiteForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-4">
+          {!isPaid && (
+            <div className="hidden text-right sm:block">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Projects Used</div>
+              <div className="text-sm font-mono-data font-bold">
+                {usage?.projects || 0} / {limits.projects}
+              </div>
+            </div>
+          )}
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2" disabled={isAtProjectLimit}>
+                <Plus className="h-4 w-4" /> New site
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create site</DialogTitle>
+                <DialogDescription>Place the marker and set the geofence radius.</DialogDescription>
+              </DialogHeader>
+              <SiteForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </header>
+
+      {isAtProjectLimit && !isPaid && (
+        <Alert variant="destructive" className="border-primary/20 bg-primary/5">
+          <AlertCircle className="h-4 w-4 text-primary" />
+          <AlertTitle className="text-primary font-bold">Project Limit Reached</AlertTitle>
+          <AlertDescription className="flex items-center justify-between text-foreground">
+            <span>You’ve reached your limit of {limits.projects} projects on the Free plan. Upgrade to add more.</span>
+            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/admin/subscriptions")}>
+              <Zap className="h-3 w-3 fill-current" /> Upgrade Now
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="border-border bg-card xl:col-span-2">

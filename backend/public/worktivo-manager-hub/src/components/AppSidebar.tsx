@@ -1,5 +1,6 @@
-import { LayoutDashboard, Users, MapPinned, ClipboardList, FileBarChart, Bell, HardHat } from "lucide-react";
+import { LayoutDashboard, Users, MapPinned, ClipboardList, FileBarChart, Bell, HardHat, ShieldCheck, History, Settings, CreditCard, BarChart3, Building2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAuthStore } from "@/store/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +26,7 @@ const groups = [
     items: [
       { title: "Employees", url: "/employees", icon: Users },
       { title: "Timesheets", url: "/timesheets", icon: ClipboardList },
+      { title: "Attendance History", url: "/history", icon: History },
     ],
   },
   {
@@ -47,6 +49,7 @@ export function AppSidebar() {
     refetchInterval: 60_000,
   });
   const unread = notifications?.filter((n) => !n.read).length ?? 0;
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
 
   return (
     <Sidebar collapsible="icon">
@@ -115,6 +118,38 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isSuperAdmin && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel className="text-primary/70 font-bold">Platform Admin</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {[
+                  { title: "Admin Console", url: "/admin", icon: ShieldCheck },
+                  { title: "Organizations", url: "/admin/organizations", icon: Building2 },
+                  { title: "Global Users", url: "/admin/users", icon: Users },
+                  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
+                  { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
+                  { title: "Audit Logs", url: "/admin/audit-logs", icon: History },
+                  { title: "System Settings", url: "/admin/settings", icon: Settings },
+                ].map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="hover:bg-sidebar-accent"
+                        activeClassName="bg-sidebar-accent text-primary font-medium"
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
