@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { inviteEmployee } from "@/lib/services";
+import { inviteEmployee, getSites } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import { useAuthStore } from "@/store/auth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
 
 export default function Team() {
   const qc = useQueryClient();
@@ -85,114 +86,94 @@ export default function Team() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Team Management</h1>
-          <p className="text-sm text-muted-foreground">Manage your organization's members and invites.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          {!isPaid && (
-            <div className="hidden text-right sm:block">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Employees Used</div>
-              <div className="text-sm font-mono-data font-bold">
-                {usage?.employees || 0} / {limits.employees}
+      <PageHeader
+        eyebrow="Workforce"
+        title="Team Management"
+        description="Invite members, assign roles, and connect people to their primary work sites."
+        icon={UserPlus}
+        actions={
+          <>
+            {!isPaid && (
+              <div className="hidden rounded-lg border border-border bg-card px-3 py-1.5 text-right shadow-card sm:block">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Employees</div>
+                <div className="font-mono-data text-sm font-bold">{usage?.employees || 0} / {limits.employees}</div>
               </div>
-            </div>
-          )}
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" disabled={isAtEmployeeLimit}>
-                <UserPlus className="h-4 w-4" /> Invite Member
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite new member</DialogTitle>
-                <DialogDescription>Send an email invitation to join your organization.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email address</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="name@company.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="owner">Owner</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department (optional)</Label>
-                  <Input 
-                    id="department" 
-                    placeholder="e.g. Operations" 
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Primary Site (optional)</Label>
-                  <Select value={siteId} onValueChange={setSiteId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a site" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {sites.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
-                <Button 
-                  onClick={() => inviteMut.mutate({ 
-                    email, 
-                    role, 
-                    department: department || undefined, 
-                    primary_site_id: siteId === "none" ? undefined : siteId 
-                  })} 
-                  disabled={inviteMut.isPending}
-                >
-                  Send Invite
+            )}
+            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95" disabled={isAtEmployeeLimit}>
+                  <UserPlus className="h-4 w-4" /> Invite Member
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </header>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite new member</DialogTitle>
+                  <DialogDescription>Send an email invitation to join your organization.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email address</Label>
+                    <Input id="email" type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Select value={role} onValueChange={setRole}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="employee">Employee</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="owner">Owner</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department (optional)</Label>
+                    <Input id="department" placeholder="e.g. Operations" value={department} onChange={(e) => setDepartment(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Primary Site (optional)</Label>
+                    <Select value={siteId} onValueChange={setSiteId}>
+                      <SelectTrigger><SelectValue placeholder="Select a site" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {sites.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
+                  <Button
+                    onClick={() => inviteMut.mutate({ email, role, department: department || undefined, primary_site_id: siteId === "none" ? undefined : siteId })}
+                    disabled={inviteMut.isPending}
+                  >
+                    Send Invite
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
 
       {isAtEmployeeLimit && !isPaid && (
         <Alert variant="destructive" className="border-primary/20 bg-primary/5">
           <AlertCircle className="h-4 w-4 text-primary" />
-          <AlertTitle className="text-primary font-bold">Employee Limit Reached</AlertTitle>
-          <AlertDescription className="flex items-center justify-between text-foreground">
-            <span>You’ve reached your limit of {limits.employees} employees on the Free plan. Upgrade to add more.</span>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/admin/subscriptions")}>
+          <AlertTitle className="font-bold text-primary">Employee Limit Reached</AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 text-foreground sm:flex-row sm:items-center sm:justify-between">
+            <span>You've reached your limit of {limits.employees} employees on the Free plan. Upgrade to add more.</span>
+            <Button size="sm" className="gap-2 bg-gradient-primary shadow-elegant" onClick={() => navigate("/manager/subscription")}>
               <Zap className="h-3 w-3 fill-current" /> Upgrade Now
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="text-base">{members.length} Members</CardTitle>
+      <Card className="border-border/60 bg-card shadow-card">
+        <CardHeader className="border-b border-border/60">
+          <CardTitle className="text-base">{members.length} {members.length === 1 ? "Member" : "Members"}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>

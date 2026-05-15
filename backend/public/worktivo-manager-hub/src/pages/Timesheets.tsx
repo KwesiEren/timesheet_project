@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getTimesheets, updateTimesheet } from "@/lib/services";
+import { getTimesheets, updateTimesheet, approveTimesheet, rejectTimesheet } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusPill } from "@/components/StatusPill";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Pencil, Save, CheckCircle2, XCircle, Info, ExternalLink } from "lucide-react";
+import { Pencil, Save, CheckCircle2, XCircle, Info, ExternalLink, ClipboardList } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Tooltip,
   TooltipContent,
@@ -56,6 +57,19 @@ export default function Timesheets() {
     },
   });
 
+  const mut = useMutation({
+    mutationFn: (payload: { id: string; clock_in: string; clock_out: string }) =>
+      updateTimesheet(payload.id, { clock_in: payload.clock_in, clock_out: payload.clock_out }),
+    onSuccess: () => {
+      toast({ title: "Updated", description: "Timesheet entry saved." });
+      qc.invalidateQueries({ queryKey: ["timesheets"] });
+      setEditing(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Update failed", description: err?.message || "Try again.", variant: "destructive" });
+    },
+  });
+
   const openEdit = (r: TimeEntry) => {
     setEditing(r);
     setEditIn(r.clock_in.slice(0, 16));
@@ -64,14 +78,16 @@ export default function Timesheets() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Timesheets</h1>
-        <p className="text-sm text-muted-foreground">Edit entries · manual edits trigger audit-trail flagging.</p>
-      </header>
+      <PageHeader
+        eyebrow="Workforce"
+        title="Timesheets"
+        description="Review, edit, and approve worker time entries. Manual edits are flagged in the audit trail."
+        icon={ClipboardList}
+      />
 
-      <Card className="border-border bg-card">
-        <CardHeader><CardTitle className="text-base">Filters</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <Card className="border-border/60 bg-card shadow-card">
+        <CardHeader className="border-b border-border/60"><CardTitle className="text-base">Filters</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 pt-5 md:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="from">From</Label>
             <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -83,8 +99,8 @@ export default function Timesheets() {
         </CardContent>
       </Card>
 
-      <Card className="border-border bg-card">
-        <CardHeader><CardTitle className="text-base">{rows.length} entries</CardTitle></CardHeader>
+      <Card className="border-border/60 bg-card shadow-card">
+        <CardHeader className="border-b border-border/60"><CardTitle className="text-base">{rows.length} {rows.length === 1 ? "entry" : "entries"}</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="zebra overflow-auto">
             <Table>

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, FileText, Loader2, Package } from "lucide-react";
+import { Download, FileText, Loader2, Package, FileBarChart } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Payroll() {
@@ -78,14 +79,16 @@ export default function Payroll() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Payroll Reports</h1>
-        <p className="text-sm text-muted-foreground">Generate per-employee PDF reports or bulk-download as ZIP.</p>
-      </header>
+      <PageHeader
+        eyebrow="Reporting"
+        title="Payroll Reports"
+        description="Generate per-employee PDF reports for any period, or bundle multiple reports into a single ZIP."
+        icon={FileBarChart}
+      />
 
-      <Card className="border-border bg-card">
-        <CardHeader><CardTitle className="text-base">Period</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <Card className="border-border/60 bg-card shadow-card">
+        <CardHeader className="border-b border-border/60"><CardTitle className="text-base">Period</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 pt-5 md:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="from">From</Label>
             <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -96,7 +99,7 @@ export default function Payroll() {
           </div>
           <div className="flex items-end">
             <Button
-              className="w-full gap-2"
+              className="w-full gap-2 bg-gradient-primary shadow-elegant hover:opacity-95"
               disabled={selected.size === 0 || bundling}
               onClick={downloadZip}
             >
@@ -108,8 +111,8 @@ export default function Payroll() {
       </Card>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card className="border-border bg-card">
-          <CardHeader><CardTitle className="text-base">Employees</CardTitle></CardHeader>
+        <Card className="border-border/60 bg-card shadow-card">
+          <CardHeader className="border-b border-border/60"><CardTitle className="text-base">Employees</CardTitle></CardHeader>
           <CardContent className="space-y-1 p-3">
             {employees.map((e) => (
               <div

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { login, getMe } from "@/lib/services";
 import { useAuthStore } from "@/store/auth";
 import { supabase } from "@/lib/supabase";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -19,6 +21,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
 
@@ -113,7 +116,10 @@ export default function Login() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 sm:p-6">
+      <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center justify-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-card p-1 shadow-sm">
@@ -124,14 +130,14 @@ export default function Login() {
             />
           </div>
           <div>
-            <div className="text-2xl font-bold tracking-tight text-foreground">Worktivo</div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Web Portal</div>
+            <div className="text-2xl font-bold tracking-tight text-foreground">{t("app.name")}</div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">{t("app.portal")}</div>
           </div>
         </div>
         <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>Owner & Manager access only.</CardDescription>
+            <CardTitle>{t("auth.signIn")}</CardTitle>
+            <CardDescription>{t("auth.signInDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -142,7 +148,7 @@ export default function Login() {
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -150,11 +156,29 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  placeholder={t("auth.emailPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t("auth.password")}</Label>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={async () => {
+                      if (!email) {
+                        toast({ title: t("auth.email"), description: t("auth.emailPlaceholder"), variant: "destructive" });
+                        return;
+                      }
+                      await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${window.location.origin}/app/reset-password`,
+                      });
+                      toast({ title: t("auth.resetLinkSent") });
+                    }}
+                  >
+                    {t("auth.forgotPassword")}
+                  </button>
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -170,7 +194,7 @@ export default function Login() {
                 className="h-12 w-full text-base font-semibold"
               >
                 {mut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sign in
+                {t("auth.signIn")}
               </Button>
             </form>
           </CardContent>

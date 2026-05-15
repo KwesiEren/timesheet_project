@@ -15,7 +15,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Tag, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Tag, AlertCircle, HardHat } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 import type { ActivityType } from "@/types/api";
 import { useAuthStore } from "@/store/auth";
@@ -92,29 +94,31 @@ export default function ActivityTypes() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Activity Types</h1>
-          <p className="text-sm text-muted-foreground">Define custom activities for workers to select.</p>
-        </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Add Activity
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add activity type</DialogTitle>
-              <DialogDescription>Create a new task category for your workforce.</DialogDescription>
-            </DialogHeader>
-            <ActivityForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
-          </DialogContent>
-        </Dialog>
-      </header>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        eyebrow="Workforce"
+        title="Activity Types"
+        description="Define the tasks workers can pick from when clocking in or logging time."
+        icon={HardHat}
+        actions={
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95">
+                <Plus className="h-4 w-4" /> Add Activity
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add activity type</DialogTitle>
+                <DialogDescription>Create a new task category for your workforce.</DialogDescription>
+              </DialogHeader>
+              <ActivityForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
-      <Card className="border-border bg-card">
+      <Card className="border-border/60 bg-card shadow-card">
         <CardContent className="p-0">
           <div className="divide-y divide-border">
             {activities.map((a) => (

@@ -19,7 +19,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, AlertCircle, Zap, FolderKanban } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Zap, FolderKanban, MapPinned } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { Site } from "@/types/api";
@@ -169,6 +170,7 @@ export default function Sites() {
   const { toast } = useToast();
   const { isPaid, isAtProjectLimit, limits, usage } = useSubscription();
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
+  const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Site | null>(null);
 
@@ -201,36 +203,36 @@ export default function Sites() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Sites & Geofences</h1>
-          <p className="text-sm text-muted-foreground">Define work sites and clock-in radii.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          {!isPaid && (
-            <div className="hidden text-right sm:block">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Projects Used</div>
-              <div className="text-sm font-mono-data font-bold">
-                {usage?.projects || 0} / {limits.projects}
+      <PageHeader
+        eyebrow="Infrastructure"
+        title="Sites & Geofences"
+        description="Define your physical work sites with GPS-anchored geofences and photo-verification rules."
+        icon={MapPinned}
+        actions={
+          <>
+            {!isPaid && (
+              <div className="hidden rounded-lg border border-border bg-card px-3 py-1.5 text-right shadow-card sm:block">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Projects</div>
+                <div className="font-mono-data text-sm font-bold">{usage?.projects || 0} / {limits.projects}</div>
               </div>
-            </div>
-          )}
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" disabled={isAtProjectLimit}>
-                <Plus className="h-4 w-4" /> New site
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create site</DialogTitle>
-                <DialogDescription>Place the marker and set the geofence radius.</DialogDescription>
-              </DialogHeader>
-              <SiteForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </header>
+            )}
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95" disabled={isAtProjectLimit}>
+                  <Plus className="h-4 w-4" /> New site
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create site</DialogTitle>
+                  <DialogDescription>Place the marker and set the geofence radius.</DialogDescription>
+                </DialogHeader>
+                <SiteForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
 
       {isAtProjectLimit && !isPaid && (
         <Alert variant="destructive" className="border-primary/20 bg-primary/5">
@@ -238,7 +240,7 @@ export default function Sites() {
           <AlertTitle className="text-primary font-bold">Project Limit Reached</AlertTitle>
           <AlertDescription className="flex items-center justify-between text-foreground">
             <span>You’ve reached your limit of {limits.projects} projects on the Free plan. Upgrade to add more.</span>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/admin/subscriptions")}>
+            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/manager/subscription")}>
               <Zap className="h-3 w-3 fill-current" /> Upgrade Now
             </Button>
           </AlertDescription>
@@ -246,10 +248,10 @@ export default function Sites() {
       )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card className="border-border bg-card xl:col-span-2">
-          <CardHeader><CardTitle className="text-base">Map view</CardTitle></CardHeader>
+        <Card className="overflow-hidden border-border/60 bg-card shadow-card xl:col-span-2">
+          <CardHeader className="border-b border-border/60"><CardTitle className="text-base">Map view</CardTitle></CardHeader>
           <CardContent className="p-0">
-            <div className="h-[520px] overflow-hidden rounded-b-lg">
+            <div className="h-[520px] overflow-hidden">
               <MapContainer center={center} zoom={11} className="h-full w-full">
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
                 {sites.map((s) => (
@@ -265,8 +267,8 @@ export default function Sites() {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
-          <CardHeader><CardTitle className="text-base">{sites.length} sites</CardTitle></CardHeader>
+        <Card className="border-border/60 bg-card shadow-card">
+          <CardHeader className="border-b border-border/60"><CardTitle className="text-base">{sites.length} {sites.length === 1 ? "site" : "sites"}</CardTitle></CardHeader>
           <CardContent className="space-y-2 p-3">
             {sites.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-md border border-border bg-secondary/30 p-3">

@@ -1,107 +1,141 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Worktivo Web Portal — Mobile color sync */
+/* Worktivo Web Portal — Premium design tokens (synced with mobile palette) */
 
 @layer base {
   :root {
-    /* Flutter: backgroundColor #FFFEFE, textDark #020202 */
-    --background: 0 100% 99.8%;
-    --foreground: 0 0% 0.8%;
+    --background: 210 40% 98%;             /* soft off-white with cool tint */
+    --foreground: 218 60% 8%;
 
-    --card: 180 100% 99.8%;                /* #FEFFFF */
-    --card-foreground: 214 94% 22%;        /* #03296E */
+    --card: 0 0% 100%;
+    --card-foreground: 218 60% 10%;
 
-    --popover: 180 100% 99.8%;
-    --popover-foreground: 214 94% 22%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 218 60% 10%;
 
     --primary: 222 95% 32%;                /* #0432A0 */
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 222 95% 55%;
 
     --secondary: 218 95% 15%;              /* #021C4B */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 208 87% 93%;                  /* #E3F2FD */
-    --muted-foreground: 0 0% 29%;          /* #4A4A4A */
+    --muted: 214 30% 95%;
+    --muted-foreground: 218 15% 40%;
 
-    --accent: 222 95% 32%;
+    --accent: 33 100% 52%;                 /* premium amber accent */
     --accent-foreground: 0 0% 100%;
+    --accent-glow: 33 100% 62%;
 
-    --success: 125 68% 48%;                /* #28CF36 */
+    --success: 142 70% 42%;
     --success-foreground: 0 0% 100%;
-    --warning: 208 87% 93%;
-    --warning-foreground: 214 94% 22%;
-    --destructive: 0 69% 46%;              /* #C52323 */
+    --warning: 38 95% 50%;
+    --warning-foreground: 218 60% 10%;
+    --destructive: 0 75% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 30% 86%;
-    --input: 214 30% 86%;
-    --ring: 222 95% 32%;
+    --border: 214 30% 90%;
+    --input: 214 30% 90%;
+    --ring: 222 95% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 218 95% 15%;     /* #021C4B */
+    --sidebar-background: 218 95% 12%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 222 95% 32%;        /* #0432A0 */
+    --sidebar-primary: 222 95% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 94% 22%;         /* #03296E */
+    --sidebar-accent: 218 80% 18%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 214 94% 22%;
-    --sidebar-ring: 222 95% 32%;
+    --sidebar-border: 218 80% 18%;
+    --sidebar-ring: 222 95% 55%;
 
-    /* Table zebra */
-    --row-stripe: 218 20% 16%;
+    --row-stripe: 214 30% 97%;
+
+    /* Premium gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(222 95% 32%) 0%, hsl(222 95% 55%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(222 95% 32%) 0%, hsl(218 95% 15%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(214 50% 97%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(214 40% 98%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(33 100% 52%) 0%, hsl(33 100% 62%) 100%);
+    --gradient-mesh: radial-gradient(at 20% 0%, hsl(222 95% 55% / 0.12) 0px, transparent 50%),
+                     radial-gradient(at 80% 0%, hsl(33 100% 52% / 0.08) 0px, transparent 50%);
+
+    /* Shadows */
+    --shadow-elegant: 0 10px 40px -12px hsl(222 95% 32% / 0.25);
+    --shadow-glow: 0 0 40px hsl(222 95% 55% / 0.35);
+    --shadow-card: 0 1px 3px hsl(218 25% 50% / 0.06), 0 1px 2px hsl(218 25% 50% / 0.04);
+    --shadow-card-hover: 0 12px 32px -10px hsl(222 95% 32% / 0.18);
+    --shadow-inset: inset 0 1px 0 0 hsl(0 0% 100% / 0.6);
+
+    /* Motion */
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 218 90% 12%;
-    --foreground: 0 0% 100%;
-    --card: 218 90% 16%;
-    --card-foreground: 0 0% 100%;
-    --popover: 218 90% 16%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 222 95% 32%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 214 94% 22%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 218 35% 24%;
-    --muted-foreground: 215 16% 70%;
-    --accent: 222 95% 32%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 69% 46%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 218 35% 28%;
-    --input: 218 35% 24%;
-    --ring: 222 95% 32%;
-    --sidebar-background: 218 25% 11%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 222 95% 32%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 94% 22%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 214 94% 22%;
-    --sidebar-ring: 222 95% 32%;
+    --background: 218 60% 7%;
+    --foreground: 210 40% 98%;
+    --card: 218 50% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 218 50% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 222 95% 60%;
+    --primary-foreground: 218 60% 8%;
+    --primary-glow: 222 95% 70%;
+    --secondary: 218 45% 16%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 218 35% 18%;
+    --muted-foreground: 215 16% 68%;
+    --accent: 33 100% 58%;
+    --accent-foreground: 218 60% 8%;
+    --accent-glow: 33 100% 68%;
+    --success: 142 70% 48%;
+    --warning: 38 95% 58%;
+    --destructive: 0 75% 58%;
+    --border: 218 35% 20%;
+    --input: 218 35% 20%;
+    --ring: 222 95% 60%;
+    --sidebar-background: 218 60% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 222 95% 60%;
+    --sidebar-primary-foreground: 218 60% 8%;
+    --sidebar-accent: 218 50% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 218 50% 14%;
+    --sidebar-ring: 222 95% 60%;
+    --row-stripe: 218 50% 13%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(222 95% 45%) 0%, hsl(222 95% 65%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(218 60% 12%) 0%, hsl(222 95% 32%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(218 50% 9%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(218 50% 10%) 100%);
+    --gradient-mesh: radial-gradient(at 20% 0%, hsl(222 95% 60% / 0.15) 0px, transparent 50%),
+                     radial-gradient(at 80% 0%, hsl(33 100% 58% / 0.08) 0px, transparent 50%);
+
+    --shadow-elegant: 0 10px 40px -12px hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.4);
+    --shadow-card-hover: 0 12px 32px -10px hsl(222 95% 55% / 0.35);
+    --shadow-inset: inset 0 1px 0 0 hsl(0 0% 100% / 0.04);
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  html, body, #root {
-    @apply h-full;
-  }
+  * { @apply border-border; }
+  html, body, #root { @apply h-full; }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Inter', system-ui, sans-serif;
     @apply tracking-tight;
   }
+  ::selection { background: hsl(var(--primary) / 0.18); }
 }
 
 @layer utilities {
@@ -112,9 +146,26 @@
   .zebra tbody tr:nth-child(even) {
     background-color: hsl(var(--row-stripe));
   }
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-hero { background-image: var(--gradient-hero); }
+  .bg-gradient-subtle { background-image: var(--gradient-subtle); }
+  .bg-gradient-card { background-image: var(--gradient-card); }
+  .bg-gradient-accent { background-image: var(--gradient-accent); }
+  .bg-gradient-mesh { background-image: var(--gradient-mesh); }
+  .shadow-elegant { box-shadow: var(--shadow-elegant); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ring-glow { box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12); }
 }
 
-/* Leaflet defaults look bad on dark — keep tiles but tweak controls */
+/* Leaflet defaults */
 .leaflet-container {
   background: hsl(var(--muted));
   font-family: 'Inter', sans-serif;
@@ -122,7 +173,11 @@
 .leaflet-control-attribution {
   background: hsl(var(--card)) !important;
   color: hsl(var(--muted-foreground)) !important;
+  font-size: 10px !important;
 }
-.leaflet-control-attribution a {
-  color: hsl(var(--primary)) !important;
+.leaflet-control-attribution a { color: hsl(var(--primary)) !important; }
+.leaflet-control-zoom a {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
 }

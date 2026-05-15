@@ -1,0 +1,101 @@
+{
+  "app": {
+    "name": "Worktivo",
+    "portal": "Web Portal"
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "actions": "Actions",
+    "signOut": "Sign out",
+    "upgrade": "Upgrade",
+    "upgradeToPro": "Upgrade to Pro",
+    "free": "Free",
+    "paid": "Paid",
+    "plan": "Plan",
+    "back": "Back",
+    "confirm": "Confirm"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signInDescription": "Owner & Manager access only.",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "you@company.com",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If that email exists, a reset link was sent.",
+    "passwordUpdated": "Password updated. You can now sign in.",
+    "loginFailed": "Login failed",
+    "checkCredentials": "Check your credentials and try again.",
+    "welcomeBack": "Welcome back!",
+    "loggedInAs": "Logged in as {{name}}",
+    "accessDenied": "Access denied",
+    "portalForManagersOnly": "The web portal is for Owners and Managers only.",
+    "accountSuspended": "Account Suspended",
+    "orgSuspended": "Your organization's access has been suspended. Please contact support.",
+    "noOrgAssigned": "No organization assigned. Please contact your administrator."
+  },
+  "nav": {
+    "overview": "Overview",
+    "dashboard": "Dashboard",
+    "workforce": "Workforce",
+    "team": "Team",
+    "timesheets": "Timesheets",
+    "activityTypes": "Activity Types",
+    "infrastructure": "Infrastructure",
+    "projects": "Projects",
+    "sites": "Sites & Geofences",
+    "organization": "Organization",
+    "payrollReports": "Payroll Reports",
+    "subscription": "Subscription",
+    "settings": "Settings",
+    "alerts": "Alerts",
+    "notifications": "Notifications",
+    "platformAdmin": "Platform Admin",
+    "adminConsole": "Admin Console",
+    "organizations": "Organizations",
+    "globalUsers": "Global Users",
+    "analytics": "Analytics",
+    "subscriptions": "Subscriptions",
+    "auditLogs": "Audit Logs",
+    "systemSettings": "System Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Live workforce overview",
+    "kpi": {
+      "clockedInNow": "Clocked in now",
+      "lateToday": "Late today",
+      "pendingApprovals": "Pending approvals",
+      "openAlerts": "Open alerts"
+    },
+    "workforceStatus": "Workforce status",
+    "active": "{{count}} active",
+    "noEmployees": "No employees currently clocked in.",
+    "recentLogs": "Recent Logs",
+    "history": "History",
+    "sitesMap": "Sites Map",
+    "freePlanActive": "Free Plan Active",
+    "freePlanCopy": "You're currently using the Free plan. To manage more than {{projects}} projects or {{employees}} employees, upgrade to our Paid tier with unlimited capacity."
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "notFoundCopy": "The page you're looking for doesn't exist or was moved.",
+    "goHome": "Go to dashboard"
+  }
+}

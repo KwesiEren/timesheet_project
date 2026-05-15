@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Save, Clock, Camera, ShieldCheck } from "lucide-react";
+import { Building2, Save, Clock, Camera, ShieldCheck, Settings as SettingsIcon } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/store/auth";
 
@@ -59,15 +60,17 @@ export default function Settings() {
   if (isLoading) return <div className="p-8 text-center">Loading settings...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Organization Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage your company profile and work rules.</p>
-      </header>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        eyebrow="Organization"
+        title="Settings"
+        description="Manage your company profile, working hours, and global workforce policies."
+        icon={SettingsIcon}
+      />
 
       <div className="space-y-6">
         {/* Profile Section */}
-        <Card className="border-border bg-card">
+        <Card className="border-border/60 bg-card shadow-card">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />

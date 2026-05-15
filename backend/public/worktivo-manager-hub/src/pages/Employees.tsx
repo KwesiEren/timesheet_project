@@ -21,7 +21,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CheckCircle2, MoreHorizontal } from "lucide-react";
+import { CheckCircle2, MoreHorizontal, Users } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -74,25 +75,27 @@ export default function Employees() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Employees</h1>
-          <p className="text-sm text-muted-foreground">Aggregated history · approve & manage entries</p>
-        </div>
-        <Button
-          disabled={selected.size === 0 || approve.isPending}
-          onClick={() => approve.mutate()}
-          className="gap-2"
-        >
-          <CheckCircle2 className="h-4 w-4" /> Approve selected ({selected.size})
-        </Button>
-      </header>
+      <PageHeader
+        eyebrow="Workforce"
+        title="Employees"
+        description="Aggregated worker history with filtering, status overrides, and bulk approvals."
+        icon={Users}
+        actions={
+          <Button
+            disabled={selected.size === 0 || approve.isPending}
+            onClick={() => approve.mutate()}
+            className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95"
+          >
+            <CheckCircle2 className="h-4 w-4" /> Approve selected ({selected.size})
+          </Button>
+        }
+      />
 
-      <Card className="border-border bg-card">
-        <CardHeader>
+      <Card className="border-border/60 bg-card shadow-card">
+        <CardHeader className="border-b border-border/60">
           <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <CardContent className="grid grid-cols-1 gap-4 pt-5 md:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="from">From</Label>
             <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />

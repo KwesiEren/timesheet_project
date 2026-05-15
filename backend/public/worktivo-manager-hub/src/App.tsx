@@ -4,12 +4,14 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SuperAdminRoute } from "@/components/SuperAdminRoute";
 import AppLayout from "@/layouts/AppLayout";
 import NotFound from "./pages/NotFound.tsx";
 
 const Login = lazy(() => import("./pages/Login"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Team = lazy(() => import("./pages/Team"));
 const Sites = lazy(() => import("./pages/Sites"));
@@ -40,50 +42,60 @@ const Fallback = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter basename="/app">
-        <Suspense fallback={<Fallback />}>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route
-              path="/manager"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="employees" element={<Team />} />
-              <Route path="history" element={<EmployeesHistory />} />
-              <Route path="sites" element={<Sites />} />
-              <Route path="timesheets" element={<Timesheets />} />
-              <Route path="payroll" element={<Payroll />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="activities" element={<ActivityTypes />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="subscription" element={<Subscription />} />
-              
-              {/* Super Admin Routes */}
-            </Route>
-            <Route path="/admin" element={<SuperAdminRoute><AdminDashboard /></SuperAdminRoute>} />
-            <Route path="/admin/organizations" element={<SuperAdminRoute><AdminOrganizations /></SuperAdminRoute>} />
-            <Route path="/admin/users" element={<SuperAdminRoute><AdminUsers /></SuperAdminRoute>} />
-            <Route path="/admin/analytics" element={<SuperAdminRoute><AdminAnalytics /></SuperAdminRoute>} />
-            <Route path="/admin/subscriptions" element={<SuperAdminRoute><AdminSubscriptions /></SuperAdminRoute>} />
-            <Route path="/admin/audit-logs" element={<SuperAdminRoute><AdminAuditLogs /></SuperAdminRoute>} />
-            <Route path="/admin/settings" element={<SuperAdminRoute><AdminSettings /></SuperAdminRoute>} />
-            <Route path="/index" element={<Navigate to="/manager" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Suspense fallback={<Fallback />}>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route
+                path="/manager"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="employees" element={<Team />} />
+                <Route path="history" element={<EmployeesHistory />} />
+                <Route path="sites" element={<Sites />} />
+                <Route path="timesheets" element={<Timesheets />} />
+                <Route path="payroll" element={<Payroll />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="activities" element={<ActivityTypes />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="subscription" element={<Subscription />} />
+              </Route>
+              <Route
+                path="/admin"
+                element={
+                  <SuperAdminRoute>
+                    <AppLayout />
+                  </SuperAdminRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="organizations" element={<AdminOrganizations />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
+                <Route path="subscriptions" element={<AdminSubscriptions />} />
+                <Route path="audit-logs" element={<AdminAuditLogs />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
+              <Route path="/index" element={<Navigate to="/manager" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

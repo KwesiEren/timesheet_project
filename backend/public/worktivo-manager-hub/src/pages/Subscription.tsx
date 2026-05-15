@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Zap, ShieldCheck, ArrowRight, Activity, Users, FolderKanban } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Check, Zap, ShieldCheck, ArrowRight, Activity, Users, FolderKanban, CreditCard, Sparkles } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { format } from "date-fns";
+import { PageHeader } from "@/components/PageHeader";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -15,98 +16,117 @@ export default function Subscription() {
   const employeeUsage = ((usage?.employees || 0) / (limits.employees || 1)) * 100;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Subscription & Billing</h1>
-          <p className="text-sm text-muted-foreground">Manage your plan and monitor usage limits.</p>
-        </div>
-        <Badge variant={isPaid ? "default" : "secondary"} className="w-fit text-sm py-1 px-4">
-          Current Plan: {isPaid ? "Paid Tier" : "Free Tier"}
-        </Badge>
-      </header>
+    <div className="mx-auto max-w-5xl space-y-8">
+      <PageHeader
+        eyebrow="Billing"
+        title="Subscription & Plan"
+        description="Track your usage limits, change plans, and contact support for enterprise pricing."
+        icon={CreditCard}
+        actions={
+          <Badge
+            variant={isPaid ? "default" : "secondary"}
+            className={`px-4 py-1.5 text-sm font-bold ${isPaid ? "bg-gradient-primary shadow-elegant" : ""}`}
+          >
+            {isPaid ? "Paid Tier" : "Free Tier"}
+          </Badge>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {/* Usage Overview */}
-        <Card className="md:col-span-2 border-border bg-card">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+        <Card className="border-border/60 bg-card shadow-card md:col-span-2">
+          <CardHeader className="border-b border-border/60">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Activity className="h-5 w-5 text-primary" />
               Usage Overview
             </CardTitle>
-            <CardDescription>How much of your current plan limits you've used.</CardDescription>
+            <CardDescription>How much of your current plan limits you've consumed.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-8 py-6">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 font-medium">
+                <div className="flex items-center gap-2 font-semibold">
                   <FolderKanban className="h-4 w-4 text-muted-foreground" />
                   Projects
                 </div>
-                <span className="font-mono-data">{usage?.projects || 0} / {isPaid ? "Unlimited" : limits.projects}</span>
+                <span className="font-mono-data font-bold">
+                  {usage?.projects || 0} / {isPaid ? "∞" : limits.projects}
+                </span>
               </div>
-              <Progress value={isPaid ? 0 : projectUsage} className="h-2 bg-secondary" />
+              <Progress value={isPaid ? 0 : projectUsage} className="h-2.5 bg-muted" />
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 font-medium">
+                <div className="flex items-center gap-2 font-semibold">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   Employees
                 </div>
-                <span className="font-mono-data">{usage?.employees || 0} / {isPaid ? "Unlimited" : limits.employees}</span>
+                <span className="font-mono-data font-bold">
+                  {usage?.employees || 0} / {isPaid ? "∞" : limits.employees}
+                </span>
               </div>
-              <Progress value={isPaid ? 0 : employeeUsage} className="h-2 bg-secondary" />
+              <Progress value={isPaid ? 0 : employeeUsage} className="h-2.5 bg-muted" />
             </div>
           </CardContent>
-          <CardFooter className="bg-secondary/10 border-t border-border py-4">
-            <p className="text-xs text-muted-foreground italic">
-              Limits are strictly enforced at the database level.
+          <CardFooter className="border-t border-border/60 bg-muted/30 py-3.5">
+            <p className="text-xs italic text-muted-foreground">
+              Limits are enforced at the database level for absolute reliability.
             </p>
           </CardFooter>
         </Card>
 
         {/* Current Plan Card */}
-        <Card className={`border-2 ${isPaid ? 'border-primary/50' : 'border-border'} bg-card relative overflow-hidden`}>
+        <Card
+          className={`relative overflow-hidden border-2 shadow-card ${
+            isPaid ? "border-primary/60 bg-gradient-card" : "border-border/60 bg-card"
+          }`}
+        >
           {isPaid && (
-            <div className="absolute top-0 right-0 p-2 bg-primary text-primary-foreground text-[10px] font-bold uppercase rounded-bl-lg">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-gradient-primary opacity-20 blur-3xl" />
+          )}
+          {isPaid && (
+            <div className="absolute right-0 top-0 rounded-bl-lg bg-gradient-primary px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
               Active
             </div>
           )}
-          <CardHeader>
+          <CardHeader className="relative">
             <CardTitle className="text-xl">{isPaid ? "Paid Tier" : "Free Tier"}</CardTitle>
             <CardDescription>
-              {isPaid ? "Full enterprise access enabled." : "Basic features with capacity limits."}
+              {isPaid ? "Full enterprise access enabled." : "Basic features with capacity caps."}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-3xl font-bold">
+          <CardContent className="relative space-y-4">
+            <div className="font-mono-data text-3xl font-bold">
               {isPaid ? "$149" : "$0"}
               <span className="text-sm font-normal text-muted-foreground"> / month</span>
             </div>
             <Separator className="bg-border" />
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2.5 text-sm">
               <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-success" />
-                {isPaid ? "Unlimited Projects" : "Max 2 Projects"}
+                <Check className="h-4 w-4 shrink-0 text-success" />
+                {isPaid ? "Unlimited Projects" : `Max ${limits.projects} Projects`}
               </li>
               <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-success" />
-                {isPaid ? "Unlimited Employees" : "Max 5 Employees"}
+                <Check className="h-4 w-4 shrink-0 text-success" />
+                {isPaid ? "Unlimited Employees" : `Max ${limits.employees} Employees`}
               </li>
               <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-success" />
+                <Check className="h-4 w-4 shrink-0 text-success" />
                 Real-time Reporting
               </li>
               <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-success" />
+                <Check className="h-4 w-4 shrink-0 text-success" />
                 Geofencing & GPS
               </li>
             </ul>
           </CardContent>
           {!isPaid && (
-            <CardFooter>
-              <Button className="w-full gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/subscription")}>
+            <CardFooter className="relative">
+              <Button
+                className="w-full gap-2 bg-gradient-primary shadow-elegant hover:opacity-95"
+                onClick={() => navigate("/manager/subscription")}
+              >
                 <Zap className="h-4 w-4 fill-current" />
                 Upgrade to Paid
               </Button>
@@ -116,42 +136,40 @@ export default function Subscription() {
       </div>
 
       {/* Benefits Section */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-        <div className="flex flex-col items-center text-center p-6 bg-card rounded-xl border border-border">
-          <ShieldCheck className="h-10 w-10 text-primary mb-4" />
-          <h3 className="font-bold">Enterprise Security</h3>
-          <p className="text-xs text-muted-foreground mt-2">Data encryption at rest and in transit with full RLS protection.</p>
-        </div>
-        <div className="flex flex-col items-center text-center p-6 bg-card rounded-xl border border-border">
-          <Zap className="h-10 w-10 text-primary mb-4" />
-          <h3 className="font-bold">Scalable Capacity</h3>
-          <p className="text-xs text-muted-foreground mt-2">Upgrade instantly as your team grows beyond 5 members.</p>
-        </div>
-        <div className="flex flex-col items-center text-center p-6 bg-card rounded-xl border border-border">
-          <Activity className="h-10 w-10 text-primary mb-4" />
-          <h3 className="font-bold">Advanced Analytics</h3>
-          <p className="text-xs text-muted-foreground mt-2">Generate deep payroll insights and workforce trends.</p>
-        </div>
+      <section className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-3">
+        {[
+          { icon: ShieldCheck, title: "Enterprise Security", desc: "Data encryption at rest and in transit with row-level access policies." },
+          { icon: Zap, title: "Scalable Capacity", desc: "Upgrade instantly as your team grows beyond the free-tier limits." },
+          { icon: Sparkles, title: "Advanced Analytics", desc: "Generate deep payroll insights and live workforce trends." },
+        ].map(({ icon: Icon, title, desc }) => (
+          <div
+            key={title}
+            className="group relative flex flex-col items-center overflow-hidden rounded-2xl border border-border/60 bg-gradient-card p-6 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground shadow-elegant">
+              <Icon className="h-6 w-6" />
+            </div>
+            <h3 className="text-sm font-bold">{title}</h3>
+            <p className="mt-2 text-xs text-muted-foreground">{desc}</p>
+          </div>
+        ))}
       </section>
 
-      <div className="bg-secondary/30 rounded-xl p-6 flex items-center justify-between border border-border">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+      <div className="relative flex flex-col items-start justify-between gap-4 overflow-hidden rounded-2xl border border-border/60 bg-gradient-card p-6 shadow-card sm:flex-row sm:items-center">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-gradient-accent opacity-10 blur-3xl" />
+        <div className="relative flex items-center gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground shadow-elegant">
             <Zap className="h-5 w-5" />
           </div>
           <div>
-            <h4 className="font-bold text-sm">Need help with your plan?</h4>
+            <h4 className="text-sm font-bold">Need help with your plan?</h4>
             <p className="text-xs text-muted-foreground">Contact support for custom enterprise pricing or multi-org discounts.</p>
           </div>
         </div>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="relative gap-2">
           Contact Support <ArrowRight size={14} />
         </Button>
       </div>
     </div>
   );
-}
-
-function Separator({ className }: { className?: string }) {
-  return <div className={`h-px w-full ${className}`} />;
 }

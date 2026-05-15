@@ -12,22 +12,8 @@ import { format } from "date-fns";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-
-function Kpi({ label, value, icon: Icon, tone }: { label: string; value: number | string; icon: React.ElementType; tone: string }) {
-  return (
-    <Card className="border-border bg-card">
-      <CardContent className="flex items-center justify-between p-5">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-1 font-mono-data text-3xl font-bold text-foreground">{value}</div>
-        </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${tone}`}>
-          <Icon className="h-6 w-6" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import { PageHeader } from "@/components/PageHeader";
+import { StatCard } from "@/components/StatCard";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -36,15 +22,7 @@ export default function Dashboard() {
   const { data: employees = [] } = useQuery({ queryKey: ["live-employees"], queryFn: getLiveEmployees, refetchInterval: 15_000 });
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
 
-  const center: [number, number] = sites[0] ? [sites[0].lat, sites[0].lng] : [5.6037, -0.1870]; // Accra default
-
-  // counts of clocked-in per site
-  const counts = employees.reduce<Record<string, number>>((acc, e) => {
-    if (e.current_site_id && e.status === "clocked_in") {
-      acc[e.current_site_id] = (acc[e.current_site_id] ?? 0) + 1;
-    }
-    return acc;
-  }, {});
+  const center: [number, number] = sites[0] ? [sites[0].lat, sites[0].lng] : [5.6037, -0.1870];
 
   useEffect(() => {
     document.title = "Dashboard · Worktivo";
@@ -52,62 +30,63 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Live workforce overview · {format(new Date(), "EEE, MMM d · HH:mm")}</p>
-        </div>
-        {!isPaid && (
-          <Button 
-            variant="outline" 
-            className="hidden border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 sm:flex"
-            onClick={() => navigate("/admin/subscriptions")}
-          >
-            <Zap className="mr-2 h-4 w-4 fill-current" /> Upgrade to Pro
-          </Button>
-        )}
-      </header>
+      <PageHeader
+        eyebrow={`Live · ${format(new Date(), "EEE, MMM d · HH:mm")}`}
+        title="Workforce Overview"
+        description="Real-time view of clock-ins, geofence activity, and approvals across your sites."
+        icon={Activity}
+        actions={
+          !isPaid && (
+            <Button
+              className="gap-2 bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-95"
+              onClick={() => navigate("/manager/subscription")}
+            >
+              <Zap className="h-4 w-4 fill-current" /> Upgrade to Pro
+            </Button>
+          )
+        }
+      />
 
       {!isPaid && (
-        <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-background p-6">
-          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-card p-5 shadow-card sm:p-6">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-gradient-primary opacity-10 blur-3xl" />
+          <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-primary">
-                <ShieldCheck size={20} />
-                <h3 className="font-bold">Free Plan Active</h3>
+                <ShieldCheck size={18} />
+                <h3 className="text-sm font-bold uppercase tracking-wider">Free Plan Active</h3>
               </div>
-              <p className="text-sm text-muted-foreground max-w-xl">
-                You're currently using the Free plan. To manage more than {limits.projects} projects or {limits.employees} employees, upgrade to our Paid tier with unlimited capacity.
+              <p className="max-w-xl text-sm text-muted-foreground">
+                You're on the Free plan. Upgrade to remove the {limits.projects}-project and {limits.employees}-employee caps and unlock unlimited capacity.
               </p>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Projects</div>
-                <div className="text-lg font-mono-data font-bold">{usage?.projects || 0} / {limits.projects}</div>
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Projects</div>
+                <div className="font-mono-data text-lg font-bold">{usage?.projects || 0} / {limits.projects}</div>
               </div>
-              <div className="text-center border-l border-border pl-6">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Employees</div>
-                <div className="text-lg font-mono-data font-bold">{usage?.employees || 0} / {limits.employees}</div>
+              <div className="border-l border-border pl-4 sm:pl-6">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Employees</div>
+                <div className="font-mono-data text-lg font-bold">{usage?.employees || 0} / {limits.employees}</div>
               </div>
-              <Button className="gap-2" onClick={() => navigate("/admin/subscriptions")}>
+              <Button className="gap-2 bg-gradient-primary shadow-elegant" onClick={() => navigate("/manager/subscription")}>
                 Upgrade <ArrowRight size={16} />
               </Button>
             </div>
           </div>
-          <Zap className="absolute -right-8 -top-8 h-48 w-48 text-primary/5 rotate-12" />
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Clocked in now" value={kpis?.clocked_in_now ?? 0} icon={Users} tone="bg-success/15 text-success" />
-        <Kpi label="Late today" value={kpis?.late_today ?? 0} icon={Clock} tone="bg-warning/15 text-warning" />
-        <Kpi label="Pending approvals" value={kpis?.pending_approvals ?? 0} icon={ClipboardCheck} tone="bg-primary/15 text-primary" />
-        <Kpi label="Open alerts" value={kpis?.open_alerts ?? 0} icon={AlertTriangle} tone="bg-destructive/15 text-destructive" />
+        <StatCard label="Clocked in now" value={kpis?.clocked_in_now ?? 0} icon={Users} tone="success" hint="Active right now" />
+        <StatCard label="Late today" value={kpis?.late_today ?? 0} icon={Clock} tone="warning" hint="Past grace period" />
+        <StatCard label="Pending approvals" value={kpis?.pending_approvals ?? 0} icon={ClipboardCheck} tone="primary" hint="Awaiting review" />
+        <StatCard label="Open alerts" value={kpis?.open_alerts ?? 0} icon={AlertTriangle} tone="destructive" hint="Action required" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* Live Status Table */}
-        <Card className="border-border bg-card xl:col-span-2">
+        <Card className="border-border/60 bg-card shadow-card xl:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-4 w-4 text-primary" /> Workforce status

@@ -1,4 +1,5 @@
 import { LayoutDashboard, Users, MapPinned, ClipboardList, FileBarChart, Bell, HardHat, ShieldCheck, History, Settings, CreditCard, BarChart3, Building2, FolderKanban } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "@/components/NavLink";
 import { useAuthStore } from "@/store/auth";
 import {
@@ -16,39 +17,41 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { getNotifications } from "@/lib/services";
 
-const groups = [
+const buildGroups = (t: (k: string) => string) => [
   {
-    label: "Overview",
-    items: [{ title: "Dashboard", url: "/manager", icon: LayoutDashboard }],
+    label: t("nav.overview"),
+    items: [{ title: t("nav.dashboard"), url: "/manager", icon: LayoutDashboard }],
   },
   {
-    label: "Workforce",
+    label: t("nav.workforce"),
     items: [
-      { title: "Team", url: "/manager/employees", icon: Users },
-      { title: "Timesheets", url: "/manager/timesheets", icon: ClipboardList },
-      { title: "Activity Types", url: "/manager/activities", icon: HardHat },
+      { title: t("nav.team"), url: "/manager/employees", icon: Users },
+      { title: t("nav.timesheets"), url: "/manager/timesheets", icon: ClipboardList },
+      { title: t("nav.activityTypes"), url: "/manager/activities", icon: HardHat },
     ],
   },
   {
-    label: "Infrastructure",
+    label: t("nav.infrastructure"),
     items: [
-      { title: "Projects", url: "/manager/projects", icon: FolderKanban },
-      { title: "Sites & Geofences", url: "/manager/sites", icon: MapPinned },
+      { title: t("nav.projects"), url: "/manager/projects", icon: FolderKanban },
+      { title: t("nav.sites"), url: "/manager/sites", icon: MapPinned },
     ],
   },
   {
-    label: "Organization",
+    label: t("nav.organization"),
     items: [
-      { title: "Payroll Reports", url: "/manager/payroll", icon: FileBarChart },
-      { title: "Subscription", url: "/manager/subscription", icon: CreditCard },
-      { title: "Settings", url: "/manager/settings", icon: Settings },
+      { title: t("nav.payrollReports"), url: "/manager/payroll", icon: FileBarChart },
+      { title: t("nav.subscription"), url: "/manager/subscription", icon: CreditCard },
+      { title: t("nav.settings"), url: "/manager/settings", icon: Settings },
     ],
   },
 ];
 
 export function AppSidebar() {
+  const { t } = useTranslation();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const groups = buildGroups(t);
 
   const { data: notifications } = useQuery({
     queryKey: ["notifications"],
@@ -59,10 +62,10 @@ export function AppSidebar() {
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white p-1">
+        <div className="flex items-center gap-2.5 px-2 py-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-primary p-1 shadow-elegant">
             <img
               src="/assets/icons/worktivo.png"
               alt="Worktivo logo"
@@ -70,9 +73,11 @@ export function AppSidebar() {
             />
           </div>
           {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-bold leading-none text-sidebar-foreground">Worktivo</span>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Web Portal</span>
+            <div className="flex flex-col leading-none">
+              <span className="text-sm font-bold text-sidebar-foreground">Worktivo</span>
+              <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/50">
+                Web Portal
+              </span>
             </div>
           )}
         </div>
@@ -104,7 +109,7 @@ export function AppSidebar() {
         ))}
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Alerts</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel>{t("nav.alerts")}</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -116,7 +121,7 @@ export function AppSidebar() {
                   >
                     <Bell className="h-4 w-4 shrink-0" />
                     {!collapsed && (
-                      <span className="flex-1">Notifications</span>
+                      <span className="flex-1">{t("nav.notifications")}</span>
                     )}
                     {unread > 0 && (
                       <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-destructive-foreground font-mono-data">
@@ -132,17 +137,17 @@ export function AppSidebar() {
 
         {isSuperAdmin && (
           <SidebarGroup>
-            {!collapsed && <SidebarGroupLabel className="text-primary/70 font-bold">Platform Admin</SidebarGroupLabel>}
+            {!collapsed && <SidebarGroupLabel className="text-primary/70 font-bold">{t("nav.platformAdmin")}</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>
                 {[
-                  { title: "Admin Console", url: "/admin", icon: ShieldCheck },
-                  { title: "Organizations", url: "/admin/organizations", icon: Building2 },
-                  { title: "Global Users", url: "/admin/users", icon: Users },
-                  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
-                  { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
-                  { title: "Audit Logs", url: "/admin/audit-logs", icon: History },
-                  { title: "System Settings", url: "/admin/settings", icon: Settings },
+                  { title: t("nav.adminConsole"), url: "/admin", icon: ShieldCheck },
+                  { title: t("nav.organizations"), url: "/admin/organizations", icon: Building2 },
+                  { title: t("nav.globalUsers"), url: "/admin/users", icon: Users },
+                  { title: t("nav.analytics"), url: "/admin/analytics", icon: BarChart3 },
+                  { title: t("nav.subscriptions"), url: "/admin/subscriptions", icon: CreditCard },
+                  { title: t("nav.auditLogs"), url: "/admin/audit-logs", icon: History },
+                  { title: t("nav.systemSettings"), url: "/admin/settings", icon: Settings },
                 ].map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
