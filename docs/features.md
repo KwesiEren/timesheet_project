@@ -1,47 +1,51 @@
-# Feature Roadmap - Current Status (v1.0)
+# Feature Status (Current)
 
-## ✅ Phase 1: Foundation & Roles (COMPLETED)
-- [x] Multi-Organization Architecture (Data Isolation)
-- [x] Hierarchical RBAC (Owner, Manager, Employee)
-- [x] Secure Invitation Workflow (Token-based)
-- [x] Database Schema Migration for SaaS model
+## Core Platform
 
-## ✅ Phase 2: Core Timesheet Enhancements (COMPLETED)
-- [x] Flagged Edit System (Manager correction audit trail)
-- [x] Daily Log Status (Pending, Present, Late, Absent, Approved)
-- [x] Single & Bulk Approval Flow
-- [x] Original Data Preservation (for transparency)
+- [x] Multi-tenant organization model (`organization_id` scoped records)
+- [x] Supabase-native identity model (`auth.users` + `profiles`)
+- [x] Role model: `owner`, `manager`, `employee`
+- [x] Invite + accept flow (`invites`, `user_roles`)
+- [x] Super admin capability via `super_admins`
 
-## ✅ Phase 3: Sites, Geofencing & Photo Proofs (COMPLETED)
-- [x] Project-Site Management (Flexible linking)
-- [x] Geofencing Validation (Lat/Lng radius check on check-in)
-- [x] Optional Photo Proofing for high-security sites
-- [x] Offline Sync Engine (Buffered check-ins when no signal)
+## Mobile App (Flutter)
 
-## ✅ Phase 4: Reporting & Alerts (COMPLETED)
-- [x] Payroll PDF Generation (Table-based hours summary)
-- [x] Automated Announcement Notifications
-- [x] Missing Log Alert System
-- [x] Push Notification Hooks (FCM ready)
+- [x] Login and authenticated app shell
+- [x] Timesheet create/update/delete flow against Node backend
+- [x] Local cache support (`get_storage`)
+- [x] Geolocation and map-related dependencies integrated
+- [x] Shared branding assets (`assets/icons/worktivo.png`)
 
-## ✅ Phase 5: Web Portal Integration (COMPLETED)
-- [x] **Worktivo Manager Hub**: Integrated React portal served by Node.js.
-- [x] **Branding Sync**: Mobile app color scheme synchronization (HSL mapping).
-- [x] **Static Infrastructure**: Backend sub-path serving for `/manager`.
-- [x] **Analytics Engine**: Real-time KPI aggregation and trend reporting.
-- [x] **Super Admin Portal**: Centralized management for all tenants, billing, and platform-wide analytics.
+## Web Portal (React)
 
-## ✅ Phase 6: Subscription & Billing (COMPLETED)
-- [x] **Tiered Pricing Model**: Multi-tier structure (Free vs Paid).
-- [x] **Usage Enforcement**: Database triggers to enforce project (max 2) and employee (max 5) limits on the Free plan.
-- [x] **Automated Suspension**: Logic to block access for suspended organizations.
-- [x] **Admin Billing Controls**: Dashboard for platform administrators to manage subscription states and usage.
-- [x] **Upgrade Workflows**: Integrated CTAs and reactive UI for plan upgrades.
+- [x] Served by backend as SPA under `/app`
+- [x] Login at `/app/`
+- [x] Manager routes under `/app/manager/*`
+- [x] Super admin routes under `/app/admin/*`
+- [x] Super admin access works without org membership
+- [x] Theme aligned to mobile color palette
+- [x] Shared logo uses root `assets/icons/worktivo.png`
 
----
+## Backend APIs
 
-## 🚀 Future Roadmap (v2.0)
-- [ ] **Advanced Payroll**: Integration with Ghanaian local payroll systems.
-- [ ] **WhatsApp/Email Integration**: Direct delivery of PDF reports and alerts.
-- [ ] **Offline History**: Full local caching of previous logs for offline viewing.
-- [ ] **Face Recognition**: Using ML for check-in verification.
+- [x] Auth context endpoint (`/auth/me`)
+- [x] Dashboard endpoints (`/dashboard/kpis`, `/dashboard/employees`)
+- [x] Timesheet routes (`/timesheets`, `/activities`)
+- [x] Employee routes (`/employees/*`)
+- [x] Notifications and missing-log scan
+- [x] Payroll PDF report route
+- [x] Role checks and org scoping middleware
+
+## Database & Migrations
+
+- [x] `supabase_setup.sql` for baseline schema + profile trigger
+- [x] Reset migration (`migration_v0_reset_supabase.sql`)
+- [x] Supabase-native migration chain `v1` to `v8`
+- [x] Legacy `users` table references removed from active app/web flows
+
+## In Progress / Next
+
+- [ ] Full automated test suite (backend + web)
+- [ ] CI checks for migrations and API health
+- [ ] Final cleanup of any remaining legacy docs/comments referencing `/manager` or `users`
+- [ ] Billing/payment provider integration for paid upgrade flow

@@ -41,14 +41,14 @@ export default function AppLayout() {
   useEffect(() => {
     if (orgStatus?.status === "suspended" && !isSuperAdmin) {
       logout();
-      navigate("/login", { state: { error: "Your account has been suspended." } });
+      navigate("/", { state: { error: "Your account has been suspended." } });
     }
   }, [orgStatus, isSuperAdmin, logout, navigate]);
 
   const handleLogout = () => {
     logout();
     qc.clear();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   const initials = (user?.name || user?.email || "U")

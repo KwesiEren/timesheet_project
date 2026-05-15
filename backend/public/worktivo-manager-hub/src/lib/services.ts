@@ -206,8 +206,8 @@ import type {
 export async function getPlatformKpis(): Promise<PlatformKpis> {
   // In a real app, this might be a RPC or a set of parallel counts
   const { count: orgCount } = await supabase.from("organizations").select("*", { count: "exact", head: true });
-  const { count: userCount } = await supabase.from("users").select("*", { count: "exact", head: true });
-  const { count: tsCount } = await supabase.from("time_entries").select("*", { count: "exact", head: true });
+  const { count: userCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
+  const { count: tsCount } = await supabase.from("timesheet_entries").select("*", { count: "exact", head: true });
   
   return {
     total_organizations: orgCount || 0,
@@ -227,7 +227,7 @@ export async function getAdminOrganizations(): Promise<OrganizationRow[]> {
       status, 
       created_at,
       sites_count:sites(count),
-      users_count:users(count)
+      users_count:profiles(count)
     `)
     .order("created_at", { ascending: false });
     
@@ -249,16 +249,13 @@ export async function updateOrganizationStatus(id: string, payload: { plan?: "Fr
 }
 
 export async function getAdminUsers(): Promise<GlobalUserRow[]> {
-  // This is complex as it involves crossing organizations
-  // For now, we fetch from the public.users table (which we assume exists or is linked)
   const { data, error } = await supabase
-    .from("users")
+    .from("profiles")
     .select(`
       id,
       name,
       email,
-      status,
-      last_active,
+      created_at,
       user_roles (
         role,
         organizations (name)
@@ -271,8 +268,8 @@ export async function getAdminUsers(): Promise<GlobalUserRow[]> {
     id: u.id,
     name: u.name,
     email: u.email,
-    status: u.status,
-    last_active: u.last_active,
+    status: "active",
+    last_active: u.created_at,
     organizations: u.user_roles?.map((r: any) => ({
       name: r.organizations?.name,
       role: r.role

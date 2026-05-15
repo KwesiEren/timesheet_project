@@ -44,39 +44,40 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/app">
         <Suspense fallback={<Fallback />}>
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Login />} />
             <Route
+              path="/manager"
               element={
                 <ProtectedRoute>
                   <AppLayout />
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/employees" element={<Team />} />
-              <Route path="/history" element={<EmployeesHistory />} />
-              <Route path="/sites" element={<Sites />} />
-              <Route path="/timesheets" element={<Timesheets />} />
-              <Route path="/payroll" element={<Payroll />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/activities" element={<ActivityTypes />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/subscription" element={<Subscription />} />
+              <Route index element={<Dashboard />} />
+              <Route path="employees" element={<Team />} />
+              <Route path="history" element={<EmployeesHistory />} />
+              <Route path="sites" element={<Sites />} />
+              <Route path="timesheets" element={<Timesheets />} />
+              <Route path="payroll" element={<Payroll />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="activities" element={<ActivityTypes />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="subscription" element={<Subscription />} />
               
               {/* Super Admin Routes */}
-              <Route path="/admin" element={<SuperAdminRoute><AdminDashboard /></SuperAdminRoute>} />
-              <Route path="/admin/organizations" element={<SuperAdminRoute><AdminOrganizations /></SuperAdminRoute>} />
-              <Route path="/admin/users" element={<SuperAdminRoute><AdminUsers /></SuperAdminRoute>} />
-              <Route path="/admin/analytics" element={<SuperAdminRoute><AdminAnalytics /></SuperAdminRoute>} />
-              <Route path="/admin/subscriptions" element={<SuperAdminRoute><AdminSubscriptions /></SuperAdminRoute>} />
-              <Route path="/admin/audit-logs" element={<SuperAdminRoute><AdminAuditLogs /></SuperAdminRoute>} />
-              <Route path="/admin/settings" element={<SuperAdminRoute><AdminSettings /></SuperAdminRoute>} />
             </Route>
-            <Route path="/index" element={<Navigate to="/" replace />} />
+            <Route path="/admin" element={<SuperAdminRoute><AdminDashboard /></SuperAdminRoute>} />
+            <Route path="/admin/organizations" element={<SuperAdminRoute><AdminOrganizations /></SuperAdminRoute>} />
+            <Route path="/admin/users" element={<SuperAdminRoute><AdminUsers /></SuperAdminRoute>} />
+            <Route path="/admin/analytics" element={<SuperAdminRoute><AdminAnalytics /></SuperAdminRoute>} />
+            <Route path="/admin/subscriptions" element={<SuperAdminRoute><AdminSubscriptions /></SuperAdminRoute>} />
+            <Route path="/admin/audit-logs" element={<SuperAdminRoute><AdminAuditLogs /></SuperAdminRoute>} />
+            <Route path="/admin/settings" element={<SuperAdminRoute><AdminSettings /></SuperAdminRoute>} />
+            <Route path="/index" element={<Navigate to="/manager" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

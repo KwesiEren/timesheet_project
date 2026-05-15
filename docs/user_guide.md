@@ -1,24 +1,45 @@
-# Worktivo User Guide v1.0
+# Worktivo User Guide (Current)
 
-Welcome to Worktivo, your mobile-first workforce management platform.
+## Mobile App Users
 
-## 👤 For Owners & Managers
-- **Organization Setup**: When you register, you create a private workspace for your company.
-- **Onboarding**: Go to the Dashboard to create "Sites" (locations) and then "Invite" your staff via their email.
-- **Approvals**: In the History tab, you can view employee logs. Daily logs remain "Pending" until you Review and Approve them.
-- **Team Management**: Use the **Team** tab to invite new staff and manage existing members. Note that the Free plan allows up to 5 employees.
-- **Subscription Plans**: Worktivo offers two tiers:
-    - **Free**: Up to 2 sites and 5 employees.
-    - **Paid**: Unlimited sites and employees.
-- **Upgrading**: If you reach your limit, click the "Upgrade" banner on your Dashboard to transition to the Paid tier.
-- **Corrections**: If an employee makes a mistake, you can edit their entry. The system will record the change as a "Flagged Edit" for audit compliance.
-- **Reporting**: Export your weekly or monthly payroll summary as a PDF directly from the app.
+### Employees
 
-## 👷 For Employees
-- **Clocking In**: Open the app at your assigned Site. If the site requires a photo, take a quick selfie to confirm your arrival.
-- **Activities**: Log your work tasks throughout the day.
-- **Offline Mode**: Don't worry about data signal. If you are offline, check-in normally. The app will "Sync" your data safely once you reach signal.
-- **Notifications**: Check your Inbox for important company announcements or reminders about missing logs.
+- Sign in on the mobile app.
+- Use check-in/check-out and activity logging during work hours.
+- If your site requires it, include photo proof at check-in.
+- You can continue basic actions offline and sync later when connectivity returns.
 
-## ⚙️ Settings
-- **FCM**: To receive alerts while the app is closed, ensure you have enabled Notifications in your device settings.
+### Owners and Managers
+
+- Manage team activity, timesheets, and site operations.
+- Review employee logs and approve/reject where required.
+- Generate payroll report outputs from available reporting screens.
+- Invite team members using organization workflows.
+
+## Web Portal Users
+
+The web portal is hosted by the backend:
+
+- Login: `http://localhost:3000/app/`
+- Manager portal: `http://localhost:3000/app/manager/`
+- Super admin portal: `http://localhost:3000/app/admin/`
+
+### Managers/Owners
+
+- Access organization-level operations and dashboards.
+- Team, site, timesheet, and reporting sections are available through the manager area.
+
+### Super Admins
+
+- Access platform-wide admin screens at `/app/admin/`.
+- Super admin access does not require joining or creating an organization.
+
+## Subscription Notes
+
+- Free/Paid tiers are enforced by database rules.
+- Limit messaging and upgrade prompts appear in the web UI when relevant.
+
+## Branding
+
+- Mobile and web share the same Worktivo color scheme.
+- Shared logo asset: `assets/icons/worktivo.png`.

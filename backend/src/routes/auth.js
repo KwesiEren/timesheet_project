@@ -14,7 +14,7 @@ router.get('/me', requireAuth, async (req, res) => {
         const { data, error } = await sb
             .from('profiles')
             .select(
-                'id, name, email, avatar_url, organization_id, organizations(name), user_roles(role, organization_id, is_default)'
+                'id, name, email, avatar_url, organization_id, organization:organizations!profiles_organization_id_fkey(name), user_roles(role, organization_id, is_default)'
             )
             .eq('id', req.auth.userId)
             .single();
@@ -39,7 +39,7 @@ router.get('/me', requireAuth, async (req, res) => {
             email: data.email,
             avatarUrl: data.avatar_url,
             organizationId: data.organization_id,
-            organizationName: data.organizations?.name,
+            organizationName: data.organization?.name,
             role
         });
     } catch (error) {

@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "dev": "nodemon --ignore public/worktivo-manager-hub/dist --ignore public/worktivo-manager-hub/node_modules src/index.js",
     "test": "node -e \"console.log('No automated backend tests yet')\""
   },
   "keywords": [],

@@ -1,93 +1,68 @@
-# Worktivo Web Portal: Development & Deployment Guide (v1.0 Ready)
+# Worktivo Web Portal Blueprint (Current)
 
-This document provides a complete technical blueprint for developing the **Worktivo Web Management Portal**. This portal is designed for Owners and Managers to oversee multi-tenant operations, approve payroll, and manage geofenced sites on a professional large-screen interface.
+## Overview
 
----
+The web portal is a React SPA in `backend/public/worktivo-manager-hub`, served by the Node backend.
 
-## 🏗️ 1. Architecture Overview
+## Runtime Paths
 
-The web portal functions as a **Single Page Application (SPA)** that is served statically by the existing Worktivo Node.js API at the `/manager` sub-path.
+- Login: `/app/`
+- Manager app: `/app/manager/*`
+- Super admin app: `/app/admin/*`
 
-- **Location**: `backend/public/worktivo-manager-hub/`
-- **Framework**: [Vite](https://vitejs.dev/) + [React](https://react.dev/) (For speed and developer accuracy).
-- **Styling**: [TailwindCSS](https://tailwindcss.com/) (For premium, responsive layouts).
-- **State Management**: [Zustand](https://github.com/pmndrs/zustand) (Lighter and faster than Redux).
-- **Data Fetching**: [TanStack Query](https://tanstack.com/query/v5) (For caching and sync states).
-- **Icons**: [Lucide React](https://lucide.dev/).
+Server-side static routing uses:
+- explicit static for `/app/assets/*`
+- SPA fallback for non-file `/app` routes
 
----
+## Frontend Stack
 
-## 🚀 2. Phase 1: Initialization (COMPLETED)
+- Vite + React + TypeScript
+- Tailwind CSS
+- Zustand (auth/session state)
+- TanStack Query (data layer)
+- Supabase JS (auth + selected direct data reads)
 
-### 1.1 Project Structure
-The project is integrated as a subdirectory within the backend, enabling a single-URL deployment:
-- **Location**: `backend/public/worktivo-manager-hub/`
-- **Build Output**: Serves from `/manager` via Express static middleware.
+## Auth and Access Flow
 
-### 1.2 Branding & Aesthetics
-Synchronized with the mobile app using HSL color mapping in `index.css`.
-- **Primary Color**: `#0432A0` (Worktivo Blue).
-- **Surface**: Clean White (`#FFFEFE`).
+1. User signs in via Supabase Auth.
+2. Access token is stored in auth store.
+3. `/auth/me` is called on backend to resolve profile + role + org context.
+4. Post-login redirect:
+   - super admin -> `/app/admin/`
+   - manager/owner -> `/app/manager/`
+5. Employee users are blocked from the manager portal.
 
----
+Super admin login is allowed even without organization membership.
 
-## 🛠️ 3. Phase 2: Feature Implementation (COMPLETED)
+## Design and Branding
 
-### 2.1 Multi-Tenant Dashboard
-- **Analytics Engine**: Real-time KPI aggregation via `GET /dashboard/kpis`.
-- **Live Employee View**: Real-time status mapping via `GET /dashboard/employees`.
-- **Interactive Map**: Site-specific check-in visualization using `react-leaflet`.
+- Theme tokens synced with Flutter palette in `src/index.css`.
+- Shared logo loaded from root app assets:
+  - `/assets/icons/worktivo.png`
 
-### 2.2 Workforce Management
-- **Audit-Trail Approvals**: Bulk approval system that preserves transparency flags.
-- **Filterable History**: Server-side filtering by date, site, and status (`GET /employees/history`).
-- **Site Geofencing**: Full CRUD operations for sites including geofence coordinate picking (`GET/POST/PUT /sites`).
+## Integration Notes
 
----
+- Supabase-native schema is used (`profiles`, `timesheet_entries`, `user_roles`, etc.).
+- Legacy table references (`users`, `time_entries`) have been removed from active web code.
 
-## 🌐 4. Phase 3: Backend Integration (COMPLETED)
+## Build and Serve
 
-### 3.1 Sub-Path Routing (SPA Support)
-The backend is configured to support React Router's browser history even on refreshes:
-```javascript
-// index.js refinement
-app.use('/manager', express.static(path.join(__dirname, '../public/worktivo-manager-hub/dist')));
-app.get('/manager/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/worktivo-manager-hub/dist/index.html'));
-});
+```bash
+cd backend/public/worktivo-manager-hub
+npm run build
 ```
 
-### 3.2 Data Alignment
-Standardized property names (e.g., `lat`, `lng`, `clock_in`) across the API to ensure 100% compatibility with the frontend TypeScript interfaces.
+Then run backend:
 
----
+```bash
+cd backend
+npm run dev
+```
 
----
+Open:
+- `http://localhost:3000/app/`
 
-## 🏗️ 5. Phase 5: Super Admin & Subscription Logic (COMPLETED)
+## Known Next Improvements
 
-### 5.1 Super Admin Portal
-- **Centralized Console**: A platform-level dashboard for managing all organizations.
-- **Tenant Lifecycle**: Actions to upgrade/downgrade plans and suspend/reactivate accounts.
-- **Global Analytics**: Cross-tenant KPI tracking.
-
-### 5.2 Subscription Enforcement
-- **Reactive UI**: Custom `useSubscription` hook that monitors usage against plan limits.
-- **Upgrade CTAs**: Integrated banners and modal triggers across the dashboard, sites, and team pages.
-- **Real-time Protection**: Header badges and layout-level suspension checks.
-
----
-
-## 🚢 6. Phase 6: Production Readiness (IN PROGRESS)
-
-### 6.1 Deployment Pipeline
-1. **Build Process**: Run `npm run build` inside `backend/public/worktivo-manager-hub`.
-2. **Commit**: Consolidate `dist/` or source code into the main repository for zero-config deployment.
-3. **Serving**: Ensure `NODE_ENV=production` correctly maps the static paths.
-
----
-
-## 📈 Next Steps (v1.2)
-- **Automated Billing Integration**: Connecting the "Upgrade" workflow to a payment provider (Stripe/Paystack).
-- **Advanced Payroll Logic**: Integrating automatic hour calculations with Ghanaian tax/SSS localizations.
-- **Announcement Broadcasting**: A web-based interface for sending push notifications directly from the dashboard.
+- Add CI for portal build + smoke tests.
+- Improve chunk splitting to reduce large main bundle warning.

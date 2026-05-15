@@ -31,10 +31,12 @@ if (missingEnvVars.length > 0) {
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/assets', express.static(path.join(__dirname, '../../assets')));
 
 // Serve Web Portal (Vite Build)
 const portalPath = path.join(__dirname, '../public/worktivo-manager-hub/dist');
-app.use('/manager', express.static(portalPath));
+app.use('/app/assets', express.static(path.join(portalPath, 'assets'), { fallthrough: false }));
+app.use('/app', express.static(portalPath));
 
 // Routes
 app.use('/auth', authRoutes);
@@ -53,9 +55,14 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Timesheet API is running' });
 });
 
-// SPA Fallback for Web Portal
-app.get(/^\/manager\/.*/, (req, res) => {
-    res.sendFile(path.join(portalPath, 'index.html'));
+app.get('/', (req, res) => {
+    res.redirect('/app/');
+});
+
+// SPA fallback for non-file app routes only (Express 5 compatible)
+app.get(/^\/app(?:\/.*)?$/, (req, res, next) => {
+    if (path.extname(req.path)) return next();
+    return res.sendFile(path.join(portalPath, 'index.html'));
 });
 
 // Start server

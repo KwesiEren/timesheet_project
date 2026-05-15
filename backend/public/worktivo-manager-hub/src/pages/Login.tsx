@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { HardHat, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
@@ -20,7 +20,7 @@ export default function Login() {
   const location = useLocation();
   const { toast } = useToast();
 
-  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname || "/";
+  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
 
   const mut = useMutation({
     mutationFn: async () => {
@@ -34,21 +34,29 @@ export default function Login() {
       // 2. Sync Profile from Backend
       try {
         const userProfile = await getMe();
-        
-        // 3. Fetch Organization Details (Plan/Status)
-        const { data: orgData } = await supabase
-          .from("organizations")
-          .select("plan, status")
-          .eq("id", userProfile.organizationId)
-          .single();
 
-        // 4. Check Super Admin Status
+        // 3. Check Super Admin Status first (org membership not required for admin portal)
         const { data: adminData } = await supabase
           .from("super_admins")
           .select("user_id")
           .eq("user_id", session.user.id)
-          .single();
-          
+          .maybeSingle();
+
+        const isSuperAdmin = !!adminData;
+
+        // 4. Organization details are required only for non-super-admin org portal access
+        let orgData: { plan?: "Free" | "Paid"; status?: "active" | "suspended" } | null = null;
+        if (userProfile.organizationId) {
+          const { data } = await supabase
+            .from("organizations")
+            .select("plan, status")
+            .eq("id", userProfile.organizationId)
+            .maybeSingle();
+          orgData = data;
+        } else if (!isSuperAdmin) {
+          throw new Error("No organization assigned. Please contact your administrator.");
+        }
+
         return { 
           session, 
           userProfile: { 
@@ -56,7 +64,7 @@ export default function Login() {
             organizationPlan: orgData?.plan || "Free",
             organizationStatus: orgData?.status || "active"
           }, 
-          isSuperAdmin: !!adminData 
+          isSuperAdmin
         };
       } catch (err) {
         // If profile fetch fails, logout to be safe
@@ -92,7 +100,8 @@ export default function Login() {
       } else {
         toast({ title: "Welcome back!", description: `Logged in as ${userProfile.name}` });
       }
-      navigate(from, { replace: true });
+      const defaultDestination = isSuperAdmin ? "/admin/" : "/manager/";
+      navigate(from || defaultDestination, { replace: true });
     },
     onError: (err: any) => {
       toast({
@@ -107,8 +116,12 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center justify-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <HardHat className="h-7 w-7" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-card p-1 shadow-sm">
+            <img
+              src="/assets/icons/worktivo.png"
+              alt="Worktivo logo"
+              className="h-10 w-10 object-contain"
+            />
           </div>
           <div>
             <div className="text-2xl font-bold tracking-tight text-foreground">Worktivo</div>

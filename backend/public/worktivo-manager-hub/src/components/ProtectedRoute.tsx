@@ -12,7 +12,7 @@ export function ProtectedRoute({ children, roles = ["owner", "manager"] }: Props
   const location = useLocation();
 
   if (!token || !user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
   if (!roles.includes(user.role as "owner" | "manager")) {
     return (

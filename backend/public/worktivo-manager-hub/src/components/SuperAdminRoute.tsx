@@ -6,7 +6,7 @@ export const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => 
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   
   if (!isSuperAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/manager" replace />;
   }
 
   return <>{children}</>;

@@ -1,357 +1,66 @@
-# Worktivo — Node.js Middleman Integration Guide
+# Worktivo Node + Supabase Integration (Current)
 
-This document explains how to integrate your existing **Node.js API** (the "middleman")
-with the **Supabase-backed Worktivo database and authentication**.
+This project uses a hybrid model:
+- Supabase Auth for identity/session
+- Supabase Postgres for storage
+- Node/Express for protected business endpoints and static app hosting
 
-The web portal (this repo) talks to Supabase **directly** for auth and most reads/writes.
-Your Node.js layer is now optional and used only for:
+## Core Principles
 
-- Heavy/aggregation endpoints (payroll PDFs, reports)
-- Third-party integrations (push notifications via FCM, email)
-- Cross-tenant admin tasks
-- Any business logic that must run server-side with elevated privileges
+- Use `auth.users` + `profiles` (not legacy `users` table).
+- Use `timesheet_entries` (not `time_entries`).
+- Use `user_roles` for role checks and employee counts.
+- Keep `SUPABASE_SERVICE_ROLE_KEY` server-side only.
 
----
-
-## 1. Project facts
-
-| Item | Value |
-|---|---|
-| Supabase Project Ref | `ulnsokshmnssndzwbufz` |
-| Supabase URL | `https://ulnsokshmnssndzwbufz.supabase.co` |
-| Anon (publishable) key | safe for clients — already in `.env` as `VITE_SUPABASE_PUBLISHABLE_KEY` |
-| Service-role key | **server-only**, never ship to a browser/mobile app |
-
-Get the keys from the Supabase dashboard → Project Settings → API.
-
----
-
-## 2. Environment variables for your Node service
-
-Create a `.env` in your Node project:
+## Required Backend Env
 
 ```bash
-SUPABASE_URL=https://ulnsokshmnssndzwbufz.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOi...         # public/anon key
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi... # SECRET — bypasses RLS
-SUPABASE_JWT_SECRET=...                 # from Project Settings → API → JWT Settings
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_JWT_SECRET=...
+PORT=3000
 ```
 
-> The portal sends the user's Supabase access token in `Authorization: Bearer <jwt>`
-> and the active organization in `X-Organization-Id: <uuid>`.
+## Current Auth Middleware Behavior
 
----
+`requireAuth` now validates token in two steps:
+1. Fast local JWT verify using `SUPABASE_JWT_SECRET`
+2. Fallback verification via `adminClient.auth.getUser(token)` if local verify fails
 
-## 3. Install dependencies
+This avoids false 401s if local JWT settings drift.
 
-```bash
-npm install @supabase/supabase-js jsonwebtoken
-```
+## Role and Org Guarding
 
----
+- `X-Organization-Id` header carries active org context.
+- `requireOrgRole` checks `user_roles` for org membership and role.
+- Super admin detection is handled via `super_admins`.
 
-## 4. Two Supabase clients (this is important)
+## `/auth/me` behavior
 
-You need TWO clients, used for very different things:
+- Reads from `profiles`
+- Embeds org using explicit FK alias to avoid ambiguous PostgREST joins
+- Returns role from `user_roles` (current org first, then default)
 
-```js
-// src/lib/supabase.js
-const { createClient } = require('@supabase/supabase-js');
+## Super Admin Notes
 
-// (A) For acting AS THE USER. Honors RLS. Use this for 99% of requests.
-function userClient(accessToken) {
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+- Super admins can sign in and reach `/app/admin/` even without organization membership.
+- `super_admins` RLS policy must be non-recursive:
+  - `USING (user_id = auth.uid())`
 
-// (B) Service-role client. BYPASSES RLS. Only for trusted server logic
-//     (cron jobs, admin actions, creating organizations during signup, etc.)
-const adminClient = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { persistSession: false, autoRefreshToken: false } }
-);
+## Migration/Schema Source of Truth
 
-module.exports = { userClient, adminClient };
-```
+- Baseline schema and profile trigger: `backend/supabase_setup.sql`
+- Incremental chain: `migration_v1` ... `migration_v8`
+- Optional clean reset: `migration_v0_reset_supabase.sql`
 
-**Rule of thumb:** if a request comes from a logged-in portal user, use `userClient(token)`
-so RLS policies enforce multi-tenant isolation automatically.
+## Common Issues and Fixes
 
----
-
-## 5. Auth middleware (verify Supabase JWT)
-
-```js
-// src/middleware/auth.js
-const jwt = require('jsonwebtoken');
-
-function requireAuth(req, res, next) {
-  const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'missing_token' });
-
-  try {
-    const payload = jwt.verify(token, process.env.SUPABASE_JWT_SECRET, {
-      algorithms: ['HS256'],
-    });
-    req.auth = {
-      token,
-      userId: payload.sub,           // auth.users.id
-      email: payload.email,
-      role: payload.role,            // Supabase role: "authenticated"
-    };
-    req.orgId = req.headers['x-organization-id'] || null;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'invalid_token' });
-  }
-}
-
-module.exports = { requireAuth };
-```
-
----
-
-## 6. Org membership / role guard
-
-The portal sends `X-Organization-Id`. You must verify the user actually belongs to that
-org with the required role. Use the SQL helpers we already created:
-
-- `public.is_org_member(_user_id uuid, _org uuid) → boolean`
-- `public.has_role_in_org(_user_id uuid, _org uuid, _role app_role) → boolean`
-- `public.is_org_manager_or_owner(_user_id uuid, _org uuid) → boolean`
-
-```js
-// src/middleware/rbac.js
-const { adminClient } = require('../lib/supabase');
-
-function requireOrgRole(roles = ['owner', 'manager']) {
-  return async (req, res, next) => {
-    if (!req.orgId) return res.status(400).json({ error: 'missing_org' });
-
-    const { data, error } = await adminClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', req.auth.userId)
-      .eq('organization_id', req.orgId)
-      .maybeSingle();
-
-    if (error) return res.status(500).json({ error: error.message });
-    if (!data || !roles.includes(data.role)) {
-      return res.status(403).json({ error: 'forbidden' });
-    }
-    req.userRole = data.role;
-    next();
-  };
-}
-
-/**
- * Super Admin Guard
- */
-function requireSuperAdmin(req, res, next) {
-  // Check if user is in super_admins table
-  // This logic can be implemented here or using Supabase RPC
-  next();
-}
-
-module.exports = { requireOrgRole, requireSuperAdmin };
-```
-
----
-
-## 7. Subscription & Billing Operations
-
-The Node.js backend can handle sensitive subscription-related tasks using the `adminClient`:
-- **Upgrade/Downgrade Plan**: `adminClient.from('organizations').update({ plan: 'Paid' }).eq('id', orgId)`
-- **Suspension**: `adminClient.from('organizations').update({ status: 'suspended' }).eq('id', orgId)`
-- **Bulk Usage Reports**: Aggregating data across multiple tenants for platform analytics.
-
----
-
-## 8. Example route — list employees of an org
-
-```js
-// src/routes/employees.js
-const express = require('express');
-const { userClient } = require('../lib/supabase');
-const { requireAuth } = require('../middleware/auth');
-const { requireOrgRole } = require('../middleware/rbac');
-
-const router = express.Router();
-
-router.get('/', requireAuth, requireOrgRole(['owner', 'manager']), async (req, res) => {
-  const sb = userClient(req.auth.token);
-  const { data, error } = await sb
-    .from('user_roles')
-    .select('role, is_default, profiles!inner(id, name, email, avatar_url)')
-    .eq('organization_id', req.orgId);
-
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
-});
-
-module.exports = router;
-```
-
-Because we used `userClient(token)`, RLS double-checks that this user can read those
-rows — defense in depth.
-
----
-
-## 9. Bootstrapping the first user (owner of a new org)
-
-Supabase Auth signup only creates the `auth.users` row + `profiles` row (via the
-`handle_new_user` trigger). It does **not** create an organization or assign a role.
-
-Recommended flow on first signup:
-
-```js
-// POST /onboarding/create-org   (called right after signup, with the new user's JWT)
-router.post('/create-org', requireAuth, async (req, res) => {
-  const { name } = req.body;
-  const { data: org, error: e1 } = await adminClient
-    .from('organizations').insert({ name }).select().single();
-  if (e1) return res.status(500).json({ error: e1.message });
-
-  const { error: e2 } = await adminClient.from('user_roles').insert({
-    user_id: req.auth.userId,
-    organization_id: org.id,
-    role: 'owner',
-    is_default: true,
-  });
-  if (e2) return res.status(500).json({ error: e2.message });
-
-  res.json({ organization: org });
-});
-```
-
-> Until at least one row exists in `user_roles` for a given user, the portal will show
-> "Resolving access…" and they cannot enter the app.
-
----
-
-## 10. Inviting users (manager/owner only)
-
-1. Insert a row into `invites` with a random `token` and an `expires_at`.
-2. Email the user `https://yourapp.com/invite/<token>`.
-3. On accept: the invitee signs up via Supabase Auth, then your endpoint validates the
-   token, inserts `user_roles(user_id, organization_id, role)`, and marks the invite
-   `accepted`.
-
-You can also use Supabase's built-in `inviteUserByEmail` from the admin client:
-
-```js
-await adminClient.auth.admin.inviteUserByEmail(email, {
-  redirectTo: 'https://yourapp.com/invite/accept',
-  data: { invited_org_id: orgId, invited_role: 'manager' },
-});
-```
-
-Then in a `POST /invite/accept` route, read `invited_org_id` from `user.user_metadata`
-and create the `user_roles` row.
-
----
-
-## 11. File uploads (check-in photos)
-
-The bucket `check-in-photos` is private. Path convention:
-
-```
-<organization_id>/<user_id>/<YYYY>/<MM>/<DD>/<filename>
-```
-
-- **Mobile app** (employee): uploads directly to Supabase Storage with their own JWT —
-  RLS policy allows write only when the path's first segment matches their `org_id`.
-- **Node middleman**: if you need to generate a temporary signed URL for managers:
-
-```js
-const { data, error } = await adminClient
-  .storage.from('check-in-photos')
-  .createSignedUrl(path, 60 * 5); // 5-minute link
-```
-
----
-
-## 12. Realtime / push notifications
-
-- Insert into `public.notifications` from any service-role context.
-- The portal can subscribe with:
-  ```ts
-  supabase.channel('notifs')
-    .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications',
-          filter: `user_id=eq.${user.id}` },
-        (payload) => { /* show toast */ })
-    .subscribe();
-  ```
-- For mobile push, your Node service reads `profiles.fcm_token` and sends via FCM.
-
----
-
-## 13. Google OAuth — one-time setup in Supabase
-
-The portal already calls `supabase.auth.signInWithOAuth({ provider: 'google' })`.
-For it to actually work you must enable Google in Supabase:
-
-1. **Google Cloud Console** → APIs & Services → Credentials → Create OAuth Client ID
-   (type: *Web application*).
-2. Authorized JavaScript origins:
-   - `http://localhost:5173`
-   - your portal's published URL
-3. Authorized redirect URI:
-   - `https://ulnsokshmnssndzwbufz.supabase.co/auth/v1/callback`
-4. Copy the Client ID + Client Secret.
-5. **Supabase Dashboard** → Authentication → Providers → Google → enable, paste keys.
-6. **Supabase Dashboard** → Authentication → URL Configuration:
-   - **Site URL**: your portal's URL
-   - **Redirect URLs**: add `http://localhost:5173/**` and `https://your-portal.com/**`
-
-Without step 6 the OAuth callback returns "requested path is invalid".
-
----
-
-## 14. Email confirmations during development
-
-In **Authentication → Providers → Email**, you can disable
-*Confirm email* for faster local testing. Re-enable it for production.
-
----
-
-## 15. Security checklist
-
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` is **only** in your Node server's environment, never
-      committed to git, never sent to a browser.
-- [ ] Every route uses `requireAuth` + `requireOrgRole(...)`.
-- [ ] You always pass the user's JWT to `userClient(token)` for user-acting reads/writes.
-- [ ] Don't log full JWTs.
-- [ ] Rotate the service-role key if it ever leaks (Supabase dashboard → API → Reset).
-
----
-
-## 16. Quick request flow (end to end)
-
-```
-[Portal browser]
-    │  user signs in → supabase.auth.signInWithPassword()
-    │  gets access_token (JWT) + refresh_token, stored by supabase-js
-    │
-    │  GET /timesheets
-    │  Authorization: Bearer <access_token>
-    │  X-Organization-Id: <uuid>
-    ▼
-[Node middleman]
-    │  requireAuth → verifies JWT with SUPABASE_JWT_SECRET
-    │  requireOrgRole(['owner','manager']) → checks user_roles
-    │  userClient(token).from('timesheet_entries').select(...)
-    ▼
-[Supabase Postgres]
-    │  RLS: organization_id = X AND user is member  ✓
-    ▼
-[Response] → Node → Portal
-```
-
-That's it. Most CRUD can skip the Node layer entirely and call Supabase from the
-browser — the middleman is for things RLS alone cannot do.
+- `401 /auth/me`:
+  - usually token verification mismatch; fallback verify now handles this
+- `PGRST201 embed ambiguity`:
+  - fix with explicit FK embed (`organizations!profiles_organization_id_fkey(...)`)
+- `infinite recursion detected in policy for relation "super_admins"`:
+  - replace self-querying policy with direct `user_id = auth.uid()`
+- Supabase `404` for `/rest/v1/users` or `/rest/v1/time_entries`:
+  - indicates stale legacy table names in frontend code; use `profiles` and `timesheet_entries`

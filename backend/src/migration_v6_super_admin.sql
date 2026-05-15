@@ -9,13 +9,12 @@ create table if not exists super_admins (
 -- Enable RLS on super_admins
 alter table super_admins enable row level security;
 
--- Only super admins can see who else is a super admin
+-- Allow users to read only their own super-admin row.
+-- Avoid self-referential EXISTS on super_admins, which causes policy recursion.
 drop policy if exists "Super admins can view super admins table" on super_admins;
 create policy "Super admins can view super admins table"
 on super_admins for select
-using (
-    exists (select 1 from super_admins where user_id = auth.uid())
-);
+using (user_id = auth.uid());
 
 -- 2. Create platform_settings table
 create table if not exists platform_settings (

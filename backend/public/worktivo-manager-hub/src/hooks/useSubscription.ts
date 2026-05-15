@@ -14,7 +14,7 @@ export function useSubscription() {
 
       const [{ count: projectCount }, { count: employeeCount }] = await Promise.all([
         supabase.from("sites").select("*", { count: "exact", head: true }).eq("organization_id", user.organizationId),
-        supabase.from("users").select("*", { count: "exact", head: true }).eq("organization_id", user.organizationId).eq("role", "employee")
+        supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("organization_id", user.organizationId).eq("role", "employee")
       ]);
 
       return {

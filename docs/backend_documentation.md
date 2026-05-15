@@ -1,95 +1,92 @@
-# Backend Documentation v1.0
+# Backend Documentation (Current)
 
-The Timesheet Backend is a multi-tenant, Node.js Express application providing a scalable RESTful API for the Worktivo workforce platform. It features strict data isolation, role-based access control (RBAC), geofencing, and automated reporting.
+Worktivo backend is an Express API over Supabase (Postgres + Auth + RLS), with the web portal served from the same Node process.
 
-## 🛠 Tech Stack
+## Stack
 
-- **Runtime**: [Node.js](https://nodejs.org/)
-- **Framework**: [Express.js](https://expressjs.com/)
-- **Database**: [PostgreSQL](https://www.postgresql.org/) (Supabase)
-- **Authentication**: JWT with Role & Org claims
-- **Reporting**: [pdfkit](https://github.com/foliojs/pdfkit)
-- **Hashing**: bcryptjs
+- Runtime: Node.js
+- API: Express 5
+- Data/Auth: Supabase (`@supabase/supabase-js`)
+- Reports: `pdfkit`
+- Auth guard: Supabase JWT verification (local verify + Supabase Auth fallback)
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 backend/
 ├── src/
-│   ├── middleware/      # auth.js, rbac.js
-│   ├── routes/          # auth, timesheet, employees, sites, reports, etc.
-│   ├── services/         # notificationService.js
-│   ├── db.js            # Connection pool
-│   ├── index.js         # Entry point
-│   └── schema.sql       # Master Schema
-├── .env                 # Environment secrets
-└── package.json         # Dependencies
+│   ├── index.js
+│   ├── lib/supabase.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   └── rbac.js
+│   ├── routes/
+│   └── migration_v0...v8.sql
+├── supabase_setup.sql
+├── .env
+└── public/worktivo-manager-hub/
 ```
 
-## 🔐 Multi-Tenancy & RBAC
+## Auth and Identity Model
 
-The system enforces strict data isolation using `organization_id` on every table. User permissions are governed by three levels:
-1. **Owner**: Full access to organization settings, employees, sites, and financial reports.
-2. **Manager**: Can manage employees, approve logs, create sites, and edit timesheets (with audit trail).
-3. **Employee**: Can clock in/out, log activities, and view their own history.
+- Identity source: `auth.users`
+- App user profile: `public.profiles`
+- Org/role: `user_roles` + `organization_id`
+- Super admins: `super_admins`
 
-### 🖥️ Dashboard & Analytics (`/dashboard`)
-- `GET /kpis`: Returns high-level stats (Clocked-in now, Late today, Pending approvals, Open alerts).
-- `GET /employees`: Real-time status map of all employees and their current sites.
+`/auth/me` reads from `profiles` and resolves:
+- user profile
+- active/default role
+- organization details
 
-### 📍 Sites & Geofencing (`/sites`)
-- `GET /`: List all active sites with shorthand keys (`lat`, `lng`, `radius`).
-- `POST /`: (Manager+) Create a site with `lat`/`lng` coordinates.
-- `PUT /:id`: Update site settings (including `photo_required`).
+Super admins can access the admin portal even without org membership.
 
-### 👷 Employee Management (`/employees`)
-- `GET /history`: Filterable organization-wide log history (aligned with web portal `TimeEntry`).
-- `POST /check-in`: Log arrival with `lat`, `lng`, and optional `photoUrl`.
-- `POST /approve`: (Manager+) Bulk approve daily logs (Status -> Approved, preserves flags).
-- `PATCH /status/:id`: (Manager+) Manually set status (e.g. Absent).
+## Main API Areas
 
-### 📝 Timesheet & Audit (`/timesheets`)
-- `PUT /:id`: Standard update. If a manager edits an entry, it triggers the **Flagged Edit** audit trail.
+- `/auth`: me, invite, onboarding/create-org, accept-invite
+- `/dashboard`: KPIs and live employee snapshot
+- `/timesheets` (+ `/activities` alias): user/org timesheet flows
+- `/employees`: history, check-in/out, approvals, status updates
+- `/sites`: site and geofence management
+- `/notifications`: notifications + missing-log scan
+- `/reports`: payroll PDF
 
-### 📊 Reports (`/reports`)
-- `GET /payroll`: Generates a professional PDF work summary for a user/period.
+## Web Portal Serving
 
-### 🔔 Notifications (`/notifications`)
-- `POST /missing-logs`: (Manager+) Finds employees who haven't checked in and sends alerts.
-- `PUT /:id/read`: Clears alerts.
+- SPA base path: `/app`
+- Login: `/app/`
+- Manager portal: `/app/manager/*`
+- Super admin portal: `/app/admin/*`
 
----
+Express serves:
+- static chunks at `/app/assets/*`
+- SPA fallback for `/app` app routes
+- shared Flutter assets at `/assets/*` (logo reuse)
 
-## 💳 Subscription & Usage Enforcement
+## Environment Variables
 
-The platform implements a tiered SaaS model (Free/Paid) with enforcement at the database layer using Postgres triggers:
-- **Free Plan Limits**: Maximum of 2 projects (`sites` table) and 5 employees (`users` table).
-- **Triggers**: `check_project_limit` and `check_employee_limit` prevent data entry exceeding these quotas.
-- **Suspension**: Organizations marked as `suspended` are blocked from accessing the API (managed via `auth/login` and `AppLayout` checks).
+Required in `backend/.env`:
 
----
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_JWT_SECRET` (used for fast-path local verify)
+- `PORT` (optional, default `3000`)
 
-## 👑 Super Admin Portal
+## Database Setup and Migrations
 
-The Super Admin Portal is a restricted dashboard for platform administrators (`role = super_admin` in `super_admins` table).
-- **Path**: `/admin` (accessible via sidebar for authorized users).
-- **Tenant Management**: View all organizations, their usage statistics, and subscription status.
-- **Subscription Controls**: Manually upgrade/downgrade plans or suspend/reactivate organizations.
-- **Platform Analytics**: Aggregate KPIs across all tenants (total organizations, growth, active users).
+Canonical setup file:
+- `backend/supabase_setup.sql`
 
----
+Migration chain (Supabase-native):
+- `migration_v0_reset_supabase.sql` (optional reset)
+- `migration_v1_multitenant.sql`
+- `migration_v2_roles_invites.sql`
+- `migration_v3_approvals_audit.sql`
+- `migration_v4_sites_geofencing.sql`
+- `migration_v5_cleanup_push.sql`
+- `migration_v6_super_admin.sql`
+- `migration_v7_subscriptions.sql`
+- `migration_v8_projects_activities.sql`
 
-## 🌐 Serving the Management Hub
-The backend serves the compiled React Manager Portal statically:
-- **Route**: `/manager`
-- **Fallback**: All sub-paths `/manager/*` route to the React index for SPA support.
-
----
-
-### 🚀 Developer Setup
-1. `npm install`
-2. Configure `.env` from `backend/.env.example` (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, optional `PORT`)
-3. In Supabase SQL Editor, run `backend/supabase_setup.sql` (creates app tables + `profiles` synced from `auth.users`)
-4. `npm run dev`
-
-**Note:** Older `migration_v*.sql` / `backend/src/schema.sql` files assumed a legacy `users` table. New installs should use **Supabase-native** identities only (`auth.users` + `profiles`).
+`backend/src/schema.sql` is legacy/deprecated for current installs.

@@ -1,9 +1,29 @@
 const jwt = require('jsonwebtoken');
+const { adminClient } = require('../lib/supabase');
+
+function attachAuthContext(req, token, userId, email, role) {
+    req.auth = {
+        token,
+        userId,
+        email: email || null,
+        role: role || 'authenticated',
+    };
+
+    req.orgId = req.headers['x-organization-id'] || null;
+
+    // Backward compatibility for older handlers
+    req.user = {
+        id: userId,
+        email: email || null,
+        organizationId: req.orgId,
+        role: role || 'authenticated',
+    };
+}
 
 /**
  * Middleware to verify Supabase JWT
  */
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
     const header = req.headers.authorization || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
 
@@ -12,29 +32,27 @@ function requireAuth(req, res, next) {
     }
 
     try {
-        const payload = jwt.verify(token, process.env.SUPABASE_JWT_SECRET, {
-            algorithms: ['HS256'],
-        });
+        // Fast path: local JWT verification (when server has correct JWT secret)
+        if (process.env.SUPABASE_JWT_SECRET) {
+            try {
+                const payload = jwt.verify(token, process.env.SUPABASE_JWT_SECRET);
+                if (payload?.sub) {
+                    attachAuthContext(req, token, payload.sub, payload.email, payload.role);
+                    return next();
+                }
+            } catch (_) {
+                // Fallback below handles rotated/remote key setups.
+            }
+        }
 
-        req.auth = {
-            token,
-            userId: payload.sub,           // auth.users.id
-            email: payload.email,
-            role: payload.role,            // Supabase role: "authenticated"
-        };
+        // Fallback: authoritative verification against Supabase Auth API.
+        const { data, error } = await adminClient.auth.getUser(token);
+        if (error || !data?.user?.id) {
+            return res.status(401).json({ error: 'invalid_token', message: 'Token is invalid or expired' });
+        }
 
-        // Standardized organization ID from header
-        req.orgId = req.headers['x-organization-id'] || null;
-        
-        // For compatibility with older routes during migration
-        req.user = {
-            id: payload.sub,
-            email: payload.email,
-            organizationId: req.orgId,
-            role: payload.role
-        };
-
-        next();
+        attachAuthContext(req, token, data.user.id, data.user.email, 'authenticated');
+        return next();
     } catch (err) {
         console.error('JWT Verification Error:', err.message);
         return res.status(401).json({ error: 'invalid_token', message: 'Token is invalid or expired' });

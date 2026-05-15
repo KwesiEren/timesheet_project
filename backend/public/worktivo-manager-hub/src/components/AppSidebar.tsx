@@ -19,29 +19,29 @@ import { getNotifications } from "@/lib/services";
 const groups = [
   {
     label: "Overview",
-    items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }],
+    items: [{ title: "Dashboard", url: "/manager", icon: LayoutDashboard }],
   },
   {
     label: "Workforce",
     items: [
-      { title: "Team", url: "/employees", icon: Users },
-      { title: "Timesheets", url: "/timesheets", icon: ClipboardList },
-      { title: "Activity Types", url: "/activities", icon: HardHat },
+      { title: "Team", url: "/manager/employees", icon: Users },
+      { title: "Timesheets", url: "/manager/timesheets", icon: ClipboardList },
+      { title: "Activity Types", url: "/manager/activities", icon: HardHat },
     ],
   },
   {
     label: "Infrastructure",
     items: [
-      { title: "Projects", url: "/projects", icon: FolderKanban },
-      { title: "Sites & Geofences", url: "/sites", icon: MapPinned },
+      { title: "Projects", url: "/manager/projects", icon: FolderKanban },
+      { title: "Sites & Geofences", url: "/manager/sites", icon: MapPinned },
     ],
   },
   {
     label: "Organization",
     items: [
-      { title: "Payroll Reports", url: "/payroll", icon: FileBarChart },
-      { title: "Subscription", url: "/subscription", icon: CreditCard },
-      { title: "Settings", url: "/settings", icon: Settings },
+      { title: "Payroll Reports", url: "/manager/payroll", icon: FileBarChart },
+      { title: "Subscription", url: "/manager/subscription", icon: CreditCard },
+      { title: "Settings", url: "/manager/settings", icon: Settings },
     ],
   },
 ];
@@ -62,8 +62,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <HardHat className="h-5 w-5" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white p-1">
+            <img
+              src="/assets/icons/worktivo.png"
+              alt="Worktivo logo"
+              className="h-6 w-6 object-contain"
+            />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
@@ -84,7 +88,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        end={item.url === "/"}
+                        end={item.url === "/manager"}
                         className="hover:bg-sidebar-accent"
                         activeClassName="bg-sidebar-accent text-primary font-medium"
                       >
@@ -106,7 +110,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
-                    to="/notifications"
+                    to="/manager/notifications"
                     className="hover:bg-sidebar-accent"
                     activeClassName="bg-sidebar-accent text-primary font-medium"
                   >

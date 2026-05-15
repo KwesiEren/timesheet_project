@@ -48,7 +48,7 @@ export default function Team() {
     queryKey: ["org-members", user?.organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("users")
+        .from("profiles")
         .select(`
           id,
           name,
