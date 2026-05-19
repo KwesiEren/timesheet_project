@@ -1,23 +1,16 @@
-import 'package:dio/dio.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timesheet_project/models/activity.dart';
 import 'package:timesheet_project/models/notification.dart';
 import 'package:timesheet_project/models/announcement.dart';
 import 'package:timesheet_project/models/employee.dart';
 
 class APIServices {
-  final Dio _dio = Dio();
-  final String baseUrl = ""; // Replace with your actual API base URL
+  final _supabase = Supabase.instance.client;
 
   Future<List<ActivityData>> fetchActivityData() async {
     try {
-      final response = await _dio.get('$baseUrl/activities');
-      if (response.statusCode == 200) {
-        return (response.data as List)
-            .map((item) => ActivityData.fromJson(item))
-            .toList();
-      } else {
-        throw Exception('Failed to load Activities');
-      }
+      final data = await _supabase.from('timesheet_entries').select().order('start_time', ascending: false);
+      return data.map((item) => ActivityData.fromJson(item)).toList();
     } catch (e) {
       throw Exception('Error fetching Activity Data: $e');
     }
@@ -25,14 +18,8 @@ class APIServices {
 
   Future<List<NotificationData>> fetchNotificationData() async {
     try {
-      final response = await _dio.get('$baseUrl/notifications');
-      if (response.statusCode == 200) {
-        return (response.data as List)
-            .map((item) => NotificationData.fromJson(item))
-            .toList();
-      } else {
-        throw Exception('Failed to load Notifications');
-      }
+      final data = await _supabase.from('notifications').select().order('created_at', ascending: false);
+      return data.map((item) => NotificationData.fromJson(item)).toList();
     } catch (e) {
       throw Exception('Error fetching Notification Data: $e');
     }
@@ -40,14 +27,8 @@ class APIServices {
 
   Future<List<AnnouncementData>> fetchAnnouncementData() async {
     try {
-      final response = await _dio.get('$baseUrl/announcements');
-      if (response.statusCode == 200) {
-        return (response.data as List)
-            .map((item) => AnnouncementData.fromJson(item))
-            .toList();
-      } else {
-        throw Exception('Failed to load Announcements');
-      }
+      final data = await _supabase.from('announcements').select().order('created_at', ascending: false);
+      return data.map((item) => AnnouncementData.fromJson(item)).toList();
     } catch (e) {
       throw Exception('Error fetching Announcement Data: $e');
     }
@@ -55,14 +36,8 @@ class APIServices {
 
   Future<List<EmployeeDay>> fetchEmployeeData() async {
     try {
-      final response = await _dio.get('$baseUrl/employees');
-      if (response.statusCode == 200) {
-        return (response.data as List)
-            .map((item) => EmployeeDay.fromJson(item))
-            .toList();
-      } else {
-        throw Exception('Failed to load Employee Data');
-      }
+      final data = await _supabase.from('profiles').select();
+      return data.map((item) => EmployeeDay.fromJson(item)).toList();
     } catch (e) {
       throw Exception('Error fetching Employee Data: $e');
     }

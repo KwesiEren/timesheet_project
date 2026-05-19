@@ -1,92 +1,110 @@
-import 'package:dio/dio.dart';
-import '../providers/api_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/timesheet_entry_model.dart';
 import 'package:flutter/foundation.dart';
 
 class TimesheetApiService {
-  final ApiClient _apiClient = ApiClient();
+  final _supabase = Supabase.instance.client;
 
   Future<List<TimesheetEntryModel>> getTimesheets() async {
     try {
-      final response = await _apiClient.dio.get('/timesheets');
-      final List<dynamic> data = response.data;
+      final session = _supabase.auth.currentSession;
+      if (session == null) throw Exception('Not authenticated');
+
+      final data = await _supabase
+          .from('timesheet_entries')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('start_time', ascending: false);
+          
       return data.map((json) {
-        // Backend returns snake_case, need to map to the model's expected camelCase JSON
-        // Or we can convert directly here. The model expects JSON keys as defined in its fromJson.
         return TimesheetEntryModel(
           id: json['id'],
           userId: json['user_id'],
           projectId: json['project_id'],
-          description: json['description'],
+          description: json['title'] ?? json['description'],
           startTime: DateTime.parse(json['start_time']),
           endTime: json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
           totalDuration: json['total_duration_seconds'] != null ? Duration(seconds: json['total_duration_seconds']) : null,
         );
       }).toList();
-    } on DioException catch (e) {
-      debugPrint('Get Timesheets Error: ${e.response?.data}');
-      throw Exception(e.response?.data['error'] ?? 'Failed to fetch timesheets');
+    } catch (e) {
+      debugPrint('Get Timesheets Error: $e');
+      throw Exception('Failed to fetch timesheets: $e');
     }
   }
 
   Future<TimesheetEntryModel> createTimesheet(TimesheetEntryModel entry) async {
     try {
-      final response = await _apiClient.dio.post(
-        '/timesheets',
-        data: {
-          'id': entry.id,
-          'projectId': entry.projectId,
-          'description': entry.description,
-          'startTime': entry.startTime.toIso8601String(),
-        },
-      );
-      final json = response.data;
+      final session = _supabase.auth.currentSession;
+      if (session == null) throw Exception('Not authenticated');
+
+      // Fetch orgId from profile
+      final response = await _supabase
+          .from('profiles')
+          .select('user_roles(organization_id)')
+          .eq('id', session.user.id)
+          .single();
+      
+      String? orgId;
+      final userRoles = response['user_roles'] as List<dynamic>?;
+      if (userRoles != null && userRoles.isNotEmpty) {
+        orgId = userRoles[0]['organization_id'] as String?;
+      }
+
+      final data = await _supabase.from('timesheet_entries').insert({
+        'id': entry.id,
+        'user_id': session.user.id,
+        'organization_id': orgId,
+        'project_id': entry.projectId,
+        'title': entry.description,
+        'start_time': entry.startTime.toIso8601String(),
+        'is_completed': false,
+      }).select().single();
+
       return TimesheetEntryModel(
-        id: json['id'],
-        userId: json['user_id'],
-        projectId: json['project_id'],
-        description: json['description'],
-        startTime: DateTime.parse(json['start_time']),
+        id: data['id'],
+        userId: data['user_id'],
+        projectId: data['project_id'],
+        description: data['title'],
+        startTime: DateTime.parse(data['start_time']),
       );
-    } on DioException catch (e) {
-      debugPrint('Create Timesheet Error: ${e.response?.data}');
-      throw Exception(e.response?.data['error'] ?? 'Failed to create timesheet');
+    } catch (e) {
+      debugPrint('Create Timesheet Error: $e');
+      throw Exception('Failed to create timesheet: $e');
     }
   }
 
   Future<TimesheetEntryModel> updateTimesheet(TimesheetEntryModel entry) async {
     try {
-      final response = await _apiClient.dio.put(
-        '/timesheets/${entry.id}',
-        data: {
-          'endTime': entry.endTime?.toIso8601String(),
-          'totalDurationSeconds': entry.totalDuration?.inSeconds,
-          'description': entry.description,
-        },
-      );
-      final json = response.data;
+      final data = await _supabase.from('timesheet_entries').update({
+        'end_time': entry.endTime?.toIso8601String(),
+        'total_duration_seconds': entry.totalDuration?.inSeconds,
+        'title': entry.description,
+        'is_completed': entry.endTime != null,
+      }).eq('id', entry.id).select().single();
+
       return TimesheetEntryModel(
-        id: json['id'],
-        userId: json['user_id'],
-        projectId: json['project_id'],
-        description: json['description'],
-        startTime: DateTime.parse(json['start_time']),
-        endTime: json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
-        totalDuration: json['total_duration_seconds'] != null ? Duration(seconds: json['total_duration_seconds']) : null,
+        id: data['id'],
+        userId: data['user_id'],
+        projectId: data['project_id'],
+        description: data['title'] ?? data['description'],
+        startTime: DateTime.parse(data['start_time']),
+        endTime: data['end_time'] != null ? DateTime.parse(data['end_time']) : null,
+        totalDuration: data['total_duration_seconds'] != null ? Duration(seconds: data['total_duration_seconds']) : null,
       );
-    } on DioException catch (e) {
-      debugPrint('Update Timesheet Error: ${e.response?.data}');
-      throw Exception(e.response?.data['error'] ?? 'Failed to update timesheet');
+    } catch (e) {
+      debugPrint('Update Timesheet Error: $e');
+      throw Exception('Failed to update timesheet: $e');
     }
   }
 
   Future<String> deleteTimesheet(String id) async {
     try {
-      final response = await _apiClient.dio.delete('/timesheets/$id');
-      return response.data['id'] ?? id;
-    } on DioException catch (e) {
-      debugPrint('Delete Timesheet Error: ${e.response?.data}');
-      throw Exception(e.response?.data['error'] ?? 'Failed to delete timesheet');
+      await _supabase.from('timesheet_entries').delete().eq('id', id);
+      return id;
+    } catch (e) {
+      debugPrint('Delete Timesheet Error: $e');
+      throw Exception('Failed to delete timesheet: $e');
     }
   }
 }
