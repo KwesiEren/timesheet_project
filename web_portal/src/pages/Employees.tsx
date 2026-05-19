@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { approveEmployees, getEmployees, getSites, setEmployeeStatus } from "@/lib/services";
+import { approveEmployees, getEmployees, getSites, inviteEmployee, setEmployeeStatus } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,7 +21,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CheckCircle2, MoreHorizontal, Users } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { CheckCircle2, MoreHorizontal, UserPlus, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +43,10 @@ export default function Employees() {
   const [siteId, setSiteId] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("employee");
+  const [invitePrimarySite, setInvitePrimarySite] = useState<string>("");
 
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
   const { data: rows = [], isLoading } = useQuery({
@@ -71,6 +84,22 @@ export default function Employees() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["employees-history"] }),
   });
 
+  const inviteMut = useMutation({
+    mutationFn: () =>
+      inviteEmployee({
+        email: inviteEmail,
+        role: inviteRole,
+        primary_site_id: invitePrimarySite || undefined,
+      }),
+    onSuccess: () => {
+      toast({ title: "Invite sent", description: `${inviteEmail} will receive an email.` });
+      setInviteOpen(false);
+      setInviteEmail("");
+      setInvitePrimarySite("");
+    },
+    onError: (e: Error) => toast({ title: "Invite failed", description: e.message, variant: "destructive" }),
+  });
+
   const totalHours = useMemo(() => rows.reduce((a, r) => a + (r.hours ?? 0), 0), [rows]);
 
   return (
@@ -81,13 +110,81 @@ export default function Employees() {
         description="Aggregated worker history with filtering, status overrides, and bulk approvals."
         icon={Users}
         actions={
-          <Button
-            disabled={selected.size === 0 || approve.isPending}
-            onClick={() => approve.mutate()}
-            className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95"
-          >
-            <CheckCircle2 className="h-4 w-4" /> Approve selected ({selected.size})
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <UserPlus className="h-4 w-4" /> Invite employee
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite employee</DialogTitle>
+                  <DialogDescription>Send an email invitation to join your organization.</DialogDescription>
+                </DialogHeader>
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    inviteMut.mutate();
+                  }}
+                >
+                  <div className="space-y-1.5">
+                    <Label htmlFor="invite-email">Email</Label>
+                    <Input
+                      id="invite-email"
+                      type="email"
+                      required
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="worker@example.com"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Role</Label>
+                    <Select value={inviteRole} onValueChange={setInviteRole}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="employee">Employee</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="owner">Owner</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Primary site (optional)</Label>
+                    <Select value={invitePrimarySite || "none"} onValueChange={(v) => setInvitePrimarySite(v === "none" ? "" : v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {sites.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={inviteMut.isPending} className="gap-2">
+                      <UserPlus className="h-4 w-4" /> Send invite
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Button
+              disabled={selected.size === 0 || approve.isPending}
+              onClick={() => approve.mutate()}
+              className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95"
+            >
+              <CheckCircle2 className="h-4 w-4" /> Approve selected ({selected.size})
+            </Button>
+          </div>
         }
       />
 

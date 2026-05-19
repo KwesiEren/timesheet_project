@@ -37,19 +37,27 @@ export async function login(email: string, password: string) {
 export async function getMe() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session) throw new Error("Not logged in");
-  
+
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
-    .select('*, user_roles(role, organizations(*))')
+    .select('id, name, email, user_roles(role, organization_id, organizations(id, name, plan, status))')
     .eq('id', session.user.id)
     .single();
-    
+
   if (profileErr) throw profileErr;
-  
+
+  const membership = (profile as any).user_roles?.[0];
+  const org = membership?.organizations;
+
   return {
-    user: profile,
-    role: profile.user_roles?.[0]?.role,
-    organization: profile.user_roles?.[0]?.organizations
+    id: profile.id as string,
+    email: (profile as any).email as string | undefined,
+    name: ((profile as any).name as string) ?? (profile as any).email ?? "User",
+    role: (membership?.role ?? "employee") as "owner" | "manager" | "employee",
+    organizationId: (membership?.organization_id ?? org?.id ?? "") as string,
+    organizationName: org?.name as string | undefined,
+    organizationPlan: (org?.plan ?? "Free") as "Free" | "Paid",
+    organizationStatus: (org?.status ?? "active") as "active" | "suspended",
   };
 }
 
@@ -338,29 +346,40 @@ export async function updateOrganizationStatus(id: string, payload: { plan?: "Fr
   if (error) throw error;
 }
 
+export async function deleteOrganization(id: string) {
+  const { error } = await supabase.from("organizations").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function getAdminUsers(): Promise<GlobalUserRow[]> {
   const { data, error } = await supabase
     .from("profiles")
-    .select(`id, name, email, created_at, user_roles ( role, organizations (name) )`);
+    .select(`id, name, email, created_at, suspended, user_roles ( role, organizations (name) )`);
   if (error) throw error;
-  
-  return data.map(u => ({
+
+  return (data as any[]).map((u) => ({
     id: u.id,
-    name: u.name,
+    name: u.name ?? u.email ?? "Unknown",
     email: u.email,
-    status: "active",
+    status: u.suspended ? "suspended" : "active",
     last_active: u.created_at,
-    organizations: u.user_roles?.map((r: any) => ({
-      name: r.organizations?.name,
-      role: r.role
-    })) || []
+    organizations:
+      u.user_roles?.map((r: any) => ({
+        name: r.organizations?.name,
+        role: r.role,
+      })) || [],
   }));
 }
 
-export async function getPlatformAuditLogs(): Promise<PlatformAuditLogRow[]> {
-  const { data, error } = await supabase.from("platform_audit_logs").select("*").order("created_at", { ascending: false }).limit(100);
+export async function setUserSuspended(userId: string, suspended: boolean) {
+  const { error } = await supabase.from("profiles").update({ suspended }).eq("id", userId);
   if (error) throw error;
-  return data;
+}
+
+export async function getPlatformAuditLogs(): Promise<PlatformAuditLogRow[]> {
+  const { data, error } = await supabase.from("platform_audit_logs").select("*").order("created_at", { ascending: false }).limit(500);
+  if (error) throw error;
+  return data as any;
 }
 
 export async function getPlatformSettings(): Promise<PlatformSettings> {
@@ -370,19 +389,99 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
 }
 
 export async function updatePlatformSettings(payload: Partial<PlatformSettings>): Promise<void> {
-  const { error } = await supabase.from("platform_settings").update(payload).eq("id", (await getPlatformSettings()).id);
+  const current = await getPlatformSettings();
+  const { error } = await supabase.from("platform_settings").update(payload).eq("id", current.id);
   if (error) throw error;
 }
 
 export async function getBillingOverview() {
-  const { count: proCount } = await supabase.from("organizations").select("*", { count: "exact", head: true }).eq("plan", "Pro");
+  const { count: proCount } = await supabase.from("organizations").select("*", { count: "exact", head: true }).eq("plan", "Paid");
   const { count: pastDueCount } = await supabase.from("organizations").select("*", { count: "exact", head: true }).eq("status", "suspended");
-  
+
   return {
     mrr: (Number(proCount) || 0) * 149,
     pro_orgs: Number(proCount) || 0,
-    past_due: Number(pastDueCount) || 0
+    past_due: Number(pastDueCount) || 0,
   };
+}
+
+// ---- Admin Analytics (live aggregations) ----
+export interface PlatformGrowthPoint { date: string; orgs: number; users: number }
+export interface PlatformActivityPoint { name: string; entries: number; active: number }
+
+export async function getPlatformGrowth(): Promise<PlatformGrowthPoint[]> {
+  const since = new Date();
+  since.setMonth(since.getMonth() - 5);
+  since.setDate(1);
+
+  const [{ data: orgs }, { data: users }] = await Promise.all([
+    supabase.from("organizations").select("created_at").gte("created_at", since.toISOString()),
+    supabase.from("profiles").select("created_at").gte("created_at", since.toISOString()),
+  ]);
+
+  const months: Record<string, { orgs: number; users: number }> = {};
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(since);
+    d.setMonth(since.getMonth() + i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    months[key] = { orgs: 0, users: 0 };
+  }
+  (orgs ?? []).forEach((r: any) => {
+    const d = new Date(r.created_at);
+    const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (months[k]) months[k].orgs += 1;
+  });
+  (users ?? []).forEach((r: any) => {
+    const d = new Date(r.created_at);
+    const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (months[k]) months[k].users += 1;
+  });
+
+  // Convert to cumulative running totals
+  let cumOrgs = 0;
+  let cumUsers = 0;
+  return Object.entries(months).map(([date, v]) => {
+    cumOrgs += v.orgs;
+    cumUsers += v.users;
+    return { date, orgs: cumOrgs, users: cumUsers };
+  });
+}
+
+export async function getPlatformPlanMix() {
+  const [{ count: freeCount }, { count: paidCount }] = await Promise.all([
+    supabase.from("organizations").select("*", { count: "exact", head: true }).eq("plan", "Free"),
+    supabase.from("organizations").select("*", { count: "exact", head: true }).eq("plan", "Paid"),
+  ]);
+  return [
+    { name: "Free", value: Number(freeCount) || 0 },
+    { name: "Paid", value: Number(paidCount) || 0 },
+  ];
+}
+
+export async function getPlatformWeeklyActivity(): Promise<PlatformActivityPoint[]> {
+  const start = new Date();
+  start.setDate(start.getDate() - 6);
+  start.setHours(0, 0, 0, 0);
+
+  const { data: entries } = await supabase
+    .from("timesheet_entries")
+    .select("start_time, user_id")
+    .gte("start_time", start.toISOString());
+
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const buckets: Record<string, { entries: number; users: Set<string> }> = {};
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    buckets[days[d.getDay()]] = { entries: 0, users: new Set() };
+  }
+  (entries ?? []).forEach((r: any) => {
+    const k = days[new Date(r.start_time).getDay()];
+    if (!buckets[k]) return;
+    buckets[k].entries += 1;
+    if (r.user_id) buckets[k].users.add(r.user_id);
+  });
+  return Object.entries(buckets).map(([name, v]) => ({ name, entries: v.entries, active: v.users.size }));
 }
 
 // ---- Organization Settings ----

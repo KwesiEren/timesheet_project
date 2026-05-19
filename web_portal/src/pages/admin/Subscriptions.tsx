@@ -32,12 +32,11 @@ export default function AdminSubscriptions() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <StatsCard 
-          title="Monthly Recurring Revenue" 
-          value={isLoading ? "..." : `$${formatNumber(billing?.mrr || 0)}`} 
-          icon={TrendingUp} 
-          subtitle="+8.2% from last month"
-          trend="up"
+        <StatsCard
+          title="Monthly Recurring Revenue"
+          value={isLoading ? "..." : `$${formatNumber(billing?.mrr || 0)}`}
+          icon={TrendingUp}
+          subtitle="Live based on active Paid plans"
         />
         <StatsCard 
           title="Total Paid Organizations" 
@@ -121,29 +120,24 @@ export default function AdminSubscriptions() {
   );
 }
 
-function StatsCard({ title, value, icon: Icon, subtitle, variant = "default", trend }: any) {
+function StatsCard({ title, value, icon: Icon, subtitle, variant = "default" }: any) {
   return (
-    <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
-        <div className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-lg",
-          variant === "destructive" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
-        )}>
+        <div
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-lg",
+            variant === "destructive" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary",
+          )}
+        >
           <Icon size={18} />
         </div>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <h3 className={cn(
-          "text-3xl font-bold",
-          variant === "destructive" ? "text-destructive" : "text-foreground"
-        )}>{value}</h3>
-        {trend && (
-          <span className={cn(
-            "text-xs font-medium",
-            trend === "up" ? "text-success" : "text-destructive"
-          )}>{trend === "up" ? "+" : "-"}{trend === "up" ? "8.2%" : "2.1%"}</span>
-        )}
+        <h3 className={cn("text-3xl font-bold", variant === "destructive" ? "text-destructive" : "text-foreground")}>
+          {value}
+        </h3>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
     </div>

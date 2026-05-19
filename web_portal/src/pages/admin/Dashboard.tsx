@@ -20,38 +20,23 @@ import {
   Bar
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
-import { getPlatformKpis } from "@/lib/services";
+import { getPlatformKpis, getPlatformWeeklyActivity } from "@/lib/services";
 import { cn } from "@/lib/utils";
 
-const data = [
-  { name: "Mon", entries: 4000, active: 2400 },
-  { name: "Tue", entries: 3000, active: 1398 },
-  { name: "Wed", entries: 2000, active: 9800 },
-  { name: "Thu", entries: 2780, active: 3908 },
-  { name: "Fri", entries: 1890, active: 4800 },
-  { name: "Sat", entries: 2390, active: 3800 },
-  { name: "Sun", entries: 3490, active: 4300 },
-];
-
-function KpiCard({ title, value, change, icon: Icon, trend }: { 
-  title: string, 
-  value: string | number, 
-  change: string, 
-  icon: React.ElementType,
-  trend: "up" | "down"
+function KpiCard({
+  title,
+  value,
+  icon: Icon,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
       <div className="flex items-center justify-between">
         <div className="rounded-lg bg-secondary/80 p-2 text-primary">
           <Icon size={20} />
-        </div>
-        <div className={cn(
-          "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full",
-          trend === "up" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-        )}>
-          {trend === "up" ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-          {change}
         </div>
       </div>
       <div className="mt-4">
@@ -66,8 +51,14 @@ export default function AdminDashboard() {
   const { data: kpis, isLoading } = useQuery({
     queryKey: ["platform-kpis"],
     queryFn: getPlatformKpis,
-    refetchInterval: 300_000 // 5 minutes
+    refetchInterval: 300_000,
   });
+  const { data: weeklyData = [] } = useQuery({
+    queryKey: ["platform-weekly-activity"],
+    queryFn: getPlatformWeeklyActivity,
+    refetchInterval: 300_000,
+  });
+  const data = weeklyData;
 
   return (
     <div className="space-y-8">
@@ -77,33 +68,25 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard 
-          title="Total Organizations" 
-          value={isLoading ? "..." : (kpis?.total_organizations || 0).toLocaleString()} 
-          change="+12%" 
-          icon={Building2} 
-          trend="up" 
+        <KpiCard
+          title="Total Organizations"
+          value={isLoading ? "..." : (kpis?.total_organizations || 0).toLocaleString()}
+          icon={Building2}
         />
-        <KpiCard 
-          title="Active Users" 
-          value={isLoading ? "..." : (kpis?.active_users || 0).toLocaleString()} 
-          change="+18%" 
-          icon={Users} 
-          trend="up" 
+        <KpiCard
+          title="Active Users"
+          value={isLoading ? "..." : (kpis?.active_users || 0).toLocaleString()}
+          icon={Users}
         />
-        <KpiCard 
-          title="Timesheet Entries" 
-          value={isLoading ? "..." : (kpis?.total_timesheets || 0).toLocaleString()} 
-          change="+5.4%" 
-          icon={Clock} 
-          trend="up" 
+        <KpiCard
+          title="Timesheet Entries"
+          value={isLoading ? "..." : (kpis?.total_timesheets || 0).toLocaleString()}
+          icon={Clock}
         />
-        <KpiCard 
-          title="Platform Growth" 
-          value={isLoading ? "..." : `${kpis?.platform_growth || 0}%`} 
-          change="-2%" 
-          icon={TrendingUp} 
-          trend="down" 
+        <KpiCard
+          title="Active Projects"
+          value={isLoading ? "..." : (kpis?.platform_growth || 0).toLocaleString()}
+          icon={TrendingUp}
         />
       </div>
 

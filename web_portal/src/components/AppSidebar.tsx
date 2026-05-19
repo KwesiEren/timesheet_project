@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useQuery } from "@tanstack/react-query";
 import { getNotifications } from "@/lib/services";
+import logoUrl from "@/assets/worktivo-logo.png";
 
 const buildGroups = (t: (k: string) => string) => [
   {
@@ -65,11 +66,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2.5 px-2 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-primary p-1 shadow-elegant">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background ring-1 ring-border p-1 shadow-elegant">
             <img
-              src="/assets/icons/worktivo.png"
+              src={logoUrl}
               alt="Worktivo logo"
-              className="h-6 w-6 object-contain"
+              className="h-7 w-7 object-contain"
             />
           </div>
           {!collapsed && (

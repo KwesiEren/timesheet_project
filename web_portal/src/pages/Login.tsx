@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logoUrl from "@/assets/worktivo-logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -60,14 +61,14 @@ export default function Login() {
           throw new Error("No organization assigned. Please contact your administrator.");
         }
 
-        return { 
-          session, 
-          userProfile: { 
-            ...userProfile, 
-            organizationPlan: orgData?.plan || "Free",
-            organizationStatus: orgData?.status || "active"
-          }, 
-          isSuperAdmin
+        return {
+          session,
+          userProfile: {
+            ...userProfile,
+            organizationPlan: orgData?.plan || userProfile.organizationPlan || "Free",
+            organizationStatus: orgData?.status || userProfile.organizationStatus || "active",
+          },
+          isSuperAdmin,
         };
       } catch (err) {
         // If profile fetch fails, logout to be safe
@@ -124,7 +125,7 @@ export default function Login() {
         <div className="mb-8 flex items-center justify-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-card p-1 shadow-sm">
             <img
-              src="/assets/icons/worktivo.png"
+              src={logoUrl}
               alt="Worktivo logo"
               className="h-10 w-10 object-contain"
             />

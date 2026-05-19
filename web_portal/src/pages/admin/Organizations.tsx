@@ -16,8 +16,8 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAdminOrganizations, updateOrganizationStatus } from "@/lib/services";
-import { cn, formatDate, formatNumber } from "@/lib/utils";
+import { getAdminOrganizations, updateOrganizationStatus, deleteOrganization } from "@/lib/services";
+import { cn, formatDate } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,13 +27,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useMemo } from "react";
 
 export default function AdminOrganizations() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
   const { data: organizations, isLoading } = useQuery({
     queryKey: ["admin-organizations"],
-    queryFn: getAdminOrganizations
+    queryFn: getAdminOrganizations,
   });
 
   const statusMut = useMutation({
@@ -42,10 +44,22 @@ export default function AdminOrganizations() {
       toast({ title: "Organization updated" });
       qc.invalidateQueries({ queryKey: ["admin-organizations"] });
     },
-    onError: (err: any) => {
-      toast({ title: "Update failed", description: err.message, variant: "destructive" });
-    }
+    onError: (err: any) => toast({ title: "Update failed", description: err.message, variant: "destructive" }),
   });
+
+  const deleteMut = useMutation({
+    mutationFn: deleteOrganization,
+    onSuccess: () => {
+      toast({ title: "Organization deleted", variant: "destructive" });
+      qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+    },
+    onError: (err: any) => toast({ title: "Delete failed", description: err.message, variant: "destructive" }),
+  });
+
+  const filtered = useMemo(
+    () => (organizations ?? []).filter((o) => o.name.toLowerCase().includes(search.toLowerCase())),
+    [organizations, search],
+  );
 
   return (
     <div className="space-y-8">
@@ -63,23 +77,22 @@ export default function AdminOrganizations() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-border bg-secondary/20 px-6 py-4 flex items-center justify-between">
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="border-b border-border bg-secondary/20 px-6 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search organizations..."
-                className="h-9 w-full rounded-md border border-input bg-white pl-10 pr-4 text-sm transition-colors focus:border-primary focus:outline-none"
+                className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm transition-colors focus:border-primary focus:outline-none"
               />
             </div>
-            <button className="flex items-center gap-2 rounded-md border border-input bg-white px-3 py-1.5 text-sm font-medium hover:bg-secondary">
-              <Filter size={16} /> Filters
-            </button>
           </div>
           <div className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{organizations?.length || 0}</span> results
+            Showing <span className="font-semibold text-foreground">{filtered.length}</span> results
           </div>
         </div>
 
@@ -101,7 +114,7 @@ export default function AdminOrganizations() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {organizations?.map((org) => (
+                {filtered.map((org) => (
                   <tr key={org.id} className="group hover:bg-secondary/20 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -203,7 +216,14 @@ export default function AdminOrganizations() {
                           )}
                           
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                          <DropdownMenuItem
+                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                            onClick={() => {
+                              if (confirm(`Permanently delete "${org.name}"? This cannot be undone.`)) {
+                                deleteMut.mutate(org.id);
+                              }
+                            }}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
                           </DropdownMenuItem>
                         </DropdownMenuContent>

@@ -1,24 +1,45 @@
-import { 
-  Search, 
-  Filter, 
-  Mail, 
-  Building2, 
-  Shield, 
-  Clock, 
-  MoreVertical,
+import {
+  Search,
+  Mail,
+  Building2,
+  Clock,
   UserX,
-  History,
-  Loader2
+  UserCheck,
+  Loader2,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { getAdminUsers } from "@/lib/services";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAdminUsers, setUserSuspended } from "@/lib/services";
 import { cn, formatDate } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminUsers() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [search, setSearch] = useState("");
+
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: getAdminUsers
+    queryFn: getAdminUsers,
   });
+
+  const suspendMut = useMutation({
+    mutationFn: ({ id, suspended }: { id: string; suspended: boolean }) => setUserSuspended(id, suspended),
+    onSuccess: (_d, vars) => {
+      toast({ title: vars.suspended ? "User suspended" : "User reactivated" });
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (err: any) => toast({ title: "Update failed", description: err.message, variant: "destructive" }),
+  });
+
+  const filtered = useMemo(
+    () =>
+      (users ?? []).filter((u) => {
+        const q = search.toLowerCase();
+        return !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+      }),
+    [users, search],
+  );
 
   return (
     <div className="space-y-8">
@@ -27,23 +48,22 @@ export default function AdminUsers() {
         <p className="text-muted-foreground mt-1">Monitor and manage users across all organizations.</p>
       </div>
 
-      <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-border bg-secondary/20 px-6 py-4 flex items-center justify-between">
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="border-b border-border bg-secondary/20 px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <div className="relative w-80">
+            <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search by name, email, or user ID..."
-                className="h-9 w-full rounded-md border border-input bg-white pl-10 pr-4 text-sm transition-colors focus:border-primary focus:outline-none"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or email..."
+                className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm focus:border-primary focus:outline-none"
               />
             </div>
-            <button className="flex items-center gap-2 rounded-md border border-input bg-white px-3 py-1.5 text-sm font-medium hover:bg-secondary">
-              <Filter size={16} /> Filters
-            </button>
           </div>
           <div className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{users?.length || 0}</span> results
+            Showing <span className="font-semibold text-foreground">{filtered.length}</span> results
           </div>
         </div>
 
@@ -51,6 +71,10 @@ export default function AdminUsers() {
           {isLoading ? (
             <div className="flex h-64 items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              No users match the current search.
             </div>
           ) : (
             <table className="w-full text-left">
@@ -64,12 +88,12 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {users?.map((user) => (
+                {filtered.map((user) => (
                   <tr key={user.id} className="group hover:bg-secondary/20 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-foreground font-bold">
-                          {user.name.charAt(0)}
+                          {user.name?.charAt(0) ?? "?"}
                         </div>
                         <div>
                           <p className="font-semibold text-foreground">{user.name}</p>
@@ -82,13 +106,19 @@ export default function AdminUsers() {
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
                         {user.organizations.map((org, i) => (
-                          <div key={i} className="flex items-center gap-1.5 rounded-md border border-border bg-white px-2 py-1 text-[10px] font-medium shadow-sm">
+                          <div
+                            key={i}
+                            className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-[10px] font-medium shadow-sm"
+                          >
                             <Building2 size={10} className="text-muted-foreground" />
                             <span>{org.name}</span>
                             <span className="text-muted-foreground">·</span>
                             <span className="text-primary font-semibold uppercase tracking-tighter">{org.role}</span>
                           </div>
                         ))}
+                        {user.organizations.length === 0 && (
+                          <span className="text-[10px] text-muted-foreground italic">No memberships</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -97,26 +127,43 @@ export default function AdminUsers() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={cn(
-                        "inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-tight ring-1 ring-inset",
-                        user.status === "active" ? "bg-success/5 text-success ring-success/20" : "bg-destructive/5 text-destructive ring-destructive/20"
-                      )}>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-tight ring-1 ring-inset",
+                          user.status === "active"
+                            ? "bg-success/5 text-success ring-success/20"
+                            : "bg-destructive/5 text-destructive ring-destructive/20",
+                        )}
+                      >
                         {user.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md" title="Audit Logs">
-                          <History size={18} />
-                        </button>
-                        <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md" title="Edit Permissions">
-                          <Shield size={18} />
-                        </button>
-                        <button className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md" title="Suspend User">
-                          <UserX size={18} />
-                        </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {user.status === "active" ? (
+                          <button
+                            disabled={suspendMut.isPending}
+                            onClick={() => {
+                              if (confirm(`Suspend ${user.name}? They will lose access immediately.`)) {
+                                suspendMut.mutate({ id: user.id, suspended: true });
+                              }
+                            }}
+                            className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md disabled:opacity-50"
+                            title="Suspend user"
+                          >
+                            <UserX size={18} />
+                          </button>
+                        ) : (
+                          <button
+                            disabled={suspendMut.isPending}
+                            onClick={() => suspendMut.mutate({ id: user.id, suspended: false })}
+                            className="p-1.5 text-success hover:bg-success/10 rounded-md disabled:opacity-50"
+                            title="Reactivate user"
+                          >
+                            <UserCheck size={18} />
+                          </button>
+                        )}
                       </div>
-                      <MoreVertical size={18} className="inline group-hover:hidden text-muted-foreground" />
                     </td>
                   </tr>
                 ))}
