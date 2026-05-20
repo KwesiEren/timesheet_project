@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getTimesheets, updateTimesheet, approveTimesheet, rejectTimesheet } from "@/lib/services";
+import { getTimesheets, updateTimesheet, approveTimesheet, rejectTimesheet, createTimesheet, getOrgMembers, getSites } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusPill } from "@/components/StatusPill";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Pencil, Save, CheckCircle2, XCircle, Info, ExternalLink, ClipboardList } from "lucide-react";
+import { Pencil, Save, CheckCircle2, XCircle, Info, ExternalLink, ClipboardList, Plus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import {
   Tooltip,
@@ -22,7 +22,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import type { TimeEntry } from "@/types/api";
@@ -35,6 +43,16 @@ export default function Timesheets() {
   const [editing, setEditing] = useState<TimeEntry | null>(null);
   const [editIn, setEditIn] = useState("");
   const [editOut, setEditOut] = useState("");
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createUserId, setCreateUserId] = useState("");
+  const [createSiteId, setCreateSiteId] = useState("");
+  const [createIn, setCreateIn] = useState("");
+  const [createOut, setCreateOut] = useState("");
+  const [createTitle, setCreateTitle] = useState("");
+
+  const { data: members = [] } = useQuery({ queryKey: ["org-members"], queryFn: getOrgMembers });
+  const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
 
   const { data: rows = [] } = useQuery({
     queryKey: ["timesheets", from, to],
@@ -70,6 +88,27 @@ export default function Timesheets() {
     },
   });
 
+  const createMut = useMutation({
+    mutationFn: () => createTimesheet({ 
+      user_id: createUserId, 
+      site_id: createSiteId, 
+      start_time: new Date(createIn).toISOString(), 
+      end_time: new Date(createOut).toISOString(),
+      title: createTitle || undefined
+    }),
+    onSuccess: () => {
+      toast({ title: "Entry added", description: "Manual time entry has been recorded." });
+      qc.invalidateQueries({ queryKey: ["timesheets"] });
+      setCreateOpen(false);
+      setCreateUserId("");
+      setCreateSiteId("");
+      setCreateIn("");
+      setCreateOut("");
+      setCreateTitle("");
+    },
+    onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" })
+  });
+
   const openEdit = (r: TimeEntry) => {
     setEditing(r);
     setEditIn(r.clock_in.slice(0, 16));
@@ -83,6 +122,58 @@ export default function Timesheets() {
         title="Timesheets"
         description="Review, edit, and approve worker time entries. Manual edits are flagged in the audit trail."
         icon={ClipboardList}
+        actions={
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95">
+                <Plus className="h-4 w-4" /> Add Manual Entry
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Manual Entry</DialogTitle>
+                <DialogDescription>Create a timesheet record on behalf of an employee.</DialogDescription>
+              </DialogHeader>
+              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }}>
+                <div className="space-y-1.5">
+                  <Label>Employee</Label>
+                  <Select value={createUserId} onValueChange={setCreateUserId}>
+                    <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
+                    <SelectContent>
+                      {members.map(m => <SelectItem key={m.id} value={m.id}>{m.name || m.email}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Site</Label>
+                  <Select value={createSiteId} onValueChange={setCreateSiteId}>
+                    <SelectTrigger><SelectValue placeholder="Select site" /></SelectTrigger>
+                    <SelectContent>
+                      {sites.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Activity Title (Optional)</Label>
+                  <Input value={createTitle} onChange={e => setCreateTitle(e.target.value)} placeholder="e.g. Site Visit" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Start Time</Label>
+                    <Input type="datetime-local" value={createIn} onChange={e => setCreateIn(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>End Time</Label>
+                    <Input type="datetime-local" value={createOut} onChange={e => setCreateOut(e.target.value)} required />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={createMut.isPending || !createUserId || !createSiteId || !createIn || !createOut}>Save Entry</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
       />
 
       <Card className="border-border/60 bg-card shadow-card">

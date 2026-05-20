@@ -130,6 +130,36 @@ export async function inviteEmployee(payload: {
   if (error) throw error;
 }
 
+export async function removeEmployee(userId: string): Promise<void> {
+  const orgId = await getCurrentOrgId();
+  const { error } = await supabase.from('user_roles').delete().eq('user_id', userId).eq('organization_id', orgId);
+  if (error) throw error;
+}
+
+export async function getOrgMembers() {
+  const orgId = await getCurrentOrgId();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(`
+      id,
+      name,
+      email,
+      department,
+      primary_site_id,
+      user_roles!inner (
+        role,
+        organization_id
+      )
+    `)
+    .eq("user_roles.organization_id", orgId);
+  
+  if (error) throw error;
+  return data.map(m => ({
+    ...m,
+    role: (m.user_roles as any)[0]?.role
+  }));
+}
+
 // ---- Sites ----
 export async function getSites(): Promise<Site[]> {
   const orgId = await getCurrentOrgId();
@@ -233,6 +263,16 @@ export async function approveTimesheet(id: string): Promise<void> {
 export async function rejectTimesheet(id: string): Promise<void> {
   const orgId = await getCurrentOrgId();
   const { error } = await supabase.from('timesheet_entries').update({ is_flagged: true }).eq('id', id).eq('organization_id', orgId);
+  if (error) throw error;
+}
+
+export async function createTimesheet(payload: { user_id: string; site_id: string; start_time: string; end_time: string; title?: string }): Promise<void> {
+  const orgId = await getCurrentOrgId();
+  const { error } = await supabase.from('timesheet_entries').insert([{
+    ...payload,
+    organization_id: orgId,
+    manual_edit: true,
+  }]);
   if (error) throw error;
 }
 

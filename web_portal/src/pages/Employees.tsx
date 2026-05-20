@@ -30,7 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CheckCircle2, MoreHorizontal, UserPlus, Users } from "lucide-react";
+import { CheckCircle2, MoreHorizontal, UserPlus, Users, Download } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -102,6 +102,30 @@ export default function Employees() {
 
   const totalHours = useMemo(() => rows.reduce((a, r) => a + (r.hours ?? 0), 0), [rows]);
 
+  const exportCsv = () => {
+    if (rows.length === 0) return;
+    const header = ["Employee", "Site", "Clock In", "Clock Out", "Hours", "Status"];
+    const csv = [
+      header.join(","),
+      ...rows.map(r => [
+        `"${r.employee_name || ''}"`,
+        `"${r.site_name || ''}"`,
+        `"${r.clock_in ? new Date(r.clock_in).toLocaleString() : ''}"`,
+        `"${r.clock_out ? new Date(r.clock_out).toLocaleString() : ''}"`,
+        r.hours?.toFixed(2) || "0",
+        r.status || "pending"
+      ].join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `employees_history_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -111,6 +135,9 @@ export default function Employees() {
         icon={Users}
         actions={
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="gap-2" onClick={exportCsv} disabled={rows.length === 0}>
+              <Download className="h-4 w-4" /> Export CSV
+            </Button>
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">

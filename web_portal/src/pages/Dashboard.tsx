@@ -7,13 +7,19 @@ import { getDashboardKpis, getLiveEmployees, getSites } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusPill } from "@/components/StatusPill";
-import { Activity, AlertTriangle, Clock, ClipboardCheck, Users, Zap, ArrowRight, ShieldCheck } from "lucide-react";
+import { Activity, AlertTriangle, Clock, ClipboardCheck, Users, Zap, ArrowRight, ShieldCheck, Plus, UserPlus, ClipboardList, FolderKanban } from "lucide-react";
 import { format } from "date-fns";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -36,14 +42,34 @@ export default function Dashboard() {
         description="Real-time view of clock-ins, geofence activity, and approvals across your sites."
         icon={Activity}
         actions={
-          !isPaid && (
-            <Button
-              className="gap-2 bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-95"
-              onClick={() => navigate("/manager/subscription")}
-            >
-              <Zap className="h-4 w-4 fill-current" /> Upgrade to Pro
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Plus className="h-4 w-4" /> Quick Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate("/manager/employees")}>
+                  <UserPlus className="mr-2 h-4 w-4" /> Invite Member
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/manager/timesheets")}>
+                  <ClipboardList className="mr-2 h-4 w-4" /> Log Time
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/manager/projects")}>
+                  <FolderKanban className="mr-2 h-4 w-4" /> New Project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {!isPaid && (
+              <Button
+                className="gap-2 bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-95"
+                onClick={() => navigate("/manager/subscription")}
+              >
+                <Zap className="h-4 w-4 fill-current" /> Upgrade to Pro
+              </Button>
+            )}
+          </div>
         }
       />
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { inviteEmployee, getSites } from "@/lib/services";
+import { inviteEmployee, getSites, removeEmployee } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,18 @@ export default function Team() {
     },
     onError: (err: any) => {
       toast({ title: "Invite failed", description: err.message, variant: "destructive" });
+    }
+  });
+
+  const removeMut = useMutation({
+    mutationFn: removeEmployee,
+    onSuccess: () => {
+      toast({ title: "Member removed", description: "The employee has been removed from your organization." });
+      qc.invalidateQueries({ queryKey: ["org-members"] });
+      qc.invalidateQueries({ queryKey: ["org-usage"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Removal failed", description: err.message, variant: "destructive" });
     }
   });
 
@@ -206,7 +218,17 @@ export default function Team() {
                     {sites.find(s => s.id === m.primary_site_id)?.name || "—"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => {
+                        if (confirm(`Remove ${m.name || m.email} from the organization?`)) {
+                          removeMut.mutate(m.id);
+                        }
+                      }}
+                      disabled={removeMut.isPending}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
