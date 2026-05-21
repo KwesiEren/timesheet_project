@@ -18,11 +18,11 @@
 
 ## Web Portal Users
 
-The web portal is hosted by the backend:
+The web portal is a standalone web application:
 
-- Login: `http://localhost:3000/app/`
-- Manager portal: `http://localhost:3000/app/manager/`
-- Super admin portal: `http://localhost:3000/app/admin/`
+- Login: `http://localhost:8080/` (or production URL)
+- Manager portal: `http://localhost:8080/manager/`
+- Super admin portal: `http://localhost:8080/admin/`
 
 ### Managers/Owners
 
@@ -31,7 +31,7 @@ The web portal is hosted by the backend:
 
 ### Super Admins
 
-- Access platform-wide admin screens at `/app/admin/`.
+- Access platform-wide admin screens at `/admin/`.
 - Super admin access does not require joining or creating an organization.
 
 ## Subscription Notes

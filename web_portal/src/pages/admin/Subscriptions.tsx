@@ -5,11 +5,23 @@ import {
   Loader2,
   TrendingUp,
   Building2,
-  AlertCircle
+  AlertCircle,
+  MoreVertical,
+  Zap,
+  ZapOff
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { getBillingOverview, getAdminOrganizations } from "@/lib/services";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getBillingOverview, getAdminOrganizations, updateOrganizationStatus } from "@/lib/services";
 import { cn, formatNumber, formatDate } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function AdminSubscriptions() {
   const { data: billing, isLoading: loadingBilling } = useQuery({
@@ -20,6 +32,19 @@ export default function AdminSubscriptions() {
   const { data: organizations, isLoading: loadingOrgs } = useQuery({
     queryKey: ["admin-organizations"],
     queryFn: getAdminOrganizations
+  });
+
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const statusMut = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => updateOrganizationStatus(id, payload),
+    onSuccess: () => {
+      toast({ title: "Plan updated successfully" });
+      qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+      qc.invalidateQueries({ queryKey: ["billing-overview"] });
+    },
+    onError: (err: any) => toast({ title: "Update failed", description: err.message, variant: "destructive" }),
   });
 
   const isLoading = loadingBilling || loadingOrgs;
@@ -79,7 +104,8 @@ export default function AdminSubscriptions() {
                   <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Plan</th>
                   <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Amount</th>
                   <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created At</th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Status</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -96,8 +122,8 @@ export default function AdminSubscriptions() {
                     </td>
                     <td className="px-6 py-4 text-sm font-mono">{org.plan === "Paid" ? "$149/mo" : "$0/mo"}</td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">{formatDate(org.created_at)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
                         {org.status === "active" ? (
                           <span className="flex items-center gap-1 text-success text-xs font-bold">
                             <CheckCircle2 size={14} /> ACTIVE
@@ -108,6 +134,28 @@ export default function AdminSubscriptions() {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors">
+                            <MoreVertical size={18} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel>Manage Subscription</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {org.plan === "Free" ? (
+                            <DropdownMenuItem onClick={() => statusMut.mutate({ id: org.id, payload: { plan: "Paid" } })}>
+                              <Zap className="mr-2 h-4 w-4 text-warning fill-warning" /> Upgrade to Paid
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => statusMut.mutate({ id: org.id, payload: { plan: "Free" } })}>
+                              <ZapOff className="mr-2 h-4 w-4 text-muted-foreground" /> Downgrade to Free
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}

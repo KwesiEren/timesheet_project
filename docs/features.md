@@ -11,30 +11,29 @@
 ## Mobile App (Flutter)
 
 - [x] Login and authenticated app shell
-- [x] Timesheet create/update/delete flow against Node backend
+- [x] Timesheet create/update/delete flow against Supabase backend
 - [x] Local cache support (`get_storage`)
 - [x] Geolocation and map-related dependencies integrated
 - [x] Shared branding assets (`assets/icons/worktivo.png`)
 
 ## Web Portal (React)
 
-- [x] Served by backend as SPA under `/app`
-- [x] Login at `/app/`
-- [x] Manager routes under `/app/manager/*`
-- [x] Super admin routes under `/app/admin/*`
+- [x] Served via standard web hosting (Vite build)
+- [x] Login at `/`
+- [x] Manager routes under `/manager/*`
+- [x] Super admin routes under `/admin/*`
 - [x] Super admin access works without org membership
 - [x] Theme aligned to mobile color palette
 - [x] Shared logo uses root `assets/icons/worktivo.png`
 
-## Backend APIs
+## Backend Data Access (Supabase)
 
-- [x] Auth context endpoint (`/auth/me`)
-- [x] Dashboard endpoints (`/dashboard/kpis`, `/dashboard/employees`)
-- [x] Timesheet routes (`/timesheets`, `/activities`)
-- [x] Employee routes (`/employees/*`)
-- [x] Notifications and missing-log scan
-- [x] Payroll PDF report route
-- [x] Role checks and org scoping middleware
+- [x] Profile/Role resolution via `profiles` + `user_roles`
+- [x] Dashboard rollups using Supabase count queries
+- [x] Timesheet direct CRUD with RLS
+- [x] Employee management direct CRUD
+- [x] Notifications system
+- [x] Role checks and org scoping via RLS and DB triggers
 
 ## Database & Migrations
 
@@ -47,5 +46,5 @@
 
 - [ ] Full automated test suite (backend + web)
 - [ ] CI checks for migrations and API health
-- [ ] Final cleanup of any remaining legacy docs/comments referencing `/manager` or `users`
+- [x] Final cleanup of legacy docs/comments completed
 - [ ] Billing/payment provider integration for paid upgrade flow

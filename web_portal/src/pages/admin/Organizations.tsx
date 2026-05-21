@@ -13,10 +13,12 @@ import {
   TrendingUp,
   Zap,
   ZapOff,
-  AlertTriangle
+  AlertTriangle,
+  Plus,
+  Edit
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAdminOrganizations, updateOrganizationStatus, deleteOrganization } from "@/lib/services";
+import { getAdminOrganizations, updateOrganizationStatus, deleteOrganization, createAdminOrganization, updateOrganizationSettings } from "@/lib/services";
 import { cn, formatDate } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -26,13 +28,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 export default function AdminOrganizations() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<{ id?: string; name: string; plan: "Free" | "Paid" } | null>(null);
+
   const { data: organizations, isLoading } = useQuery({
     queryKey: ["admin-organizations"],
     queryFn: getAdminOrganizations,
@@ -56,6 +71,23 @@ export default function AdminOrganizations() {
     onError: (err: any) => toast({ title: "Delete failed", description: err.message, variant: "destructive" }),
   });
 
+  const saveMut = useMutation({
+    mutationFn: async ({ id, payload }: { id?: string; payload: any }) => {
+      if (id) {
+        await updateOrganizationSettings(id, payload);
+      } else {
+        await createAdminOrganization(payload);
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "Organization saved successfully" });
+      qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+      setIsFormOpen(false);
+      setEditingOrg(null);
+    },
+    onError: (err: any) => toast({ title: "Save failed", description: err.message, variant: "destructive" }),
+  });
+
   const filtered = useMemo(
     () => (organizations ?? []).filter((o) => o.name.toLowerCase().includes(search.toLowerCase())),
     [organizations, search],
@@ -75,6 +107,12 @@ export default function AdminOrganizations() {
            </div>
            <p className="text-sm text-muted-foreground">2 tiers active</p>
         </div>
+        <Button onClick={() => {
+          setEditingOrg(null);
+          setIsFormOpen(true);
+        }}>
+          <Plus className="mr-2 h-4 w-4" /> Add Organization
+        </Button>
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -183,6 +221,12 @@ export default function AdminOrganizations() {
                         <DropdownMenuContent align="end" className="w-56">
                           <DropdownMenuLabel>Manage Organization</DropdownMenuLabel>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => {
+                            setEditingOrg({ id: org.id, name: org.name, plan: org.plan });
+                            setIsFormOpen(true);
+                          }}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit Details
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => window.open(`/admin/organizations/${org.id}`, "_blank")}>
                             <Eye className="mr-2 h-4 w-4" /> View Full Profile
                           </DropdownMenuItem>
@@ -236,6 +280,51 @@ export default function AdminOrganizations() {
           )}
         </div>
       </div>
+
+      <Dialog open={isFormOpen} onOpenChange={(open) => {
+        setIsFormOpen(open);
+        if (!open) setEditingOrg(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingOrg?.id ? "Edit Organization" : "Create Organization"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            saveMut.mutate({
+              id: editingOrg?.id,
+              payload: {
+                name: formData.get("name") as string,
+                plan: formData.get("plan") as "Free" | "Paid"
+              }
+            });
+          }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="org-name">Organization Name</Label>
+              <Input id="org-name" name="name" defaultValue={editingOrg?.name || ""} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="org-plan">Plan</Label>
+              <select
+                id="org-plan"
+                name="plan"
+                defaultValue={editingOrg?.plan || "Free"}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="Free">Free</option>
+                <option value="Paid">Paid</option>
+              </select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saveMut.isPending}>
+                {saveMut.isPending ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

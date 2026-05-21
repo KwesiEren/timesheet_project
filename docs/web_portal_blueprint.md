@@ -2,17 +2,17 @@
 
 ## Overview
 
-The web portal is a React SPA in `backend/public/worktivo-manager-hub`, served by the Node backend.
+The web portal is a React SPA located in the `web_portal/` directory.
 
 ## Runtime Paths
 
-- Login: `/app/`
-- Manager app: `/app/manager/*`
-- Super admin app: `/app/admin/*`
+- Login: `/`
+- Manager app: `/manager/*`
+- Super admin app: `/admin/*`
 
 Server-side static routing uses:
-- explicit static for `/app/assets/*`
-- SPA fallback for non-file `/app` routes
+- Vite for development
+- Standard static hosting for production builds
 
 ## Frontend Stack
 
@@ -20,16 +20,16 @@ Server-side static routing uses:
 - Tailwind CSS
 - Zustand (auth/session state)
 - TanStack Query (data layer)
-- Supabase JS (auth + selected direct data reads)
+- Supabase JS (auth + all data reads/writes)
 
 ## Auth and Access Flow
 
-1. User signs in via Supabase Auth.
+1. User signs in via Supabase Auth (`supabase.auth.signInWithPassword`).
 2. Access token is stored in auth store.
-3. `/auth/me` is called on backend to resolve profile + role + org context.
+3. Supabase client fetches profile + role + org context from `profiles` and `user_roles`.
 4. Post-login redirect:
-   - super admin -> `/app/admin/`
-   - manager/owner -> `/app/manager/`
+   - super admin -> `/admin/`
+   - manager/owner -> `/manager/`
 5. Employee users are blocked from the manager portal.
 
 Super admin login is allowed even without organization membership.
@@ -37,30 +37,30 @@ Super admin login is allowed even without organization membership.
 ## Design and Branding
 
 - Theme tokens synced with Flutter palette in `src/index.css`.
-- Shared logo loaded from root app assets:
-  - `/assets/icons/worktivo.png`
+- Shared logo loaded from root app assets or web portal assets.
 
 ## Integration Notes
 
 - Supabase-native schema is used (`profiles`, `timesheet_entries`, `user_roles`, etc.).
 - Legacy table references (`users`, `time_entries`) have been removed from active web code.
+- No Node.js Express backend exists anymore. All logic executes directly via Supabase Postgres RLS, RPCs, or the Supabase JS Client.
 
 ## Build and Serve
 
 ```bash
-cd backend/public/worktivo-manager-hub
+cd web_portal
 npm run build
 ```
 
-Then run backend:
+Then run frontend for development:
 
 ```bash
-cd backend
+cd web_portal
 npm run dev
 ```
 
 Open:
-- `http://localhost:3000/app/`
+- `http://localhost:8080/` (or port specified by Vite)
 
 ## Known Next Improvements
 

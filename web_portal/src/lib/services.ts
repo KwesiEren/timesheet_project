@@ -416,6 +416,35 @@ export async function setUserSuspended(userId: string, suspended: boolean) {
   if (error) throw error;
 }
 
+export async function createAdminOrganization(payload: { name: string; plan: "Free" | "Paid" }) {
+  const { data, error } = await supabase.from("organizations").insert([payload]).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function createAdminUser(payload: { name: string; email: string; password?: string }) {
+  const { data, error } = await supabase.auth.signUp({
+    email: payload.email,
+    password: payload.password || 'Temporary123!',
+    options: {
+      data: { name: payload.name }
+    }
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function updateAdminUser(id: string, payload: { name?: string; email?: string }) {
+  const { data, error } = await supabase.from("profiles").update(payload).eq("id", id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteAdminUser(id: string) {
+  const { error } = await supabase.from("profiles").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function getPlatformAuditLogs(): Promise<PlatformAuditLogRow[]> {
   const { data, error } = await supabase.from("platform_audit_logs").select("*").order("created_at", { ascending: false }).limit(500);
   if (error) throw error;

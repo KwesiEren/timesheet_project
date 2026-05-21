@@ -1,13 +1,6 @@
-# Backend Integration
+# Backend Integration (Pure Supabase)
 
-This portal speaks to **two** backends:
-
-1. **Supabase** — authentication, plus direct table reads/writes for things
-   that have RLS-protected schemas (projects, activity_types, organizations,
-   profiles, audit logs, platform settings).
-2. **Express REST API** — workforce-specific endpoints that need server-side
-   business logic (dashboard rollups, timesheet approval, PDF generation,
-   notifications).
+This portal speaks entirely to **Supabase** for all authentication, data storage, and business logic. There is no legacy Node.js Express backend.
 
 ## Environment variables
 
@@ -16,18 +9,16 @@ Put these in `.env` (Vite exposes only `VITE_*`):
 ```bash
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon key>
-VITE_API_URL=http://localhost:3000          # Express base URL
 ```
 
-The Supabase URL and anon key come from your Lovable Cloud / Supabase project.
-The Express base URL is whatever serves the `/auth/me`, `/dashboard/*`,
-`/timesheets`, `/sites`, `/employees/*`, `/notifications`, `/reports/*` routes.
+The Supabase URL and anon key come from your Supabase project.
 
-## HTTP client (`src/lib/api.ts`)
+## Supabase Client (`src/lib/supabase.ts`)
 
-- Adds `Authorization: Bearer <supabase access token>` to every request.
-- Adds `X-Organization-Id: <user.organizationId>` when present.
-- On `401`, signs the user out and redirects to `/`.
+- Configured using the environment variables.
+- Manages authentication state automatically.
+- All database queries go through the strongly-typed Supabase JS client.
+- RLS (Row Level Security) ensures that users can only access data they are authorized to see based on their `organization_id` and role in the `user_roles` table.
 
 ## Auth flow
 
@@ -35,80 +26,41 @@ The Express base URL is whatever serves the `/auth/me`, `/dashboard/*`,
 Login.tsx
   └─ supabase.auth.signInWithPassword
        └─ store session in Zustand (token, user)
-            └─ GET /auth/me  → { profile, role, organizationId, isSuperAdmin }
+            └─ GET profiles & user_roles via Supabase → { profile, role, organizationId, isSuperAdmin }
                  └─ redirect:
-                      super_admin            → /admin
-                      owner | manager         → /manager
-                      employee                → blocked screen ("mobile app only")
+                      super_admin            → /admin/
+                      owner | manager        → /manager/
+                      employee               → blocked screen ("mobile app only")
 ```
 
 `onAuthStateChange` rehydrates the session on hard refresh.
 
-## REST endpoints (Express)
+## Data Access (Supabase Tables & RPCs)
 
-| Method | Path | Used by | Notes |
-|---|---|---|---|
-| GET | `/auth/me` | login | resolves profile + role + org + isSuperAdmin |
-| POST | `/auth/invite` | Team page | invites employee, takes `{email, role, department?, primary_site_id?}` |
-| GET | `/dashboard/kpis` | Manager Dashboard | `{clocked_in_now, late_today, pending_approvals, open_alerts}` |
-| GET | `/dashboard/employees` | Manager Dashboard | live employee snapshot |
-| GET | `/employees/history` | History page | params: `from, to, site_id, status` |
-| POST | `/employees/approve` | History page | body: `{ ids: string[] }` |
-| PATCH | `/employees/status/:id` | Team page | body: `{ status }` |
-| GET | `/sites` | Sites page | list |
-| POST | `/sites` | Sites page | create |
-| PUT | `/sites/:id` | Sites page | update |
-| DELETE | `/sites/:id` | Sites page | delete |
-| GET | `/timesheets` | Timesheets page | params: `from, to` |
-| PATCH | `/timesheets/:id` | Timesheets page | edit (preserves `original`) |
-| PATCH | `/timesheets/:id/approve` | Timesheets page | |
-| PATCH | `/timesheets/:id/reject` | Timesheets page | |
-| GET | `/reports/payroll` | Payroll page | returns `application/pdf` blob |
-| GET | `/notifications` | Notifications + sidebar badge | |
-| PUT | `/notifications/:id/read` | Notifications | |
-| POST | `/notifications/missing-logs` | Notifications | returns `{ created }` |
+All data access is handled in `src/lib/services.ts` directly via Supabase.
 
-## Supabase tables (read directly)
-
-| Table | Purpose | Accessed by |
+| Entity | Handled via | Notes |
 |---|---|---|
-| `auth.users` | Supabase-managed | login |
-| `profiles` | display name, email | admin Users page |
-| `user_roles` | role per (user, organization) | admin Users page |
-| `organizations` | name, plan, status, settings | admin Organizations, Settings |
-| `projects` | per-org project list | manager Projects |
-| `activity_types` | per-org activity vocab | manager Activity Types |
-| `platform_audit_logs` | platform-wide audit trail | admin Audit Logs |
-| `platform_settings` | feature flags, free-tier caps | admin Settings |
-| `sites` | (read via REST, not direct) | counted in admin Organizations |
-| `timesheet_entries` | (read via REST, not direct) | counted in admin Dashboard |
+| Authentication | `supabase.auth.*` | Login, logout, session management |
+| Profile / Org Context | `profiles`, `user_roles`, `organizations` | Fetches current user context |
+| Dashboard KPIs | `timesheet_entries`, `user_roles` | Direct count queries and status checks |
+| Employees / Team | `profiles`, `user_roles` | Invites via `supabase.auth.admin.inviteUserByEmail` (Edge Function/Admin Client) or direct inserts if handled via triggers |
+| Sites & Geofencing | `sites` | Direct CRUD |
+| Timesheets & Approvals | `timesheet_entries` | Direct CRUD, bulk status updates via `.update().in('id', ids)` |
+| Projects & Activities | `projects`, `activity_types` | Direct CRUD |
+| Notifications | `notifications` | Direct CRUD, missing log scans via edge functions/RPCs |
+| Admin Portals | `organizations`, `profiles`, `platform_settings` | Accessed by users with `super_admins` entry |
+| Audit Logs | `platform_audit_logs` | Written via Postgres functions/triggers or direct insert |
 
 ### RLS expectations
 
-- `projects` and `activity_types` — read/write requires `user_roles.organization_id`
-  to match the row's `organization_id`. Manager + owner only.
-- `organizations`, `profiles`, `user_roles` — readable by super-admins only
-  for cross-tenant rows; tenant users see their own org/profile only.
+- `projects`, `activity_types`, `sites`, `timesheet_entries` — read/write requires `user_roles.organization_id` to match the row's `organization_id`. Manager + owner only.
+- `organizations`, `profiles`, `user_roles` — readable by super-admins globally; tenant users see their own org/profile only.
 - `platform_audit_logs`, `platform_settings` — super-admin only.
-- Always use a `has_role(uid, role)` SECURITY DEFINER function (see project
-  user-roles guidance) — never check roles by joining inside an RLS policy.
 
-## Adding a new backend endpoint
+## Adding a new data fetching endpoint
 
-1. Add the function to `src/lib/services.ts` (use `api` for REST or `supabase`
-   for direct table access).
+1. Add the function to `src/lib/services.ts` using the `supabase` client.
 2. Add types to `src/types/api.ts` or `src/types/admin.ts`.
-3. Wrap calls in `useQuery` (for reads) or `useMutation` (for writes) in the
-   page; invalidate the right query keys on success.
+3. Wrap calls in `useQuery` (for reads) or `useMutation` (for writes) in the page; invalidate the right query keys on success.
 4. Surface a toast on error via `useToast`.
-
-## Local dev quickstart
-
-```bash
-bun install
-cp .env.example .env   # fill in VITE_* values
-bun dev                # http://localhost:8080
-```
-
-The Express backend is a separate repo; point `VITE_API_URL` at wherever it
-runs (e.g. `http://localhost:3000`).

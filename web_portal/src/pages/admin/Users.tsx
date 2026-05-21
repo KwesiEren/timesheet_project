@@ -6,17 +6,41 @@ import {
   UserX,
   UserCheck,
   Loader2,
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAdminUsers, setUserSuspended } from "@/lib/services";
+import { getAdminUsers, setUserSuspended, createAdminUser, updateAdminUser, deleteAdminUser } from "@/lib/services";
 import { cn, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function AdminUsers() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<{ id?: string; name: string; email: string } | null>(null);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -32,6 +56,32 @@ export default function AdminUsers() {
     onError: (err: any) => toast({ title: "Update failed", description: err.message, variant: "destructive" }),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: deleteAdminUser,
+    onSuccess: () => {
+      toast({ title: "User deleted", variant: "destructive" });
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (err: any) => toast({ title: "Delete failed", description: err.message, variant: "destructive" }),
+  });
+
+  const saveMut = useMutation({
+    mutationFn: async ({ id, payload }: { id?: string; payload: any }) => {
+      if (id) {
+        await updateAdminUser(id, payload);
+      } else {
+        await createAdminUser(payload);
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "User saved successfully" });
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      setIsFormOpen(false);
+      setEditingUser(null);
+    },
+    onError: (err: any) => toast({ title: "Save failed", description: err.message, variant: "destructive" }),
+  });
+
   const filtered = useMemo(
     () =>
       (users ?? []).filter((u) => {
@@ -43,9 +93,17 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Global User Management</h1>
-        <p className="text-muted-foreground mt-1">Monitor and manage users across all organizations.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Global User Management</h1>
+          <p className="text-muted-foreground mt-1">Monitor and manage users across all organizations.</p>
+        </div>
+        <Button onClick={() => {
+          setEditingUser(null);
+          setIsFormOpen(true);
+        }}>
+          <Plus className="mr-2 h-4 w-4" /> Add Global User
+        </Button>
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -139,31 +197,55 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {user.status === "active" ? (
-                          <button
-                            disabled={suspendMut.isPending}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors">
+                            <MoreVertical size={18} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel>Manage User</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => {
+                            setEditingUser({ id: user.id, name: user.name, email: user.email });
+                            setIsFormOpen(true);
+                          }}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit Details
+                          </DropdownMenuItem>
+                          
+                          {user.status === "active" ? (
+                            <DropdownMenuItem 
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              onClick={() => {
+                                if (confirm(`Suspend ${user.name}? They will lose access immediately.`)) {
+                                  suspendMut.mutate({ id: user.id, suspended: true });
+                                }
+                              }}
+                            >
+                              <UserX className="mr-2 h-4 w-4" /> Suspend User
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              className="text-success focus:bg-success/10 focus:text-success"
+                              onClick={() => suspendMut.mutate({ id: user.id, suspended: false })}
+                            >
+                              <UserCheck className="mr-2 h-4 w-4" /> Reactivate User
+                            </DropdownMenuItem>
+                          )}
+                          
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                             onClick={() => {
-                              if (confirm(`Suspend ${user.name}? They will lose access immediately.`)) {
-                                suspendMut.mutate({ id: user.id, suspended: true });
+                              if (confirm(`Permanently delete "${user.name}"? This cannot be undone.`)) {
+                                deleteMut.mutate(user.id);
                               }
                             }}
-                            className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md disabled:opacity-50"
-                            title="Suspend user"
                           >
-                            <UserX size={18} />
-                          </button>
-                        ) : (
-                          <button
-                            disabled={suspendMut.isPending}
-                            onClick={() => suspendMut.mutate({ id: user.id, suspended: false })}
-                            className="p-1.5 text-success hover:bg-success/10 rounded-md disabled:opacity-50"
-                            title="Reactivate user"
-                          >
-                            <UserCheck size={18} />
-                          </button>
-                        )}
-                      </div>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
@@ -172,6 +254,50 @@ export default function AdminUsers() {
           )}
         </div>
       </div>
+
+      <Dialog open={isFormOpen} onOpenChange={(open) => {
+        setIsFormOpen(open);
+        if (!open) setEditingUser(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingUser?.id ? "Edit User" : "Create Global User"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const payload: any = {
+              name: formData.get("name") as string,
+              email: formData.get("email") as string,
+            };
+            if (!editingUser?.id) {
+              payload.password = formData.get("password") as string;
+            }
+            saveMut.mutate({ id: editingUser?.id, payload });
+          }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Full Name</Label>
+              <Input id="user-name" name="name" defaultValue={editingUser?.name || ""} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-email">Email Address</Label>
+              <Input id="user-email" type="email" name="email" defaultValue={editingUser?.email || ""} required />
+            </div>
+            {!editingUser?.id && (
+              <div className="space-y-2">
+                <Label htmlFor="user-password">Temporary Password</Label>
+                <Input id="user-password" type="password" name="password" required />
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saveMut.isPending}>
+                {saveMut.isPending ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
