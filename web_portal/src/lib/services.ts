@@ -97,14 +97,23 @@ export async function getEmployees(params?: {
   status?: string;
 }): Promise<TimeEntry[]> {
   const orgId = await getCurrentOrgId();
-  let query = supabase.from('daily_logs').select('*').eq('organization_id', orgId);
+  let query = supabase
+    .from('daily_logs')
+    .select('*, profiles(id, name, email), sites(id, name)')
+    .eq('organization_id', orgId);
   if (params?.from) query = query.gte('date', params.from);
   if (params?.to) query = query.lte('date', params.to);
+  if (params?.site_id) query = query.eq('site_id', params.site_id);
   if (params?.status) query = query.eq('status', params.status);
-  
+
   const { data, error } = await query;
   if (error) throw error;
-  return data as any;
+  return (data ?? []).map((r: any) => ({
+    ...r,
+    employee_id: r.user_id ?? r.profiles?.id,
+    employee_name: r.profiles?.name ?? r.profiles?.email ?? "Unknown",
+    site_name: r.sites?.name ?? "—",
+  })) as any;
 }
 
 export async function approveEmployees(ids: string[]): Promise<void> {
@@ -339,10 +348,72 @@ export async function markNotificationRead(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function runMissingLogsCheck(): Promise<{ created: number }> {
-  // In a pure Supabase setup, this would be an Edge Function or pg_cron job.
-  // For now, we mock the result to avoid client-side heavy scans.
-  return { created: 0 };
+export async function runMissingLogsCheck(): Promise<{ created: number; scanned: number; days: number }> {
+  const orgId = await getCurrentOrgId();
+  if (!orgId) return { created: 0, scanned: 0, days: 0 };
+
+  // Get all employees in the org
+  const { data: members } = await supabase
+    .from('user_roles')
+    .select('user_id, profiles(name, email)')
+    .eq('organization_id', orgId);
+
+  const userIds = (members ?? []).map((m: any) => m.user_id).filter(Boolean);
+  if (userIds.length === 0) return { created: 0, scanned: 0, days: 0 };
+
+  // Build list of last 7 weekdays
+  const days: string[] = [];
+  const d = new Date();
+  while (days.length < 7) {
+    d.setDate(d.getDate() - 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) days.push(d.toISOString().slice(0, 10));
+  }
+  const from = days[days.length - 1];
+  const to = days[0];
+
+  const { data: logs } = await supabase
+    .from('daily_logs')
+    .select('user_id, date')
+    .eq('organization_id', orgId)
+    .gte('date', from)
+    .lte('date', to)
+    .in('user_id', userIds);
+
+  const present = new Set((logs ?? []).map((l: any) => `${l.user_id}|${l.date}`));
+
+  // Pull existing missing_log notifications to dedupe
+  const { data: existing } = await supabase
+    .from('notifications')
+    .select('message')
+    .eq('organization_id', orgId)
+    .eq('type', 'missing_log')
+    .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString());
+  const existingSet = new Set((existing ?? []).map((n: any) => n.message));
+
+  const inserts: any[] = [];
+  for (const m of members ?? []) {
+    const uid = (m as any).user_id;
+    const name = (m as any).profiles?.name ?? (m as any).profiles?.email ?? 'Employee';
+    for (const day of days) {
+      if (present.has(`${uid}|${day}`)) continue;
+      const message = `${name} missed log on ${day}`;
+      if (existingSet.has(message)) continue;
+      inserts.push({
+        organization_id: orgId,
+        user_id: uid,
+        type: 'missing_log',
+        message,
+        is_read: false,
+      });
+    }
+  }
+
+  if (inserts.length > 0) {
+    await supabase.from('notifications').insert(inserts);
+  }
+
+  return { created: inserts.length, scanned: userIds.length, days: days.length };
 }
 
 // ---- Super Admin ----

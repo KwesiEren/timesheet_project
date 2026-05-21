@@ -86,6 +86,7 @@ export default function Projects() {
       qc.invalidateQueries({ queryKey: ["projects"] });
       qc.invalidateQueries({ queryKey: ["org-usage"] });
     },
+    onError: (e: Error) => toast({ title: "Create failed", description: e.message, variant: "destructive" }),
   });
 
   const updateMut = useMutation({
@@ -95,6 +96,7 @@ export default function Projects() {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["projects"] });
     },
+    onError: (e: Error) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
   });
 
   const deleteMut = useMutation({
@@ -104,6 +106,7 @@ export default function Projects() {
       qc.invalidateQueries({ queryKey: ["projects"] });
       qc.invalidateQueries({ queryKey: ["org-usage"] });
     },
+    onError: (e: Error) => toast({ title: "Delete failed", description: e.message, variant: "destructive" }),
   });
 
   return (

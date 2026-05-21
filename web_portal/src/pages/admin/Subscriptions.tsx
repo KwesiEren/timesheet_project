@@ -11,6 +11,7 @@ import {
   ZapOff
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { getBillingOverview, getAdminOrganizations, updateOrganizationStatus } from "@/lib/services";
 import { cn, formatNumber, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,7 @@ export default function AdminSubscriptions() {
 
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
 
   const statusMut = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: any }) => updateOrganizationStatus(id, payload),
@@ -48,6 +50,11 @@ export default function AdminSubscriptions() {
   });
 
   const isLoading = loadingBilling || loadingOrgs;
+
+  const filteredOrgs = useMemo(
+    () => (organizations ?? []).filter((o) => !search || o.name.toLowerCase().includes(search.toLowerCase())),
+    [organizations, search],
+  );
 
   return (
     <div className="space-y-8">
@@ -85,6 +92,8 @@ export default function AdminSubscriptions() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by organization..."
               className="h-9 w-full rounded-md border border-input bg-white pl-10 pr-4 text-sm focus:outline-none"
             />
@@ -109,7 +118,7 @@ export default function AdminSubscriptions() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {organizations?.map((org) => (
+                {filteredOrgs.map((org) => (
                   <tr key={org.id} className="hover:bg-secondary/10 transition-colors">
                     <td className="px-6 py-4 font-semibold text-foreground">{org.name}</td>
                     <td className="px-6 py-4">

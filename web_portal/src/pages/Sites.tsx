@@ -174,22 +174,29 @@ export default function Sites() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Site | null>(null);
 
+  const normalize = (v: FormState) => ({
+    ...v,
+    project_id: v.project_id && v.project_id !== "none" ? v.project_id : undefined,
+  });
+
   const createMut = useMutation({
-    mutationFn: createSite,
+    mutationFn: (v: FormState) => createSite(normalize(v) as any),
     onSuccess: () => {
       toast({ title: "Site created" });
       setCreateOpen(false);
       qc.invalidateQueries({ queryKey: ["sites"] });
       qc.invalidateQueries({ queryKey: ["org-usage"] });
     },
+    onError: (e: Error) => toast({ title: "Create failed", description: e.message, variant: "destructive" }),
   });
   const updateMut = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<Site> }) => updateSite(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: FormState }) => updateSite(id, normalize(payload)),
     onSuccess: () => {
       toast({ title: "Site updated" });
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["sites"] });
     },
+    onError: (e: Error) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
   });
   const deleteMut = useMutation({
     mutationFn: deleteSite,
@@ -197,6 +204,7 @@ export default function Sites() {
       toast({ title: "Site deleted" });
       qc.invalidateQueries({ queryKey: ["sites"] });
     },
+    onError: (e: Error) => toast({ title: "Delete failed", description: e.message, variant: "destructive" }),
   });
 
   const center: [number, number] = sites[0] ? [sites[0].lat, sites[0].lng] : [5.6037, -0.187];

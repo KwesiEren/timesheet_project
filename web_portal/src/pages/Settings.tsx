@@ -24,6 +24,7 @@ export default function Settings() {
   });
 
   const [name, setName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [workHours, setWorkHours] = useState(8);
   const [lateThreshold, setLateThreshold] = useState(15);
   const [requirePhoto, setRequirePhoto] = useState(false);
@@ -31,6 +32,7 @@ export default function Settings() {
   useEffect(() => {
     if (org) {
       setName(org.name);
+      setLogoUrl(org.logo_url ?? "");
       setWorkHours(org.settings?.work_hours_per_day ?? 8);
       setLateThreshold(org.settings?.late_threshold_minutes ?? 15);
       setRequirePhoto(org.settings?.require_photo_checkin ?? false);
@@ -43,11 +45,13 @@ export default function Settings() {
       toast({ title: "Settings saved", description: "Your organization settings have been updated." });
       qc.invalidateQueries({ queryKey: ["org-settings"] });
     },
+    onError: (e: Error) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
   });
 
   const handleSave = () => {
     updateMut.mutate({
       name,
+      logo_url: logoUrl || null,
       settings: {
         ...org?.settings,
         work_hours_per_day: workHours,
@@ -89,16 +93,22 @@ export default function Settings() {
               />
             </div>
             <div className="flex items-center gap-4 py-2">
-              <div className="h-16 w-16 rounded-lg bg-secondary flex items-center justify-center border border-border">
-                {org?.logo_url ? (
-                  <img src={org.logo_url} alt="Logo" className="h-full w-full object-contain rounded-lg" />
+              <div className="h-16 w-16 rounded-lg bg-secondary flex items-center justify-center border border-border overflow-hidden">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
                 ) : (
                   <Building2 className="h-8 w-8 text-muted-foreground/50" />
                 )}
               </div>
-              <div>
-                <Button variant="outline" size="sm" disabled>Change Logo</Button>
-                <p className="text-[10px] text-muted-foreground mt-1">Recommended size: 256x256px.</p>
+              <div className="flex-1 space-y-1.5">
+                <Label htmlFor="logo-url" className="text-xs">Logo URL</Label>
+                <Input
+                  id="logo-url"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://yourcdn.com/logo.png"
+                />
+                <p className="text-[10px] text-muted-foreground">Paste a public image URL (PNG/SVG, ~256×256).</p>
               </div>
             </div>
           </CardContent>

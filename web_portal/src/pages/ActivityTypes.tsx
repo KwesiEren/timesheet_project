@@ -74,6 +74,7 @@ export default function ActivityTypes() {
       setCreateOpen(false);
       qc.invalidateQueries({ queryKey: ["activity-types"] });
     },
+    onError: (e: Error) => toast({ title: "Create failed", description: e.message, variant: "destructive" }),
   });
 
   const updateMut = useMutation({
@@ -83,6 +84,7 @@ export default function ActivityTypes() {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["activity-types"] });
     },
+    onError: (e: Error) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
   });
 
   const deleteMut = useMutation({
@@ -91,6 +93,7 @@ export default function ActivityTypes() {
       toast({ title: "Activity type removed" });
       qc.invalidateQueries({ queryKey: ["activity-types"] });
     },
+    onError: (e: Error) => toast({ title: "Delete failed", description: e.message, variant: "destructive" }),
   });
 
   return (

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+// removed unused useNavigate
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { PageHeader } from "@/components/PageHeader";
 
 export default function Subscription() {
-  const navigate = useNavigate();
+  // navigation handled via mailto: links below
   const { isPaid, usage, limits } = useSubscription();
 
   const projectUsage = ((usage?.projects || 0) / (limits.projects || 1)) * 100;
@@ -125,7 +125,10 @@ export default function Subscription() {
             <CardFooter className="relative">
               <Button
                 className="w-full gap-2 bg-gradient-primary shadow-elegant hover:opacity-95"
-                onClick={() => navigate("/manager/subscription")}
+                onClick={() =>
+                  (window.location.href =
+                    "mailto:billing@worktivo.app?subject=Upgrade%20to%20Paid%20Plan&body=Hi%20team%2C%0A%0AI%27d%20like%20to%20upgrade%20my%20organization%20to%20the%20Paid%20plan.%20Please%20share%20next%20steps.%0A%0AThanks%21")
+                }
               >
                 <Zap className="h-4 w-4 fill-current" />
                 Upgrade to Paid
@@ -166,7 +169,14 @@ export default function Subscription() {
             <p className="text-xs text-muted-foreground">Contact support for custom enterprise pricing or multi-org discounts.</p>
           </div>
         </div>
-        <Button variant="outline" className="relative gap-2">
+        <Button
+          variant="outline"
+          className="relative gap-2"
+          onClick={() =>
+            (window.location.href =
+              "mailto:support@worktivo.app?subject=Help%20with%20my%20Worktivo%20plan")
+          }
+        >
           Contact Support <ArrowRight size={14} />
         </Button>
       </div>

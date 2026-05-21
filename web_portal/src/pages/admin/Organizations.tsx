@@ -95,24 +95,23 @@ export default function AdminOrganizations() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
           <p className="text-muted-foreground mt-1">Manage all tenants and their subscriptions.</p>
         </div>
         <div className="flex items-center gap-3">
-           <div className="flex -space-x-2">
+          <div className="hidden items-center gap-2 sm:flex">
+            <div className="flex -space-x-2">
               <div className="h-8 w-8 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">F</div>
               <div className="h-8 w-8 rounded-full border-2 border-white bg-warning/10 flex items-center justify-center text-[10px] font-bold text-warning">P</div>
-           </div>
-           <p className="text-sm text-muted-foreground">2 tiers active</p>
+            </div>
+            <p className="text-sm text-muted-foreground">2 tiers active</p>
+          </div>
+          <Button onClick={() => { setEditingOrg(null); setIsFormOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Add Organization
+          </Button>
         </div>
-        <Button onClick={() => {
-          setEditingOrg(null);
-          setIsFormOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Organization
-        </Button>
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -226,9 +225,6 @@ export default function AdminOrganizations() {
                             setIsFormOpen(true);
                           }}>
                             <Edit className="mr-2 h-4 w-4" /> Edit Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => window.open(`/admin/organizations/${org.id}`, "_blank")}>
-                            <Eye className="mr-2 h-4 w-4" /> View Full Profile
                           </DropdownMenuItem>
                           
                           <DropdownMenuSeparator />

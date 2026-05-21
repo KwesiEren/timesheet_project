@@ -25,9 +25,13 @@ export default function Notifications() {
   const runCheck = useMutation({
     mutationFn: runMissingLogsCheck,
     onSuccess: (r) => {
-      toast({ title: "Missing-logs check complete", description: `${r.created} alert(s) created.` });
+      toast({
+        title: "Missing-logs check complete",
+        description: `Scanned ${r.scanned} employees × ${r.days} day(s) — ${r.created} alert(s) created.`,
+      });
       qc.invalidateQueries({ queryKey: ["notifications"] });
     },
+    onError: (e: Error) => toast({ title: "Check failed", description: e.message, variant: "destructive" }),
   });
   const markRead = useMutation({
     mutationFn: markNotificationRead,

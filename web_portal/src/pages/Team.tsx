@@ -71,12 +71,20 @@ export default function Team() {
     enabled: !!user?.organizationId
   });
 
+  const resetInviteForm = () => {
+    setEmail("");
+    setRole("employee");
+    setDepartment("");
+    setSiteId("");
+  };
+
   const inviteMut = useMutation({
     mutationFn: inviteEmployee,
     onSuccess: () => {
       toast({ title: "Invite sent", description: `An invitation has been sent to ${email}` });
       setInviteOpen(false);
-      setEmail("");
+      resetInviteForm();
+      qc.invalidateQueries({ queryKey: ["org-members"] });
       qc.invalidateQueries({ queryKey: ["org-usage"] });
     },
     onError: (err: any) => {
@@ -111,7 +119,7 @@ export default function Team() {
                 <div className="font-mono-data text-sm font-bold">{usage?.employees || 0} / {limits.employees}</div>
               </div>
             )}
-            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <Dialog open={inviteOpen} onOpenChange={(o) => { setInviteOpen(o); if (!o) resetInviteForm(); }}>
               <DialogTrigger asChild>
                 <Button className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95" disabled={isAtEmployeeLimit}>
                   <UserPlus className="h-4 w-4" /> Invite Member
@@ -122,10 +130,25 @@ export default function Team() {
                   <DialogTitle>Invite new member</DialogTitle>
                   <DialogDescription>Send an email invitation to join your organization.</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <form
+                  className="space-y-4 py-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+                      toast({ title: "Invalid email", variant: "destructive" });
+                      return;
+                    }
+                    inviteMut.mutate({
+                      email: email.trim(),
+                      role,
+                      department: department || undefined,
+                      primary_site_id: !siteId || siteId === "none" ? undefined : siteId,
+                    });
+                  }}
+                >
                   <div className="space-y-2">
                     <Label htmlFor="email">Email address</Label>
-                    <Input id="email" type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <Input id="email" type="email" required placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Role</Label>
@@ -144,7 +167,7 @@ export default function Team() {
                   </div>
                   <div className="space-y-2">
                     <Label>Primary Site (optional)</Label>
-                    <Select value={siteId} onValueChange={setSiteId}>
+                    <Select value={siteId || "none"} onValueChange={(v) => setSiteId(v === "none" ? "" : v)}>
                       <SelectTrigger><SelectValue placeholder="Select a site" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
@@ -154,16 +177,13 @@ export default function Team() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
-                  <Button
-                    onClick={() => inviteMut.mutate({ email, role, department: department || undefined, primary_site_id: siteId === "none" ? undefined : siteId })}
-                    disabled={inviteMut.isPending}
-                  >
-                    Send Invite
-                  </Button>
-                </DialogFooter>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => { setInviteOpen(false); resetInviteForm(); }}>Cancel</Button>
+                    <Button type="submit" disabled={inviteMut.isPending}>
+                      {inviteMut.isPending ? "Sending..." : "Send Invite"}
+                    </Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
           </>

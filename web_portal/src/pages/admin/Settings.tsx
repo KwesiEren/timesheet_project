@@ -10,9 +10,11 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlatformSettings, updatePlatformSettings } from "@/lib/services";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminSettings() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: settings, isLoading } = useQuery({
     queryKey: ["platform-settings"],
     queryFn: getPlatformSettings
@@ -21,8 +23,10 @@ export default function AdminSettings() {
   const mutation = useMutation({
     mutationFn: updatePlatformSettings,
     onSuccess: () => {
+      toast({ title: "Settings updated" });
       queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
-    }
+    },
+    onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
   });
 
   const handleToggle = (key: string, value: any) => {
@@ -114,7 +118,11 @@ export default function AdminSettings() {
             </div>
           </div>
           <div className="mt-6 flex gap-4">
-            <button className="rounded-lg border border-destructive bg-white px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5">
+            <button
+              type="button"
+              onClick={() => toast({ title: "Purge unavailable", description: "Soft-delete is not enabled — nothing to purge.", variant: "destructive" })}
+              className="rounded-lg border border-destructive bg-white px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5"
+            >
               Purge Deleted Organizations
             </button>
             <button 
