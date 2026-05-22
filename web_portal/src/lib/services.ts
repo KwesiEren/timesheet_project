@@ -53,7 +53,7 @@ export async function getMe() {
     id: profile.id as string,
     email: (profile as any).email as string | undefined,
     name: ((profile as any).name as string) ?? (profile as any).email ?? "User",
-    role: (membership?.role ?? "employee") as "owner" | "manager" | "employee",
+    role: (membership?.role?.toLowerCase() ?? "employee") as "owner" | "manager" | "employee",
     organizationId: (membership?.organization_id ?? org?.id ?? "") as string,
     organizationName: org?.name as string | undefined,
     organizationPlan: (org?.plan ?? "Free") as "Free" | "Paid",

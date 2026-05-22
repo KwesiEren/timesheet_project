@@ -12,9 +12,9 @@ class AuthController extends GetxController {
   UserModel? get currentUser => _currentUser.value;
   bool get isAuthenticated => _currentUser.value != null;
 
-  bool get isOwner => _currentUser.value?.role == 'Owner' || _currentUser.value?.role == 'owner';
-  bool get isManager => _currentUser.value?.role == 'Manager' || _currentUser.value?.role == 'manager';
-  bool get isEmployee => _currentUser.value?.role == 'Employee' || _currentUser.value?.role == 'employee';
+  bool get isOwner => _currentUser.value?.role == 'owner';
+  bool get isManager => _currentUser.value?.role == 'manager';
+  bool get isEmployee => _currentUser.value?.role == 'employee';
   bool get isManagement => isOwner || isManager;
 
   final RxBool isLoading = false.obs;

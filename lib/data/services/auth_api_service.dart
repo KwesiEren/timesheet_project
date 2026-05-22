@@ -71,7 +71,7 @@ class AuthApiService {
         email: response['email'] as String? ?? session.user.email ?? '',
         name: response['name'] as String? ?? '',
         avatarUrl: response['avatarUrl'] as String?,
-        role: role ?? 'employee',
+        role: role?.toLowerCase() ?? 'employee',
         organizationId: orgId,
         organizationName: orgName,
       );
