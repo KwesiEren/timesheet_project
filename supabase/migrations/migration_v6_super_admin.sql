@@ -56,11 +56,14 @@ begin
     end if;
 end $$;
 
+-- Add suspended column to profiles
+alter table profiles add column if not exists suspended boolean default false;
+
 -- 5. Helper function to check if a user is a super admin
-create or replace function is_super_admin(user_id uuid)
+create or replace function is_super_admin(_user_id uuid)
 returns boolean as $$
 begin
-    return exists (select 1 from super_admins where user_id = $1);
+    return exists (select 1 from super_admins where user_id = _user_id);
 end;
 $$ language plpgsql security definer;
 

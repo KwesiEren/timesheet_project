@@ -2,7 +2,7 @@ export type EmployeeStatus = "approved" | "pending" | "late" | "absent" | "clock
 
 export interface Site {
   id: string;
-  org_id: string;
+  organization_id: string;
   project_id?: string;
   name: string;
   lat: number;

@@ -68,7 +68,7 @@ export async function getDashboardKpis(): Promise<DashboardKpis> {
   
   const { count: employeeCount } = await supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('organization_id', orgId);
   const { count: timesheetCount } = await supabase.from('timesheet_entries').select('*', { count: 'exact', head: true }).eq('organization_id', orgId);
-  const { count: projectCount } = await supabase.from('projects').select('*', { count: 'exact', head: true }).eq('org_id', orgId);
+  const { count: projectCount } = await supabase.from('projects').select('*', { count: 'exact', head: true }).eq('organization_id', orgId);
 
   return {
     total_organizations: 1,
@@ -172,28 +172,28 @@ export async function getOrgMembers() {
 // ---- Sites ----
 export async function getSites(): Promise<Site[]> {
   const orgId = await getCurrentOrgId();
-  const { data, error } = await supabase.from('sites').select('*').eq('org_id', orgId).order('name');
+  const { data, error } = await supabase.from('sites').select('*').eq('organization_id', orgId).order('name');
   if (error) throw error;
   return data as any;
 }
 
-export async function createSite(payload: Omit<Site, "id" | "org_id" | "created_at">): Promise<Site> {
+export async function createSite(payload: Omit<Site, "id" | "organization_id" | "created_at">): Promise<Site> {
   const orgId = await getCurrentOrgId();
-  const { data, error } = await supabase.from('sites').insert([{ ...payload, org_id: orgId }]).select().single();
+  const { data, error } = await supabase.from('sites').insert([{ ...payload, organization_id: orgId }]).select().single();
   if (error) throw error;
   return data as any;
 }
 
 export async function updateSite(id: string, payload: Partial<Site>): Promise<Site> {
   const orgId = await getCurrentOrgId();
-  const { data, error } = await supabase.from('sites').update(payload).eq('id', id).eq('org_id', orgId).select().single();
+  const { data, error } = await supabase.from('sites').update(payload).eq('id', id).eq('organization_id', orgId).select().single();
   if (error) throw error;
   return data as any;
 }
 
 export async function deleteSite(id: string): Promise<void> {
   const orgId = await getCurrentOrgId();
-  const { error } = await supabase.from('sites').delete().eq('id', id).eq('org_id', orgId);
+  const { error } = await supabase.from('sites').delete().eq('id', id).eq('organization_id', orgId);
   if (error) throw error;
 }
 
@@ -441,7 +441,7 @@ export async function getPlatformKpis(): Promise<PlatformKpis> {
 export async function getAdminOrganizations(): Promise<OrganizationRow[]> {
   const { data, error } = await supabase
     .from("organizations")
-    .select(`id, name, plan, status, created_at, sites_count:sites(count), users_count:profiles(count)`)
+    .select(`id, name, plan, status, created_at, sites_count:sites(count), users_count:profiles!profiles_organization_id_fkey(count)`)
     .order("created_at", { ascending: false });
   if (error) throw error;
   
