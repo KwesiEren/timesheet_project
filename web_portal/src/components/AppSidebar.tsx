@@ -27,6 +27,7 @@ const buildGroups = (t: (k: string) => string) => [
     label: t("nav.workforce"),
     items: [
       { title: t("nav.team"), url: "/manager/employees", icon: Users },
+      { title: t("nav.history"), url: "/manager/history", icon: History },
       { title: t("nav.timesheets"), url: "/manager/timesheets", icon: ClipboardList },
       { title: t("nav.activityTypes"), url: "/manager/activities", icon: HardHat },
     ],

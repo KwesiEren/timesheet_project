@@ -8,6 +8,7 @@ interface StatCardProps {
   tone?: "primary" | "success" | "warning" | "destructive" | "accent";
   hint?: string;
   className?: string;
+  onClick?: () => void;
 }
 
 const toneClasses: Record<NonNullable<StatCardProps["tone"]>, { glow: string; icon: string }> = {
@@ -18,12 +19,17 @@ const toneClasses: Record<NonNullable<StatCardProps["tone"]>, { glow: string; ic
   accent: { glow: "from-accent/30", icon: "bg-accent/10 text-accent" },
 };
 
-export function StatCard({ label, value, icon: Icon, tone = "primary", hint, className }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, tone = "primary", hint, className, onClick }: StatCardProps) {
   const c = toneClasses[tone];
   return (
     <Card
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
       className={cn(
         "group relative overflow-hidden border-border/60 bg-gradient-card shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card-hover",
+        onClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
     >

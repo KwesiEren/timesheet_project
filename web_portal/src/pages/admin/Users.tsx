@@ -16,6 +16,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAdminUsers, setUserSuspended, createAdminUser, updateAdminUser, deleteAdminUser } from "@/lib/services";
 import { cn, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ import { Label } from "@/components/ui/label";
 export default function AdminUsers() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [search, setSearch] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<{ id?: string; name: string; email: string } | null>(null);
@@ -216,10 +218,14 @@ export default function AdminUsers() {
                           {user.status === "active" ? (
                             <DropdownMenuItem 
                               className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                              onClick={() => {
-                                if (confirm(`Suspend ${user.name}? They will lose access immediately.`)) {
-                                  suspendMut.mutate({ id: user.id, suspended: true });
-                                }
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: "Suspend user?",
+                                  description: `Suspend ${user.name}? They will lose access immediately.`,
+                                  confirmLabel: "Suspend",
+                                  destructive: true,
+                                });
+                                if (ok) suspendMut.mutate({ id: user.id, suspended: true });
                               }}
                             >
                               <UserX className="mr-2 h-4 w-4" /> Suspend User
@@ -236,10 +242,14 @@ export default function AdminUsers() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            onClick={() => {
-                              if (confirm(`Permanently delete "${user.name}"? This cannot be undone.`)) {
-                                deleteMut.mutate(user.id);
-                              }
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: "Delete user?",
+                                description: `Permanently delete "${user.name}"? This cannot be undone.`,
+                                confirmLabel: "Delete",
+                                destructive: true,
+                              });
+                              if (ok) deleteMut.mutate(user.id);
                             }}
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
@@ -298,6 +308,7 @@ export default function AdminUsers() {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

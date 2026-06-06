@@ -2,6 +2,7 @@ export interface PlatformKpis {
   total_organizations: number;
   active_users: number;
   total_timesheets: number;
+  total_projects: number;
   platform_growth: number;
 }
 

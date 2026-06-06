@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -38,7 +39,12 @@ const queryClient = new QueryClient({
 });
 
 const Fallback = () => (
-  <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Loading…</div>
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <Loader2 className="h-5 w-5 animate-spin" />
+      Loading…
+    </div>
+  </div>
 );
 
 const App = () => (

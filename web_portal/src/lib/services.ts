@@ -16,12 +16,25 @@ import autoTable from "jspdf-autotable";
 async function getCurrentOrgId() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
+
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('user_roles(organization_id)')
-    .eq('id', session.user.id)
-    .single();
-  return profile?.user_roles?.[0]?.organization_id;
+    .from("profiles")
+    .select("organization_id")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  if (profile?.organization_id) return profile.organization_id;
+
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("organization_id, is_default")
+    .eq("user_id", session.user.id);
+
+  const preferred =
+    roles?.find((r) => r.is_default) ??
+    roles?.[0];
+
+  return preferred?.organization_id ?? null;
 }
 
 // ---- Auth ----
@@ -38,23 +51,49 @@ export async function getMe() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session) throw new Error("Not logged in");
 
+  const userId = session.user.id;
+
   const { data: profile, error: profileErr } = await supabase
-    .from('profiles')
-    .select('id, name, email, user_roles(role, organization_id, organizations(id, name, plan, status))')
-    .eq('id', session.user.id)
+    .from("profiles")
+    .select("id, name, email, organization_id")
+    .eq("id", userId)
     .single();
 
   if (profileErr) throw profileErr;
 
-  const membership = (profile as any).user_roles?.[0];
-  const org = membership?.organizations;
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role, organization_id, is_default, organizations(id, name, plan, status)")
+    .eq("user_id", userId);
+
+  const membership =
+    (roles ?? []).find((r) => r.organization_id === profile.organization_id) ??
+    (roles ?? []).find((r) => r.is_default) ??
+    roles?.[0];
+
+  const organizationId =
+    membership?.organization_id ?? profile.organization_id ?? "";
+
+  let org = membership?.organizations as
+    | { id?: string; name?: string; plan?: string; status?: string }
+    | null
+    | undefined;
+
+  if (organizationId && (!org || !org.name)) {
+    const { data: orgRow } = await supabase
+      .from("organizations")
+      .select("id, name, plan, status")
+      .eq("id", organizationId)
+      .maybeSingle();
+    org = orgRow ?? org;
+  }
 
   return {
     id: profile.id as string,
-    email: (profile as any).email as string | undefined,
-    name: ((profile as any).name as string) ?? (profile as any).email ?? "User",
+    email: profile.email as string | undefined,
+    name: (profile.name as string) ?? profile.email ?? "User",
     role: (membership?.role?.toLowerCase() ?? "employee") as "owner" | "manager" | "employee",
-    organizationId: (membership?.organization_id ?? org?.id ?? "") as string,
+    organizationId,
     organizationName: org?.name as string | undefined,
     organizationPlan: (org?.plan ?? "Free") as "Free" | "Paid",
     organizationStatus: (org?.status ?? "active") as "active" | "suspended",
@@ -65,17 +104,51 @@ export async function getMe() {
 export async function getDashboardKpis(): Promise<DashboardKpis> {
   const orgId = await getCurrentOrgId();
   if (!orgId) throw new Error("No organization found");
-  
-  const { count: employeeCount } = await supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('organization_id', orgId);
-  const { count: timesheetCount } = await supabase.from('timesheet_entries').select('*', { count: 'exact', head: true }).eq('organization_id', orgId);
-  const { count: projectCount } = await supabase.from('projects').select('*', { count: 'exact', head: true }).eq('organization_id', orgId);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [
+    { count: clockedIn },
+    { count: lateToday },
+    { count: pendingTimesheets },
+    { count: pendingLogs },
+    { count: openAlerts },
+  ] = await Promise.all([
+    supabase
+      .from("timesheet_entries")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("is_completed", false)
+      .is("end_time", null),
+    supabase
+      .from("daily_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("date", today)
+      .eq("status", "late"),
+    supabase
+      .from("timesheet_entries")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("status", "pending"),
+    supabase
+      .from("daily_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("status", "pending"),
+    supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("is_read", false),
+  ]);
 
   return {
-    total_organizations: 1,
-    active_users: employeeCount || 0,
-    total_timesheets: timesheetCount || 0,
-    platform_growth: projectCount || 0,
-  } as any;
+    clocked_in_now: clockedIn || 0,
+    late_today: lateToday || 0,
+    pending_approvals: (pendingTimesheets || 0) + (pendingLogs || 0),
+    open_alerts: openAlerts || 0,
+  };
 }
 
 export async function getLiveEmployees(): Promise<Employee[]> {
@@ -339,7 +412,15 @@ export async function getNotifications(): Promise<Notification[]> {
   const orgId = await getCurrentOrgId();
   const { data, error } = await supabase.from('notifications').select('*').eq('organization_id', orgId).order('created_at', { ascending: false });
   if (error) throw error;
-  return data as any;
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    type: row.type as Notification["type"],
+    message: row.message as string,
+    created_at: row.created_at as string,
+    read: Boolean(row.is_read ?? row.read),
+    employee_id: row.user_id as string | undefined,
+    site_id: row.site_id as string | undefined,
+  }));
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
@@ -426,15 +507,46 @@ import type {
 } from "@/types/admin";
 
 export async function getPlatformKpis(): Promise<PlatformKpis> {
-  const { count: orgCount } = await supabase.from("organizations").select("*", { count: "exact", head: true });
-  const { count: userCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
-  const { count: tsCount } = await supabase.from("timesheet_entries").select("*", { count: "exact", head: true });
-  
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const [
+    { count: orgCount },
+    { count: userCount },
+    { count: tsCount },
+    { count: projectCount },
+    { count: thisMonthOrgs },
+    { count: lastMonthOrgs },
+  ] = await Promise.all([
+    supabase.from("organizations").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("timesheet_entries").select("*", { count: "exact", head: true }),
+    supabase.from("projects").select("*", { count: "exact", head: true }),
+    supabase
+      .from("organizations")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", thisMonthStart.toISOString()),
+    supabase
+      .from("organizations")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", lastMonthStart.toISOString())
+      .lt("created_at", thisMonthStart.toISOString()),
+  ]);
+
+  const growth =
+    lastMonthOrgs && lastMonthOrgs > 0
+      ? (((thisMonthOrgs ?? 0) - lastMonthOrgs) / lastMonthOrgs) * 100
+      : (thisMonthOrgs ?? 0) > 0
+        ? 100
+        : 0;
+
   return {
     total_organizations: orgCount || 0,
     active_users: userCount || 0,
     total_timesheets: tsCount || 0,
-    platform_growth: 12.5,
+    total_projects: projectCount || 0,
+    platform_growth: Math.round(growth * 10) / 10,
   };
 }
 

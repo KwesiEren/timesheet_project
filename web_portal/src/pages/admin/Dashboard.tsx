@@ -1,148 +1,160 @@
-import React from "react";
-import { 
-  Building2, 
-  Users, 
-  Clock, 
-  TrendingUp, 
+import {
+  Building2,
+  Users,
+  Clock,
+  TrendingUp,
   Activity,
-  ArrowUpRight,
-  ArrowDownRight
+  FolderKanban,
 } from "lucide-react";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
-  Bar
+  Bar,
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { getPlatformKpis, getPlatformWeeklyActivity } from "@/lib/services";
-import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/PageHeader";
+import { StatCard } from "@/components/StatCard";
+import { QueryState } from "@/components/QueryState";
+import { ShieldCheck } from "lucide-react";
 
-function KpiCard({
-  title,
-  value,
-  icon: Icon,
-}: {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex items-center justify-between">
-        <div className="rounded-lg bg-secondary/80 p-2 text-primary">
-          <Icon size={20} />
-        </div>
-      </div>
-      <div className="mt-4">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        <h3 className="text-2xl font-bold tracking-tight mt-1">{value}</h3>
-      </div>
-    </div>
-  );
-}
+const chartTick = { fontSize: 12, fill: "hsl(var(--muted-foreground))" };
+const tooltipStyle = {
+  borderRadius: "8px",
+  border: "1px solid hsl(var(--border))",
+  background: "hsl(var(--card))",
+  boxShadow: "var(--shadow-card)",
+};
 
 export default function AdminDashboard() {
-  const { data: kpis, isLoading } = useQuery({
+  const { data: kpis, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["platform-kpis"],
     queryFn: getPlatformKpis,
     refetchInterval: 300_000,
   });
-  const { data: weeklyData = [] } = useQuery({
+  const { data: weeklyData = [], isLoading: loadingWeekly } = useQuery({
     queryKey: ["platform-weekly-activity"],
     queryFn: getPlatformWeeklyActivity,
     refetchInterval: 300_000,
   });
-  const data = weeklyData;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Platform Overview</h1>
-        <p className="text-muted-foreground mt-1">Real-time metrics across all organizations and users.</p>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Platform Admin"
+        title="Platform Overview"
+        description="Real-time metrics across all organizations and users."
+        icon={ShieldCheck}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total Organizations"
+          value={isLoading ? "…" : (kpis?.total_organizations || 0).toLocaleString()}
+          icon={Building2}
+          tone="primary"
+        />
+        <StatCard
+          label="Active Users"
+          value={isLoading ? "…" : (kpis?.active_users || 0).toLocaleString()}
+          icon={Users}
+          tone="success"
+        />
+        <StatCard
+          label="Timesheet Entries"
+          value={isLoading ? "…" : (kpis?.total_timesheets || 0).toLocaleString()}
+          icon={Clock}
+          tone="accent"
+        />
+        <StatCard
+          label="Total Projects"
+          value={isLoading ? "…" : (kpis?.total_projects || 0).toLocaleString()}
+          icon={FolderKanban}
+          tone="warning"
+          hint={isLoading ? undefined : `${kpis?.platform_growth ?? 0}% org growth (MoM)`}
+        />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          title="Total Organizations"
-          value={isLoading ? "..." : (kpis?.total_organizations || 0).toLocaleString()}
-          icon={Building2}
-        />
-        <KpiCard
-          title="Active Users"
-          value={isLoading ? "..." : (kpis?.active_users || 0).toLocaleString()}
-          icon={Users}
-        />
-        <KpiCard
-          title="Timesheet Entries"
-          value={isLoading ? "..." : (kpis?.total_timesheets || 0).toLocaleString()}
-          icon={Clock}
-        />
-        <KpiCard
-          title="Active Projects"
-          value={isLoading ? "..." : (kpis?.platform_growth || 0).toLocaleString()}
-          icon={TrendingUp}
-        />
-      </div>
+      {isError && (
+        <QueryState isLoading={false} isError error={error as Error} onRetry={() => refetch()}>
+          <span />
+        </QueryState>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+          <div className="mb-6 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold">Activity Trend</h3>
-              <p className="text-sm text-muted-foreground">Timesheet entries vs Active users</p>
+              <p className="text-sm text-muted-foreground">Timesheet entries vs active users</p>
             </div>
             <Activity className="text-muted-foreground" size={20} />
           </div>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="colorEntries" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  itemStyle={{ fontSize: '12px', fontWeight: 600 }}
-                />
-                <Area type="monotone" dataKey="entries" stroke="#0f172a" strokeWidth={2} fillOpacity={1} fill="url(#colorEntries)" />
-                <Area type="monotone" dataKey="active" stroke="#64748b" strokeWidth={2} fill="transparent" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {loadingWeekly ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading chart…</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={weeklyData}>
+                  <defs>
+                    <linearGradient id="colorEntries" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={chartTick} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={chartTick} />
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ fontSize: "12px", fontWeight: 600 }} />
+                  <Area
+                    type="monotone"
+                    dataKey="entries"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorEntries)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="active"
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeWidth={2}
+                    fill="transparent"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+          <div className="mb-6 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold">Organization Signups</h3>
-              <p className="text-sm text-muted-foreground">New tenants per day</p>
+              <p className="text-sm text-muted-foreground">New tenants per week</p>
             </div>
             <TrendingUp className="text-muted-foreground" size={20} />
           </div>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
-                <Bar dataKey="entries" fill="#0f172a" radius={[4, 4, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
+            {loadingWeekly ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading chart…</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weeklyData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={chartTick} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={chartTick} />
+                  <Tooltip cursor={{ fill: "hsl(var(--muted))" }} contentStyle={tooltipStyle} />
+                  <Bar dataKey="entries" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

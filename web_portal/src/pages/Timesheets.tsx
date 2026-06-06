@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Pencil, Save, CheckCircle2, XCircle, Info, ExternalLink, ClipboardList, Plus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { QueryState, TableSkeleton } from "@/components/QueryState";
 import {
   Tooltip,
   TooltipContent,
@@ -54,7 +55,7 @@ export default function Timesheets() {
   const { data: members = [] } = useQuery({ queryKey: ["org-members"], queryFn: getOrgMembers });
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
 
-  const { data: rows = [] } = useQuery({
+  const { data: rows = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["timesheets", from, to],
     queryFn: () => getTimesheets({ from: from || undefined, to: to || undefined }),
   });
@@ -193,6 +194,13 @@ export default function Timesheets() {
       <Card className="border-border/60 bg-card shadow-card">
         <CardHeader className="border-b border-border/60"><CardTitle className="text-base">{rows.length} {rows.length === 1 ? "entry" : "entries"}</CardTitle></CardHeader>
         <CardContent className="p-0">
+          <QueryState
+            isLoading={isLoading}
+            isError={isError}
+            error={error as Error}
+            onRetry={() => refetch()}
+            skeleton={<TableSkeleton rows={8} />}
+          >
           <div className="zebra overflow-auto">
             <Table>
               <TableHeader>
@@ -265,6 +273,7 @@ export default function Timesheets() {
               </TableBody>
             </Table>
           </div>
+          </QueryState>
         </CardContent>
       </Card>
 

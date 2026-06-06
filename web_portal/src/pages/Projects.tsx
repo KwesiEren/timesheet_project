@@ -25,6 +25,7 @@ import type { Project } from "@/types/api";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth";
+import { useConfirm } from "@/hooks/use-confirm";
 
 interface ProjectFormProps {
   initial?: Project;
@@ -71,6 +72,7 @@ export default function Projects() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const user = useAuthStore((s) => s.user);
   const { isPaid, isAtProjectLimit, limits, usage } = useSubscription();
   const { data: projects = [], isLoading } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
@@ -148,7 +150,7 @@ export default function Projects() {
           <AlertTitle className="text-primary font-bold">Project Limit Reached</AlertTitle>
           <AlertDescription className="flex items-center justify-between text-foreground">
             <span>You’ve reached your limit of {limits.projects} projects on the Free plan. Upgrade to add more.</span>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/subscription")}>
+            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/manager/subscription")}>
               <Zap className="h-3 w-3 fill-current" /> Upgrade Now
             </Button>
           </AlertDescription>
@@ -178,15 +180,22 @@ export default function Projects() {
                 </div>
               </div>
               <div className="flex gap-1 opacity-60 transition-opacity group-hover:opacity-100">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)} aria-label={`Edit ${p.name}`}>
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => {
-                    if (confirm(`Delete project "${p.name}"? This will affect sites linked to it.`)) deleteMut.mutate(p.id);
+                  aria-label={`Delete ${p.name}`}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Delete project?",
+                      description: `Delete "${p.name}"? Sites linked to this project will be unassigned.`,
+                      confirmLabel: "Delete",
+                      destructive: true,
+                    });
+                    if (ok) deleteMut.mutate(p.id);
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -232,6 +241,7 @@ export default function Projects() {
           )}
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

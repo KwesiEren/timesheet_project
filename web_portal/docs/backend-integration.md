@@ -26,12 +26,19 @@ The Supabase URL and anon key come from your Supabase project.
 Login.tsx
   └─ supabase.auth.signInWithPassword
        └─ store session in Zustand (token, user)
-            └─ GET profiles & user_roles via Supabase → { profile, role, organizationId, isSuperAdmin }
+            └─ getMe() in services.ts:
+                 1. profiles (id, name, email, organization_id)
+                 2. user_roles (role, organization_id) for same user
+                 3. organizations (plan, status, name) — fallback query if join empty
                  └─ redirect:
                       super_admin            → /admin/
                       owner | manager        → /manager/
                       employee               → blocked screen ("mobile app only")
 ```
+
+**Important:** `user_roles` and `organizations` must have tenant `SELECT` RLS
+policies (see `migration_v9_tenant_auth_rls.sql`). Without them, login fails with
+"No organization assigned" even when DB rows exist. Details: [`auth-login-fix.md`](./auth-login-fix.md).
 
 `onAuthStateChange` rehydrates the session on hard refresh.
 
@@ -54,8 +61,10 @@ All data access is handled in `src/lib/services.ts` directly via Supabase.
 
 ### RLS expectations
 
-- `projects`, `activity_types`, `sites`, `timesheet_entries` — read/write requires `user_roles.organization_id` to match the row's `organization_id`. Manager + owner only.
-- `organizations`, `profiles`, `user_roles` — readable by super-admins globally; tenant users see their own org/profile only.
+- `profiles` — users can read/update their own row; managers can read org members (see `supabase_setup.sql`).
+- `user_roles` — users can read **own** roles; managers can read roles in their org (`migration_v9_tenant_auth_rls.sql`). Required for login.
+- `organizations` — members can read their org row (`migration_v9_tenant_auth_rls.sql`). Required for login plan/status.
+- `projects`, `activity_types`, `sites`, `timesheet_entries` — read/write requires matching `organization_id` and manager/owner role.
 - `platform_audit_logs`, `platform_settings` — super-admin only.
 
 ## Adding a new data fetching endpoint

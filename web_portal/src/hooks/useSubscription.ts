@@ -13,7 +13,7 @@ export function useSubscription() {
       if (!user?.organizationId) return null;
 
       const [{ count: projectCount }, { count: employeeCount }] = await Promise.all([
-        supabase.from("sites").select("*", { count: "exact", head: true }).eq("organization_id", user.organizationId),
+        supabase.from("projects").select("*", { count: "exact", head: true }).eq("organization_id", user.organizationId),
         supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("organization_id", user.organizationId).eq("role", "employee")
       ]);
 

@@ -30,11 +30,14 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { useConfirm } from "@/hooks/use-confirm";
+import { QueryState, TableSkeleton } from "@/components/QueryState";
 
 export default function Team() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { confirm, ConfirmDialog } = useConfirm();
   const user = useAuthStore((s) => s.user);
   const { isPaid, isAtEmployeeLimit, limits, usage } = useSubscription();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -45,7 +48,7 @@ export default function Team() {
 
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
 
-  const { data: members = [], isLoading } = useQuery({
+  const { data: members = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["org-members", user?.organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -208,6 +211,16 @@ export default function Team() {
           <CardTitle className="text-base">{members.length} {members.length === 1 ? "Member" : "Members"}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
+          <QueryState
+            isLoading={isLoading}
+            isError={isError}
+            error={error as Error}
+            onRetry={() => refetch()}
+            skeleton={<TableSkeleton />}
+            isEmpty={!isLoading && members.length === 0}
+            emptyTitle="No team members yet"
+            emptyDescription="Invite your first employee or manager to get started."
+          >
           <Table>
             <TableHeader>
               <TableRow>
@@ -242,10 +255,15 @@ export default function Team() {
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8 text-destructive"
-                      onClick={() => {
-                        if (confirm(`Remove ${m.name || m.email} from the organization?`)) {
-                          removeMut.mutate(m.id);
-                        }
+                      aria-label={`Remove ${m.name || m.email}`}
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: "Remove member?",
+                          description: `Remove ${m.name || m.email} from your organization? They will lose access immediately.`,
+                          confirmLabel: "Remove",
+                          destructive: true,
+                        });
+                        if (ok) removeMut.mutate(m.id);
                       }}
                       disabled={removeMut.isPending}
                     >
@@ -256,8 +274,10 @@ export default function Team() {
               ))}
             </TableBody>
           </Table>
+          </QueryState>
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   );
 }

@@ -1,7 +1,4 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Circle, Tooltip } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import "@/lib/leaflet-setup";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardKpis, getLiveEmployees, getSites } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import { DashboardMap } from "@/components/DashboardMap";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,9 +103,9 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Clocked in now" value={kpis?.clocked_in_now ?? 0} icon={Users} tone="success" hint="Active right now" />
-        <StatCard label="Late today" value={kpis?.late_today ?? 0} icon={Clock} tone="warning" hint="Past grace period" />
-        <StatCard label="Pending approvals" value={kpis?.pending_approvals ?? 0} icon={ClipboardCheck} tone="primary" hint="Awaiting review" />
-        <StatCard label="Open alerts" value={kpis?.open_alerts ?? 0} icon={AlertTriangle} tone="destructive" hint="Action required" />
+        <StatCard label="Late today" value={kpis?.late_today ?? 0} icon={Clock} tone="warning" hint="Past grace period" onClick={() => navigate("/manager/history")} />
+        <StatCard label="Pending approvals" value={kpis?.pending_approvals ?? 0} icon={ClipboardCheck} tone="primary" hint="Awaiting review" onClick={() => navigate("/manager/timesheets")} />
+        <StatCard label="Open alerts" value={kpis?.open_alerts ?? 0} icon={AlertTriangle} tone="destructive" hint="Action required" onClick={() => navigate("/manager/notifications")} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -165,7 +163,7 @@ export default function Dashboard() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 Recent Logs
               </CardTitle>
-              <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold tracking-tight" onClick={() => navigate("/timesheets")}>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold tracking-tight" onClick={() => navigate("/manager/history")}>
                 History <ArrowRight size={10} className="ml-1" />
               </Button>
             </CardHeader>
@@ -197,19 +195,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="h-[220px] w-full">
-                <MapContainer center={center} zoom={11} className="h-full w-full" zoomControl={false}>
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  {sites.map((s) => (
-                    <Circle
-                      key={s.id}
-                      center={[s.lat, s.lng]}
-                      radius={s.radius}
-                      pathOptions={{ color: "hsl(var(--primary))", fillColor: "hsl(var(--primary))", fillOpacity: 0.1, weight: 1 }}
-                    />
-                  ))}
-                </MapContainer>
+                <DashboardMap center={center} sites={sites} />
               </div>
             </CardContent>
           </Card>

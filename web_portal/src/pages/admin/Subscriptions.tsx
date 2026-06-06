@@ -15,6 +15,9 @@ import { useState, useMemo } from "react";
 import { getBillingOverview, getAdminOrganizations, updateOrganizationStatus } from "@/lib/services";
 import { cn, formatNumber, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/PageHeader";
+import { Input } from "@/components/ui/input";
+import { CreditCard } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,11 +60,13 @@ export default function AdminSubscriptions() {
   );
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Subscriptions & Billing</h1>
-        <p className="text-muted-foreground mt-1">Manage platform revenue and organization plans.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Platform Admin"
+        title="Subscriptions & Billing"
+        description="Manage platform revenue and organization plans."
+        icon={CreditCard}
+      />
 
       <div className="grid gap-6 md:grid-cols-3">
         <StatsCard
@@ -85,17 +90,17 @@ export default function AdminSubscriptions() {
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-border bg-secondary/20 px-6 py-4 flex items-center justify-between">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+        <div className="flex flex-col gap-3 border-b border-border bg-secondary/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="font-bold">Recent Billing Status</h3>
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
+            <Input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by organization..."
-              className="h-9 w-full rounded-md border border-input bg-white pl-10 pr-4 text-sm focus:outline-none"
+              className="pl-10"
             />
           </div>
         </div>

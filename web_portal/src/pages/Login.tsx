@@ -81,8 +81,8 @@ export default function Login() {
       
       if (userProfile.organizationStatus === "suspended" && !isSuperAdmin) {
         toast({
-          title: "Account Suspended",
-          description: "Your organization's access has been suspended. Please contact support.",
+          title: t("auth.accountSuspended"),
+          description: t("auth.orgSuspended"),
           variant: "destructive",
         });
         useAuthStore.getState().logout();
@@ -91,8 +91,8 @@ export default function Login() {
       
       if (userProfile.role === "employee" && !isSuperAdmin) {
         toast({
-          title: "Access denied",
-          description: "The web portal is for Owners and Managers only.",
+          title: t("auth.accessDenied"),
+          description: t("auth.portalForManagersOnly"),
           variant: "destructive",
         });
         useAuthStore.getState().logout();
@@ -100,17 +100,17 @@ export default function Login() {
       }
       
       if (isSuperAdmin) {
-        toast({ title: "Super Admin Access", description: `Logged in as ${userProfile.name} with platform privileges.` });
+        toast({ title: "Super Admin Access", description: t("auth.loggedInAs", { name: userProfile.name }) });
       } else {
-        toast({ title: "Welcome back!", description: `Logged in as ${userProfile.name}` });
+        toast({ title: t("auth.welcomeBack"), description: t("auth.loggedInAs", { name: userProfile.name }) });
       }
       const defaultDestination = isSuperAdmin ? "/admin/" : "/manager/";
       navigate(from || defaultDestination, { replace: true });
     },
     onError: (err: any) => {
       toast({
-        title: "Login failed",
-        description: err.message || "Check your credentials and try again.",
+        title: t("auth.loginFailed"),
+        description: err.message || t("auth.checkCredentials"),
         variant: "destructive",
       });
     },
@@ -172,7 +172,7 @@ export default function Login() {
                         return;
                       }
                       await supabase.auth.resetPasswordForEmail(email, {
-                        redirectTo: `${window.location.origin}/app/reset-password`,
+                        redirectTo: `${window.location.origin}/reset-password`,
                       });
                       toast({ title: t("auth.resetLinkSent") });
                     }}
@@ -200,9 +200,6 @@ export default function Login() {
             </form>
           </CardContent>
         </Card>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          API: <span className="font-mono-data">{import.meta.env.VITE_API_URL || "http://localhost:3000"}</span>
-        </p>
       </div>
     </div>
   );

@@ -39,11 +39,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useState, useMemo, useEffect } from "react";
 
 export default function AdminOrganizations() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [search, setSearch] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<{ id?: string; name: string; plan: "Free" | "Paid" } | null>(null);
@@ -258,10 +260,14 @@ export default function AdminOrganizations() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            onClick={() => {
-                              if (confirm(`Permanently delete "${org.name}"? This cannot be undone.`)) {
-                                deleteMut.mutate(org.id);
-                              }
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: "Delete organization?",
+                                description: `Permanently delete "${org.name}"? This cannot be undone.`,
+                                confirmLabel: "Delete",
+                                destructive: true,
+                              });
+                              if (ok) deleteMut.mutate(org.id);
                             }}
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
@@ -321,6 +327,7 @@ export default function AdminOrganizations() {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { MapContainer, TileLayer, Circle, Marker, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import "@/lib/leaflet-setup";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSite, deleteSite, getSites, updateSite } from "@/lib/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +16,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, AlertCircle, Zap, FolderKanban, MapPinned } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderKanban, MapPinned } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/hooks/use-toast";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useConfirm } from "@/hooks/use-confirm";
 import type { Site } from "@/types/api";
 import { getProjects } from "@/lib/services";
 import {
@@ -32,8 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useNavigate } from "react-router-dom";
+import { SitePickerMap } from "@/components/maps/SitePickerMap";
+import { SitesOverviewMap } from "@/components/maps/SitesOverviewMap";
 
 interface FormState {
   name: string;
@@ -44,23 +41,16 @@ interface FormState {
   project_id?: string;
 }
 
-function PickLocation({ value, onChange }: { value: [number, number]; onChange: (p: [number, number]) => void }) {
-  useMapEvents({
-    click(e) {
-      onChange([e.latlng.lat, e.latlng.lng]);
-    },
-  });
-  return <Marker position={value} />;
-}
-
 function SiteForm({
   initial,
   onSubmit,
   submitting,
+  mapInstanceKey,
 }: {
   initial?: Site;
   onSubmit: (v: FormState) => void;
   submitting: boolean;
+  mapInstanceKey: string;
 }) {
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
   const [form, setForm] = useState<FormState>({
@@ -142,19 +132,14 @@ function SiteForm({
         </div>
         <Switch checked={form.photo_required} onCheckedChange={(v) => setForm({ ...form, photo_required: v })} />
       </div>
-      <div className="h-64 overflow-hidden rounded-md border border-border">
-        <MapContainer center={[form.lat, form.lng]} zoom={14} className="h-full w-full">
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-          <Circle
-            center={[form.lat, form.lng]}
-            radius={form.radius}
-            pathOptions={{ color: "hsl(33 100% 50%)", fillOpacity: 0.15 }}
-          />
-          <PickLocation
-            value={[form.lat, form.lng]}
-            onChange={([lat, lng]) => setForm({ ...form, lat, lng })}
-          />
-        </MapContainer>
+      <div className="relative isolate h-64 overflow-hidden rounded-md border border-border">
+        <SitePickerMap
+          instanceKey={mapInstanceKey}
+          lat={form.lat}
+          lng={form.lng}
+          radius={form.radius}
+          onLocationChange={(lat, lng) => setForm((prev) => ({ ...prev, lat, lng }))}
+        />
       </div>
       <p className="text-xs text-muted-foreground">Click the map to place the site center.</p>
       <DialogFooter>
@@ -166,13 +151,14 @@ function SiteForm({
 
 export default function Sites() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const { isPaid, isAtProjectLimit, limits, usage } = useSubscription();
+  const { confirm, ConfirmDialog } = useConfirm();
   const { data: sites = [] } = useQuery({ queryKey: ["sites"], queryFn: getSites });
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Site | null>(null);
+
+  const mapDialogOpen = createOpen || !!editing;
 
   const normalize = (v: FormState) => ({
     ...v,
@@ -217,60 +203,41 @@ export default function Sites() {
         description="Define your physical work sites with GPS-anchored geofences and photo-verification rules."
         icon={MapPinned}
         actions={
-          <>
-            {!isPaid && (
-              <div className="hidden rounded-lg border border-border bg-card px-3 py-1.5 text-right shadow-card sm:block">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Projects</div>
-                <div className="font-mono-data text-sm font-bold">{usage?.projects || 0} / {limits.projects}</div>
-              </div>
-            )}
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95" disabled={isAtProjectLimit}>
-                  <Plus className="h-4 w-4" /> New site
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Create site</DialogTitle>
-                  <DialogDescription>Place the marker and set the geofence radius.</DialogDescription>
-                </DialogHeader>
-                <SiteForm onSubmit={(v) => createMut.mutate(v)} submitting={createMut.isPending} />
-              </DialogContent>
-            </Dialog>
-          </>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-gradient-primary shadow-elegant hover:opacity-95">
+                <Plus className="h-4 w-4" /> New site
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create site</DialogTitle>
+                <DialogDescription>Place the marker and set the geofence radius.</DialogDescription>
+              </DialogHeader>
+              {createOpen && (
+                <SiteForm
+                  mapInstanceKey="create-site"
+                  onSubmit={(v) => createMut.mutate(v)}
+                  submitting={createMut.isPending}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
         }
       />
-
-      {isAtProjectLimit && !isPaid && (
-        <Alert variant="destructive" className="border-primary/20 bg-primary/5">
-          <AlertCircle className="h-4 w-4 text-primary" />
-          <AlertTitle className="text-primary font-bold">Project Limit Reached</AlertTitle>
-          <AlertDescription className="flex items-center justify-between text-foreground">
-            <span>You’ve reached your limit of {limits.projects} projects on the Free plan. Upgrade to add more.</span>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate("/manager/subscription")}>
-              <Zap className="h-3 w-3 fill-current" /> Upgrade Now
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="overflow-hidden border-border/60 bg-card shadow-card xl:col-span-2">
           <CardHeader className="border-b border-border/60"><CardTitle className="text-base">Map view</CardTitle></CardHeader>
           <CardContent className="p-0">
-            <div className="h-[520px] overflow-hidden">
-              <MapContainer center={center} zoom={11} className="h-full w-full">
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-                {sites.map((s) => (
-                  <Circle
-                    key={s.id}
-                    center={[s.lat, s.lng]}
-                    radius={s.radius}
-                    pathOptions={{ color: "hsl(33 100% 50%)", fillOpacity: 0.18 }}
-                  />
-                ))}
-              </MapContainer>
+            <div className="relative h-[520px] overflow-hidden">
+              {mapDialogOpen ? (
+                <div className="flex h-full items-center justify-center bg-muted/40 px-6 text-center text-sm text-muted-foreground">
+                  Map paused while the site form is open.
+                </div>
+              ) : (
+                <SitesOverviewMap center={center} sites={sites} />
+              )}
             </div>
           </CardContent>
         </Card>
@@ -298,15 +265,22 @@ export default function Sites() {
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(s)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(s)} aria-label={`Edit ${s.name}`}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => {
-                      if (confirm(`Delete "${s.name}"?`)) deleteMut.mutate(s.id);
+                    aria-label={`Delete ${s.name}`}
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Delete site?",
+                        description: `Delete "${s.name}"? Workers assigned to this site may need a new primary site.`,
+                        confirmLabel: "Delete",
+                        destructive: true,
+                      });
+                      if (ok) deleteMut.mutate(s.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -329,13 +303,16 @@ export default function Sites() {
           </DialogHeader>
           {editing && (
             <SiteForm
+              key={editing.id}
               initial={editing}
+              mapInstanceKey={`edit-${editing.id}`}
               submitting={updateMut.isPending}
               onSubmit={(v) => updateMut.mutate({ id: editing.id, payload: v })}
             />
           )}
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

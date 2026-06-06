@@ -9,6 +9,7 @@ This directory contains the canonical documentation for the Worktivo Web Portal
 | [`plan.md`](./plan.md) | Engineering / PM | Roadmap to production: phase plan, priorities, acceptance criteria |
 | [`user-guide.md`](./user-guide.md) | Managers / Owners / Super Admins | How to use every screen of the portal |
 | [`backend-integration.md`](./backend-integration.md) | Engineering | API contract, Supabase tables, auth flow, env config |
+| [`auth-login-fix.md`](./auth-login-fix.md) | Engineering / Ops | Fix for "No organization assigned" login error (RLS + getMe) |
 
 ## Quick architectural map
 

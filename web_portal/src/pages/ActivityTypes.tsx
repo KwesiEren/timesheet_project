@@ -19,6 +19,7 @@ import { Plus, Pencil, Trash2, Tag, AlertCircle, HardHat } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
 import type { ActivityType } from "@/types/api";
 import { useAuthStore } from "@/store/auth";
 
@@ -61,6 +62,7 @@ function ActivityForm({ initial, onSubmit, submitting }: ActivityFormProps) {
 export default function ActivityTypes() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const user = useAuthStore((s) => s.user);
   const { data: activities = [], isLoading } = useQuery({ queryKey: ["activity-types"], queryFn: getActivityTypes });
   
@@ -136,15 +138,22 @@ export default function ActivityTypes() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(a)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(a)} aria-label={`Edit ${a.name}`}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => {
-                      if (confirm(`Remove activity "${a.name}"?`)) deleteMut.mutate(a.id);
+                    aria-label={`Delete ${a.name}`}
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Remove activity type?",
+                        description: `Remove "${a.name}"? Historical entries will keep this label.`,
+                        confirmLabel: "Remove",
+                        destructive: true,
+                      });
+                      if (ok) deleteMut.mutate(a.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -179,6 +188,7 @@ export default function ActivityTypes() {
           )}
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

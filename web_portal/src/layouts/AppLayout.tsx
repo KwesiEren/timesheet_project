@@ -72,7 +72,9 @@ export default function AppLayout() {
               <div className="hidden items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground md:flex">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold">Org</span>
-                  <span className="font-mono-data text-foreground">{user?.organizationId?.slice(0, 8) ?? "—"}</span>
+                  <span className="max-w-[180px] truncate font-medium normal-case text-foreground">
+                    {user?.organizationName || "—"}
+                  </span>
                 </div>
                 <div className="h-4 w-px bg-border" />
                 <div
@@ -124,8 +126,8 @@ export default function AppLayout() {
           </header>
 
           {orgStatus?.status === "suspended" && !isSuperAdmin && (
-            <div className="bg-destructive p-2 text-center text-xs font-bold text-destructive-foreground">
-              ACCOUNT SUSPENDED. YOUR ACCESS IS RESTRICTED.
+            <div className="bg-destructive p-2 text-center text-xs font-medium text-destructive-foreground">
+              Your organization has been suspended. Contact support for assistance.
             </div>
           )}
 

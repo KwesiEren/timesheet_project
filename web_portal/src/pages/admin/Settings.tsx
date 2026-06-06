@@ -1,23 +1,22 @@
 import React from "react";
-import { 
-  Shield, 
-  Lock, 
-  Save,
-  Loader2,
-  FileEdit,
-  Trash2
-} from "lucide-react";
+import { Shield, Loader2, FileEdit, Settings as SettingsIcon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPlatformSettings, updatePlatformSettings } from "@/lib/services";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/PageHeader";
+import { PageLoader } from "@/components/QueryState";
 
 export default function AdminSettings() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: settings, isLoading } = useQuery({
     queryKey: ["platform-settings"],
-    queryFn: getPlatformSettings
+    queryFn: getPlatformSettings,
   });
 
   const mutation = useMutation({
@@ -26,84 +25,80 @@ export default function AdminSettings() {
       toast({ title: "Settings updated" });
       queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
     },
-    onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
   });
 
-  const handleToggle = (key: string, value: any) => {
+  const handleToggle = (key: string, value: unknown) => {
     mutation.mutate({ [key]: value });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (isLoading) return <PageLoader />;
 
   return (
-    <div className="max-w-4xl space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Platform Settings</h1>
-          <p className="text-muted-foreground mt-1">Configure global limits, features, and security.</p>
-        </div>
-        {mutation.isPending && (
-          <div className="flex items-center gap-2 text-sm text-primary font-medium animate-pulse">
-            <Loader2 size={16} className="animate-spin" /> Saving...
-          </div>
-        )}
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        eyebrow="Platform Admin"
+        title="Platform Settings"
+        description="Configure global limits, features, and security."
+        icon={SettingsIcon}
+        actions={
+          mutation.isPending ? (
+            <div className="flex items-center gap-2 text-sm font-medium text-primary animate-pulse">
+              <Loader2 size={16} className="animate-spin" /> Saving…
+            </div>
+          ) : undefined
+        }
+      />
 
       <div className="grid gap-6">
         <SettingsGroup title="Global Feature Toggles" icon={FileEdit}>
-          <SettingItem 
-            title="Geofencing" 
+          <SettingItem
+            title="Geofencing"
             description="Allow organizations to use GPS-based clock-in validation."
           >
-            <Switch 
-              checked={settings?.geofencing_enabled || false} 
-              onCheckedChange={(val) => handleToggle("geofencing_enabled", val)} 
+            <Switch
+              checked={settings?.geofencing_enabled || false}
+              onCheckedChange={(val) => handleToggle("geofencing_enabled", val)}
             />
           </SettingItem>
-          <SettingItem 
-            title="Photo Verification" 
-            description="Enable AI-assisted face matching on clock-in."
+          <SettingItem
+            title="Photo Verification"
+            description="Enable photo capture verification on clock-in."
           >
-            <Switch 
-              checked={settings?.photo_verification_enabled || false} 
-              onCheckedChange={(val) => handleToggle("photo_verification_enabled", val)} 
+            <Switch
+              checked={settings?.photo_verification_enabled || false}
+              onCheckedChange={(val) => handleToggle("photo_verification_enabled", val)}
             />
           </SettingItem>
-          <SettingItem 
-            title="Offline Mode" 
+          <SettingItem
+            title="Offline Mode"
             description="Allow mobile app to queue logs without internet."
           >
-            <Switch 
-              checked={settings?.offline_mode_enabled || false} 
-              onCheckedChange={(val) => handleToggle("offline_mode_enabled", val)} 
+            <Switch
+              checked={settings?.offline_mode_enabled || false}
+              onCheckedChange={(val) => handleToggle("offline_mode_enabled", val)}
             />
           </SettingItem>
         </SettingsGroup>
 
         <SettingsGroup title="Subscription Limits" icon={Shield}>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Max Users (Free)</label>
-              <input 
-                type="number" 
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Max Users (Free)</Label>
+              <Input
+                type="number"
                 value={settings?.max_users_free || 0}
-                onChange={(e) => handleToggle("max_users_free", parseInt(e.target.value))}
-                className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none" 
+                onChange={(e) => handleToggle("max_users_free", parseInt(e.target.value, 10))}
+                className="font-mono-data"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Max Sites (Free)</label>
-              <input 
-                type="number" 
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Max Projects (Free)</Label>
+              <Input
+                type="number"
                 value={settings?.max_sites_free || 0}
-                onChange={(e) => handleToggle("max_sites_free", parseInt(e.target.value))}
-                className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none" 
+                onChange={(e) => handleToggle("max_sites_free", parseInt(e.target.value, 10))}
+                className="font-mono-data"
               />
             </div>
           </div>
@@ -114,28 +109,30 @@ export default function AdminSettings() {
             <Shield size={24} />
             <div>
               <h3 className="text-lg font-bold">Danger Zone</h3>
-              <p className="text-sm opacity-80">Actions here are irreversible and affect the entire platform.</p>
+              <p className="text-sm opacity-80">Actions here affect the entire platform.</p>
             </div>
           </div>
-          <div className="mt-6 flex gap-4">
-            <button
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button
               type="button"
-              onClick={() => toast({ title: "Purge unavailable", description: "Soft-delete is not enabled — nothing to purge.", variant: "destructive" })}
-              className="rounded-lg border border-destructive bg-white px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5"
+              variant="outline"
+              className="border-destructive text-destructive hover:bg-destructive/5"
+              onClick={() =>
+                toast({
+                  title: "Purge unavailable",
+                  description: "Soft-delete is not enabled — nothing to purge.",
+                  variant: "destructive",
+                })
+              }
             >
               Purge Deleted Organizations
-            </button>
-            <button 
+            </Button>
+            <Button
+              variant={settings?.maintenance_mode ? "default" : "destructive"}
               onClick={() => handleToggle("maintenance_mode", !settings?.maintenance_mode)}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-semibold transition-colors",
-                settings?.maintenance_mode 
-                  ? "bg-success text-success-foreground hover:bg-success/90" 
-                  : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              )}
             >
               {settings?.maintenance_mode ? "Disable Maintenance" : "Enable Maintenance Mode"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -143,47 +140,26 @@ export default function AdminSettings() {
   );
 }
 
-function SettingsGroup({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) {
+function SettingsGroup({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
-      <div className="border-b border-border bg-secondary/20 px-6 py-4 flex items-center gap-2">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+      <div className="flex items-center gap-2 border-b border-border bg-secondary/20 px-6 py-4">
         <Icon size={18} className="text-primary" />
         <h3 className="font-bold text-foreground">{title}</h3>
       </div>
-      <div className="divide-y divide-border px-6">
-        {children}
-      </div>
+      <div className="divide-y divide-border px-6">{children}</div>
     </div>
   );
 }
 
-function SettingItem({ title, description, children }: { title: string, description: string, children: React.ReactNode }) {
+function SettingItem({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="py-6 flex items-center justify-between">
+    <div className="flex items-center justify-between gap-4 py-6">
       <div className="space-y-1">
         <p className="text-sm font-bold text-foreground">{title}</p>
-        <p className="text-xs text-muted-foreground max-w-md">{description}</p>
+        <p className="max-w-md text-xs text-muted-foreground">{description}</p>
       </div>
       {children}
     </div>
-  );
-}
-
-function Switch({ checked, onCheckedChange }: { checked: boolean, onCheckedChange: (val: boolean) => void }) {
-  return (
-    <button
-      onClick={() => onCheckedChange(!checked)}
-      className={cn(
-        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-        checked ? "bg-primary" : "bg-muted"
-      )}
-    >
-      <span
-        className={cn(
-          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-          checked ? "translate-x-5" : "translate-x-0"
-        )}
-      />
-    </button>
   );
 }

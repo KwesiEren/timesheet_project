@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Building2, Save, Clock, Camera, ShieldCheck, Settings as SettingsIcon } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { PageLoader } from "@/components/QueryState";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/store/auth";
 
@@ -61,7 +62,7 @@ export default function Settings() {
     });
   };
 
-  if (isLoading) return <div className="p-8 text-center">Loading settings...</div>;
+  if (isLoading) return <PageLoader />;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -172,11 +173,10 @@ export default function Settings() {
                 <div className="space-y-0.5">
                   <div className="text-sm font-medium flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4" />
-                    Enforce Geofencing
+                    Geofencing
                   </div>
-                  <p className="text-xs text-muted-foreground">Prevent check-ins if the worker is outside the site radius.</p>
+                  <p className="text-xs text-muted-foreground">Configure per-site geofence radius under Sites & Geofences.</p>
                 </div>
-                <Switch checked={true} disabled />
               </div>
             </div>
           </CardContent>
