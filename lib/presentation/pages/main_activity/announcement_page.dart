@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../services/api.dart';
 import '../../../shared/theme_control.dart';
+import '../../../models/announcement.dart';
+import 'package:intl/intl.dart';
 
 class AnnouncementPage extends StatefulWidget {
   const AnnouncementPage({super.key});
@@ -56,7 +58,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
 
   // Shows Popup DIalog box
   void _showAnnouncementDetails(
-      BuildContext context, Map<String, dynamic> announcement) {
+      BuildContext context, AnnouncementData announcement) {
     showDialog(
       context: context,
       builder: (context) {
@@ -76,7 +78,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        announcement['title'],
+                        announcement.title ?? 'No Title',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -92,12 +94,12 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    announcement['description'],
+                    announcement.description ?? 'No Description',
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Received: ${announcement['date']}",
+                    "Received: ${announcement.timestamp != null ? DateFormat('y-MM-dd HH:mm').format(announcement.timestamp!) : 'Unknown'}",
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
@@ -165,7 +167,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      announcement['title']!,
+                                      announcement.title ?? 'No Title',
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -173,7 +175,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      announcement['description']!,
+                                      announcement.description ?? 'No Description',
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(fontSize: 14),
@@ -184,7 +186,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          announcement['date']!,
+                                          announcement.timestamp != null ? DateFormat('y-MM-dd HH:mm').format(announcement.timestamp!) : 'Unknown',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Colors.grey,

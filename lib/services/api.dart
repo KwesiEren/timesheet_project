@@ -9,7 +9,14 @@ class APIServices {
 
   Future<List<ActivityData>> fetchActivityData() async {
     try {
-      final data = await _supabase.from('timesheet_entries').select().order('start_time', ascending: false);
+      final session = _supabase.auth.currentSession;
+      if (session == null) throw Exception('Not authenticated');
+
+      final data = await _supabase
+          .from('timesheet_entries')
+          .select()
+          .eq('user_id', session.user.id)
+          .order('start_time', ascending: false);
       return data.map((item) => ActivityData.fromJson(item)).toList();
     } catch (e) {
       throw Exception('Error fetching Activity Data: $e');
@@ -18,7 +25,14 @@ class APIServices {
 
   Future<List<NotificationData>> fetchNotificationData() async {
     try {
-      final data = await _supabase.from('notifications').select().order('created_at', ascending: false);
+      final session = _supabase.auth.currentSession;
+      if (session == null) throw Exception('Not authenticated');
+
+      final data = await _supabase
+          .from('notifications')
+          .select()
+          .eq('user_id', session.user.id)
+          .order('created_at', ascending: false);
       return data.map((item) => NotificationData.fromJson(item)).toList();
     } catch (e) {
       throw Exception('Error fetching Notification Data: $e');

@@ -27,10 +27,9 @@ class NotificationData {
     return NotificationData(
       id: json['id'] as String?,
       title: json['title'] as String?,
-      details: json['details'] as String?,
-      timestamp:
-          json['timestamp'] != null ? DateTime.parse(json['timestamp']) : null,
-      isUnread: json['isUnread'] as bool?,
+      details: json['message'] as String?,
+      timestamp: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      isUnread: !(json['is_read'] as bool? ?? false),
     );
   }
 
@@ -38,9 +37,9 @@ class NotificationData {
     return {
       'id': id,
       'title': title,
-      'details': details,
-      'timestamp': timestamp?.toIso8601String(),
-      'isUnread': isUnread,
+      'message': details,
+      'created_at': timestamp?.toIso8601String(),
+      'is_read': !(isUnread ?? true),
     };
   }
 

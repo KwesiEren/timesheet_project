@@ -24,9 +24,8 @@ class AnnouncementData {
     return AnnouncementData(
       id: json['id'] as String?,
       title: json['title'] as String?,
-      description: json['description'] as String?,
-      timestamp:
-          json['timestamp'] == null ? null : DateTime.parse(json['timestamp']),
+      description: json['content'] as String?,
+      timestamp: json['created_at'] == null ? null : DateTime.parse(json['created_at']),
     );
   }
 
@@ -34,9 +33,8 @@ class AnnouncementData {
     final Map<String, dynamic> announcementData = <String, dynamic>{};
     announcementData['id'] = id;
     announcementData['title'] = title;
-    announcementData['description'] = description;
-    announcementData['timestamp'] =
-        timestamp?.toIso8601String(); // Convert DateTime to String
+    announcementData['content'] = description;
+    announcementData['created_at'] = timestamp?.toIso8601String(); // Convert DateTime to String
     return announcementData;
   }
 }

@@ -31,10 +31,9 @@ class ActivityData {
       title: json['title'] as String?,
       details: json['details'] as String?,
       notes: json['notes'] as String?,
-      startTime:
-          json['startTime'] != null ? DateTime.parse(json['startTime']) : null,
-      endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
-      isCompleted: json['isCompleted'] as bool?,
+      startTime: json['start_time'] != null ? DateTime.parse(json['start_time']) : null,
+      endTime: json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
+      isCompleted: json['is_completed'] as bool? ?? false,
     );
   }
 
@@ -44,9 +43,9 @@ class ActivityData {
       'title': title,
       'details': details,
       'notes': notes,
-      'startTime': startTime?.toIso8601String(),
-      'endTime': endTime?.toIso8601String(),
-      'isCompleted': isCompleted,
+      'start_time': startTime?.toIso8601String(),
+      'end_time': endTime?.toIso8601String(),
+      'is_completed': isCompleted,
     };
   }
 }

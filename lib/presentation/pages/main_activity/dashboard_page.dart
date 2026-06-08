@@ -11,6 +11,8 @@ import '../../../shared/theme_control.dart';
 
 import '../../../shared/components/button_2.dart';
 import '../../../shared/components/circlecard1.dart';
+import '../../../../controllers/home_controller.dart';
+import 'package:get/get.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -21,6 +23,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int _currentIndex = 0;
+  final HomeController _homeController = Get.find<HomeController>();
 
   //Logics used in the Dashboard screen here;
 
@@ -66,8 +69,8 @@ class _DashboardPageState extends State<DashboardPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    '9 : 23 AM',
+                                  Obx(() => Text(
+                                    _homeController.checkInTime.value,
                                     style: TextStyle(
                                       fontSize: screen.width *
                                           0.08, // 8% of screen width
@@ -75,7 +78,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Comfortaa',
                                     ),
-                                  ),
+                                  )),
                                   Text(
                                     'Today\'s in time',
                                     style: TextStyle(
@@ -123,8 +126,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        '13',
+                                      Obx(() => Text(
+                                        '${_homeController.activitiesCompleted.value}',
                                         style: TextStyle(
                                           fontSize: screen.width *
                                               0.08, // 8% of screen width
@@ -132,7 +135,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Comfortaa',
                                         ),
-                                      ),
+                                      )),
                                       Text(
                                         'Activites\nCompleted',
                                         style: TextStyle(
@@ -174,8 +177,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        '7',
+                                      Obx(() => Text(
+                                        '${_homeController.activitiesLeft.value}',
                                         style: TextStyle(
                                           fontSize: screen.width *
                                               0.08, // 8% of screen width
@@ -183,7 +186,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Comfortaa',
                                         ),
-                                      ),
+                                      )),
                                       Text(
                                         'Activities\nLeft',
                                         style: TextStyle(
@@ -227,8 +230,8 @@ class _DashboardPageState extends State<DashboardPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    '7 : 20 : 5 HRS',
+                                  Obx(() => Text(
+                                    _homeController.workHours.value,
                                     style: TextStyle(
                                       fontSize: screen.width *
                                           0.08, // 8% of screen width
@@ -236,7 +239,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Comfortaa',
                                     ),
-                                  ),
+                                  )),
                                   Text(
                                     'Work Hours',
                                     style: TextStyle(

@@ -1,6 +1,7 @@
-import { MapContainer, TileLayer, Circle } from "react-leaflet";
+import { MapContainer, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "@/lib/leaflet-setup";
+import { MapLayerToggle } from "./MapLayerToggle";
 
 interface SiteCircle {
   id: string;
@@ -16,9 +17,9 @@ interface SitesOverviewMapProps {
 
 export function SitesOverviewMap({ center, sites }: SitesOverviewMapProps) {
   return (
-    <div className="leaflet-map-root h-full w-full">
+    <div className="leaflet-map-root relative h-full w-full">
       <MapContainer center={center} zoom={11} className="h-full w-full">
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+        <MapLayerToggle />
         {sites.map((s) => (
           <Circle
             key={s.id}

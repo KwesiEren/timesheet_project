@@ -104,7 +104,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
                                 return Column(
                                   children: [
                                     ListTile(
-                                      leading: activity.isCompleted!
+                                      leading: activity.isCompleted == true
                                           ? const Icon(
                                               Icons.task_alt, // Tick icon
                                               color: Colors.green)
@@ -113,13 +113,18 @@ class _ActivitiesPageState extends State<ActivitiesPage> {
                                                   .hourglass_bottom_rounded, // Tick icon
                                               color: Colors.grey),
                                       title: Text(
-                                        activity.title as String,
+                                        activity.title ?? 'No Title',
                                         style: const TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.w500),
                                       ),
                                       subtitle: Text(
-                                        '${activity.startTime!.hour}:${activity.startTime!.minute} - ${activity.endTime!.hour}:${activity.endTime!.minute}',
+                                        activity.startTime != null 
+                                            ? '${activity.startTime!.hour.toString().padLeft(2, '0')}:${activity.startTime!.minute.toString().padLeft(2, '0')} - ' +
+                                              (activity.endTime != null 
+                                                ? '${activity.endTime!.hour.toString().padLeft(2, '0')}:${activity.endTime!.minute.toString().padLeft(2, '0')}' 
+                                                : 'Ongoing')
+                                            : 'No start time',
                                         style: const TextStyle(fontSize: 15),
                                       ),
                                     ),

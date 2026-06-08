@@ -1,15 +1,15 @@
-import { MapContainer, TileLayer, Circle, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, Circle, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "@/lib/leaflet-setup";
 import { MapResizeOnMount } from "./MapResizeOnMount";
 import { MapFlyToCenter } from "./MapFlyToCenter";
+import { MapLayerToggle } from "./MapLayerToggle";
 
 interface SitePickerMapProps {
   lat: number;
   lng: number;
   radius: number;
   onLocationChange: (lat: number, lng: number) => void;
-  /** Change when dialog opens so Leaflet gets a fresh instance */
   instanceKey?: string;
 }
 
@@ -32,7 +32,7 @@ export function SitePickerMap({ lat, lng, radius, onLocationChange, instanceKey 
   const center: [number, number] = [lat, lng];
 
   return (
-    <div className="leaflet-map-root h-full w-full">
+    <div className="leaflet-map-root relative h-full w-full">
       <MapContainer
         key={instanceKey}
         center={center}
@@ -40,7 +40,7 @@ export function SitePickerMap({ lat, lng, radius, onLocationChange, instanceKey 
         className="h-full w-full"
         scrollWheelZoom
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+        <MapLayerToggle />
         <MapResizeOnMount />
         <MapFlyToCenter lat={lat} lng={lng} />
         <Circle

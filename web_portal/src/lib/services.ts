@@ -201,14 +201,25 @@ export async function setEmployeeStatus(id: string, status: string): Promise<voi
   await supabase.from('daily_logs').update({ status }).eq('id', id).eq('organization_id', orgId);
 }
 
-export async function inviteEmployee(payload: { 
-  email: string; 
+export async function inviteEmployee(payload: {
+  email: string;
   role: string;
   department?: string;
   primary_site_id?: string;
 }): Promise<void> {
   const orgId = await getCurrentOrgId();
-  const { error } = await supabase.from('invites').insert([{ ...payload, organization_id: orgId }]);
+  const { data: { user } } = await supabase.auth.getUser();
+  const token = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const expires_at = new Date(Date.now() + 7 * 86400000).toISOString();
+  const { error } = await supabase.from('invites').insert([{
+    organization_id: orgId,
+    inviter_id: user?.id ?? null,
+    email: payload.email,
+    role: payload.role,
+    token,
+    expires_at,
+    status: 'pending',
+  }]);
   if (error) throw error;
 }
 
@@ -243,25 +254,64 @@ export async function getOrgMembers() {
 }
 
 // ---- Sites ----
+// DB columns: latitude, longitude, radius_meters, project_uuid (uuid FK)
+// Frontend Site type: lat, lng, radius, project_id
+function mapSiteRow(r: any): Site {
+  return {
+    id: r.id,
+    organization_id: r.organization_id,
+    project_id: r.project_uuid ?? r.project_id ?? undefined,
+    name: r.name,
+    lat: Number(r.latitude),
+    lng: Number(r.longitude),
+    radius: Number(r.radius_meters ?? 100),
+    photo_required: !!r.photo_required,
+    created_at: r.created_at,
+  };
+}
+
+function mapSitePayload(p: Partial<Site> & { lat?: number; lng?: number; radius?: number }) {
+  const out: any = {};
+  if (p.name !== undefined) out.name = p.name;
+  if (p.lat !== undefined) out.latitude = p.lat;
+  if (p.lng !== undefined) out.longitude = p.lng;
+  if (p.radius !== undefined) out.radius_meters = p.radius;
+  if (p.photo_required !== undefined) out.photo_required = p.photo_required;
+  if (p.project_id !== undefined) out.project_uuid = p.project_id || null;
+  return out;
+}
+
 export async function getSites(): Promise<Site[]> {
   const orgId = await getCurrentOrgId();
   const { data, error } = await supabase.from('sites').select('*').eq('organization_id', orgId).order('name');
   if (error) throw error;
-  return data as any;
+  return (data ?? []).map(mapSiteRow);
 }
 
 export async function createSite(payload: Omit<Site, "id" | "organization_id" | "created_at">): Promise<Site> {
   const orgId = await getCurrentOrgId();
-  const { data, error } = await supabase.from('sites').insert([{ ...payload, organization_id: orgId }]).select().single();
+  const row = {
+    id: crypto.randomUUID(),
+    organization_id: orgId,
+    is_active: true,
+    ...mapSitePayload(payload as any),
+  };
+  const { data, error } = await supabase.from('sites').insert([row]).select().single();
   if (error) throw error;
-  return data as any;
+  return mapSiteRow(data);
 }
 
 export async function updateSite(id: string, payload: Partial<Site>): Promise<Site> {
   const orgId = await getCurrentOrgId();
-  const { data, error } = await supabase.from('sites').update(payload).eq('id', id).eq('organization_id', orgId).select().single();
+  const { data, error } = await supabase
+    .from('sites')
+    .update(mapSitePayload(payload as any))
+    .eq('id', id)
+    .eq('organization_id', orgId)
+    .select()
+    .single();
   if (error) throw error;
-  return data as any;
+  return mapSiteRow(data);
 }
 
 export async function deleteSite(id: string): Promise<void> {
@@ -319,26 +369,65 @@ export async function deleteActivityType(id: string): Promise<void> {
 }
 
 // ---- Timesheets ----
+// DB: timesheet_entries(start_time, end_time, is_completed, is_flagged, user_id, project_id)
+// Frontend TimeEntry: clock_in, clock_out, status, employee_id, site_id
+function mapTimeEntry(r: any): TimeEntry {
+  const status: any = r.is_flagged ? "pending" : r.is_completed ? "approved" : "pending";
+  return {
+    id: r.id,
+    employee_id: r.user_id,
+    employee_name: r.profiles?.name ?? r.profiles?.email ?? "—",
+    site_id: r.project_id ?? "",
+    site_name: r.title ?? "—",
+    clock_in: r.start_time,
+    clock_out: r.end_time,
+    hours: r.total_duration_seconds ? Math.round((r.total_duration_seconds / 3600) * 100) / 100 : undefined,
+    status,
+    manual_edit: !!r.last_edited_by,
+  };
+}
+
+function mapTimeEntryPayload(p: Partial<TimeEntry> & { clock_in?: string; clock_out?: string }) {
+  const out: any = {};
+  if (p.clock_in !== undefined) out.start_time = p.clock_in;
+  if (p.clock_out !== undefined) out.end_time = p.clock_out;
+  if (p.clock_in && p.clock_out) {
+    const total = Math.max(0, Math.floor((new Date(p.clock_out).getTime() - new Date(p.clock_in).getTime()) / 1000));
+    out.total_duration_seconds = total;
+  }
+  return out;
+}
+
 export async function getTimesheets(params?: { from?: string; to?: string }): Promise<TimeEntry[]> {
   const orgId = await getCurrentOrgId();
-  let query = supabase.from('timesheet_entries').select('*').eq('organization_id', orgId).order('start_time', { ascending: false });
+  let query = supabase
+    .from('timesheet_entries')
+    .select('*, profiles(id, name, email)')
+    .eq('organization_id', orgId)
+    .order('start_time', { ascending: false });
   if (params?.from) query = query.gte('start_time', params.from);
   if (params?.to) query = query.lte('start_time', params.to);
   const { data, error } = await query;
   if (error) throw error;
-  return data as any;
+  return (data ?? []).map(mapTimeEntry);
 }
 
-export async function updateTimesheet(id: string, payload: Partial<TimeEntry>): Promise<TimeEntry> {
+export async function updateTimesheet(id: string, payload: Partial<TimeEntry> & { clock_in?: string; clock_out?: string }): Promise<TimeEntry> {
   const orgId = await getCurrentOrgId();
-  const { data, error } = await supabase.from('timesheet_entries').update(payload).eq('id', id).eq('organization_id', orgId).select().single();
+  const { data, error } = await supabase
+    .from('timesheet_entries')
+    .update(mapTimeEntryPayload(payload))
+    .eq('id', id)
+    .eq('organization_id', orgId)
+    .select('*, profiles(id, name, email)')
+    .single();
   if (error) throw error;
-  return data as any;
+  return mapTimeEntry(data);
 }
 
 export async function approveTimesheet(id: string): Promise<void> {
   const orgId = await getCurrentOrgId();
-  const { error } = await supabase.from('timesheet_entries').update({ is_completed: true }).eq('id', id).eq('organization_id', orgId);
+  const { error } = await supabase.from('timesheet_entries').update({ is_completed: true, is_flagged: false }).eq('id', id).eq('organization_id', orgId);
   if (error) throw error;
 }
 
@@ -348,12 +437,23 @@ export async function rejectTimesheet(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function createTimesheet(payload: { user_id: string; site_id: string; start_time: string; end_time: string; title?: string }): Promise<void> {
+export async function createTimesheet(payload: { user_id: string; site_id?: string; project_id?: string; start_time: string; end_time: string; title?: string; details?: string; notes?: string }): Promise<void> {
   const orgId = await getCurrentOrgId();
+  const start = new Date(payload.start_time).getTime();
+  const end = new Date(payload.end_time).getTime();
+  const total = Math.max(0, Math.floor((end - start) / 1000));
   const { error } = await supabase.from('timesheet_entries').insert([{
-    ...payload,
+    id: crypto.randomUUID(),
+    user_id: payload.user_id,
     organization_id: orgId,
-    manual_edit: true,
+    project_id: payload.project_id ?? null,
+    title: payload.title ?? 'Manual entry',
+    details: payload.details ?? null,
+    notes: payload.notes ?? null,
+    start_time: payload.start_time,
+    end_time: payload.end_time,
+    total_duration_seconds: total,
+    is_completed: true,
   }]);
   if (error) throw error;
 }
@@ -408,18 +508,24 @@ export async function getPayrollPdf(params: {
 }
 
 // ---- Notifications ----
+// DB columns: id (text, no default), user_id, organization_id, title, message, is_read, created_at
+// Frontend Notification.type is derived from title prefix tag (e.g. "[missing_log] ...").
+function parseNotificationType(title: string): Notification["type"] {
+  const m = /^\[(missing_log|geofence_violation|manual_edit|info)\]/.exec(title || "");
+  return (m?.[1] as Notification["type"]) || "info";
+}
+
 export async function getNotifications(): Promise<Notification[]> {
   const orgId = await getCurrentOrgId();
   const { data, error } = await supabase.from('notifications').select('*').eq('organization_id', orgId).order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row: Record<string, unknown>) => ({
-    id: row.id as string,
-    type: row.type as Notification["type"],
-    message: row.message as string,
-    created_at: row.created_at as string,
-    read: Boolean(row.is_read ?? row.read),
-    employee_id: row.user_id as string | undefined,
-    site_id: row.site_id as string | undefined,
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    type: parseNotificationType(row.title),
+    message: row.message,
+    created_at: row.created_at,
+    read: Boolean(row.is_read),
+    employee_id: row.user_id ?? undefined,
   }));
 }
 
@@ -433,7 +539,6 @@ export async function runMissingLogsCheck(): Promise<{ created: number; scanned:
   const orgId = await getCurrentOrgId();
   if (!orgId) return { created: 0, scanned: 0, days: 0 };
 
-  // Get all employees in the org
   const { data: members } = await supabase
     .from('user_roles')
     .select('user_id, profiles(name, email)')
@@ -442,7 +547,6 @@ export async function runMissingLogsCheck(): Promise<{ created: number; scanned:
   const userIds = (members ?? []).map((m: any) => m.user_id).filter(Boolean);
   if (userIds.length === 0) return { created: 0, scanned: 0, days: 0 };
 
-  // Build list of last 7 weekdays
   const days: string[] = [];
   const d = new Date();
   while (days.length < 7) {
@@ -463,14 +567,17 @@ export async function runMissingLogsCheck(): Promise<{ created: number; scanned:
 
   const present = new Set((logs ?? []).map((l: any) => `${l.user_id}|${l.date}`));
 
-  // Pull existing missing_log notifications to dedupe
+  // Dedupe against existing missing_log notifications in last 7 days
   const { data: existing } = await supabase
     .from('notifications')
-    .select('message')
+    .select('message,title')
     .eq('organization_id', orgId)
-    .eq('type', 'missing_log')
     .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString());
-  const existingSet = new Set((existing ?? []).map((n: any) => n.message));
+  const existingSet = new Set(
+    (existing ?? [])
+      .filter((n: any) => (n.title || '').startsWith('[missing_log]'))
+      .map((n: any) => n.message)
+  );
 
   const inserts: any[] = [];
   for (const m of members ?? []) {
@@ -481,9 +588,10 @@ export async function runMissingLogsCheck(): Promise<{ created: number; scanned:
       const message = `${name} missed log on ${day}`;
       if (existingSet.has(message)) continue;
       inserts.push({
+        id: crypto.randomUUID(),
         organization_id: orgId,
         user_id: uid,
-        type: 'missing_log',
+        title: '[missing_log] Missing daily log',
         message,
         is_read: false,
       });
@@ -491,7 +599,8 @@ export async function runMissingLogsCheck(): Promise<{ created: number; scanned:
   }
 
   if (inserts.length > 0) {
-    await supabase.from('notifications').insert(inserts);
+    const { error } = await supabase.from('notifications').insert(inserts);
+    if (error) throw error;
   }
 
   return { created: inserts.length, scanned: userIds.length, days: days.length };
