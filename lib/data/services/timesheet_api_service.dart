@@ -16,15 +16,15 @@ class TimesheetApiService {
           .eq('user_id', session.user.id)
           .order('start_time', ascending: false);
           
-      return data.map((json) {
+      return data.map<TimesheetEntryModel>((json) {
         return TimesheetEntryModel(
           id: json['id'],
           userId: json['user_id'],
           projectId: json['project_id'],
-          description: json['title'] ?? json['description'],
+          title: json['title'] ?? json['description'],
           startTime: DateTime.parse(json['start_time']),
           endTime: json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
-          totalDuration: json['total_duration_seconds'] != null ? Duration(seconds: json['total_duration_seconds']) : null,
+          totalDurationSeconds: json['total_duration_seconds'],
         );
       }).toList();
     } catch (e) {
@@ -56,7 +56,7 @@ class TimesheetApiService {
         'user_id': session.user.id,
         'organization_id': orgId,
         'project_id': entry.projectId,
-        'title': entry.description,
+        'title': entry.title,
         'start_time': entry.startTime.toIso8601String(),
         'is_completed': false,
       }).select().single();
@@ -65,7 +65,7 @@ class TimesheetApiService {
         id: data['id'],
         userId: data['user_id'],
         projectId: data['project_id'],
-        description: data['title'],
+        title: data['title'],
         startTime: DateTime.parse(data['start_time']),
       );
     } catch (e) {
@@ -78,8 +78,8 @@ class TimesheetApiService {
     try {
       final data = await _supabase.from('timesheet_entries').update({
         'end_time': entry.endTime?.toIso8601String(),
-        'total_duration_seconds': entry.totalDuration?.inSeconds,
-        'title': entry.description,
+        'total_duration_seconds': entry.totalDurationSeconds,
+        'title': entry.title,
         'is_completed': entry.endTime != null,
       }).eq('id', entry.id).select().single();
 
@@ -87,10 +87,10 @@ class TimesheetApiService {
         id: data['id'],
         userId: data['user_id'],
         projectId: data['project_id'],
-        description: data['title'] ?? data['description'],
+        title: data['title'] ?? data['description'],
         startTime: DateTime.parse(data['start_time']),
         endTime: data['end_time'] != null ? DateTime.parse(data['end_time']) : null,
-        totalDuration: data['total_duration_seconds'] != null ? Duration(seconds: data['total_duration_seconds']) : null,
+        totalDurationSeconds: data['total_duration_seconds'],
       );
     } catch (e) {
       debugPrint('Update Timesheet Error: $e');

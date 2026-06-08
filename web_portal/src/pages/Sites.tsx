@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, FolderKanban, MapPinned } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderKanban, MapPinned, LocateFixed, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { SitePickerMap } from "@/components/maps/SitePickerMap";
 import { SitesOverviewMap } from "@/components/maps/SitesOverviewMap";
+import { getCurrentLocation } from "@/lib/geolocation";
 
 interface FormState {
   name: string;
@@ -52,7 +53,9 @@ function SiteForm({
   submitting: boolean;
   mapInstanceKey: string;
 }) {
+  const { toast } = useToast();
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
+  const [locating, setLocating] = useState(false);
   const [form, setForm] = useState<FormState>({
     name: initial?.name ?? "",
     lat: initial?.lat ?? 5.6037,
@@ -61,6 +64,26 @@ function SiteForm({
     photo_required: initial?.photo_required ?? false,
     project_id: initial?.project_id ?? "",
   });
+
+  const useMyLocation = async () => {
+    setLocating(true);
+    try {
+      const { lat, lng, accuracyMeters } = await getCurrentLocation();
+      setForm((prev) => ({ ...prev, lat, lng }));
+      toast({
+        title: "Location captured",
+        description: `GPS accuracy ±${Math.round(accuracyMeters)} m. Tap the map to fine-tune if needed.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Could not get location",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setLocating(false);
+    }
+  };
 
   return (
     <form
@@ -88,29 +111,45 @@ function SiteForm({
           </SelectContent>
         </Select>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="lat">Latitude</Label>
-          <Input
-            id="lat"
-            type="number"
-            step="any"
-            className="font-mono-data"
-            value={form.lat}
-            onChange={(e) => setForm({ ...form, lat: parseFloat(e.target.value) })}
-          />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid flex-1 grid-cols-2 gap-3 min-w-[12rem]">
+          <div className="space-y-1.5">
+            <Label htmlFor="lat">Latitude</Label>
+            <Input
+              id="lat"
+              type="number"
+              step="any"
+              className="font-mono-data"
+              value={form.lat}
+              onChange={(e) => setForm({ ...form, lat: parseFloat(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="lng">Longitude</Label>
+            <Input
+              id="lng"
+              type="number"
+              step="any"
+              className="font-mono-data"
+              value={form.lng}
+              onChange={(e) => setForm({ ...form, lng: parseFloat(e.target.value) })}
+            />
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="lng">Longitude</Label>
-          <Input
-            id="lng"
-            type="number"
-            step="any"
-            className="font-mono-data"
-            value={form.lng}
-            onChange={(e) => setForm({ ...form, lng: parseFloat(e.target.value) })}
-          />
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="shrink-0 gap-2"
+          disabled={locating}
+          onClick={useMyLocation}
+        >
+          {locating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <LocateFixed className="h-4 w-4" />
+          )}
+          {locating ? "Locating…" : "Use my location"}
+        </Button>
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -141,7 +180,9 @@ function SiteForm({
           onLocationChange={(lat, lng) => setForm((prev) => ({ ...prev, lat, lng }))}
         />
       </div>
-      <p className="text-xs text-muted-foreground">Click the map to place the site center.</p>
+      <p className="text-xs text-muted-foreground">
+        On site? Use your GPS, then click the map to fine-tune the geofence center.
+      </p>
       <DialogFooter>
         <Button type="submit" disabled={submitting}>{initial ? "Save changes" : "Create site"}</Button>
       </DialogFooter>

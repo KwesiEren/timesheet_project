@@ -2,6 +2,7 @@ import { MapContainer, TileLayer, Circle, Marker, useMapEvents } from "react-lea
 import "leaflet/dist/leaflet.css";
 import "@/lib/leaflet-setup";
 import { MapResizeOnMount } from "./MapResizeOnMount";
+import { MapFlyToCenter } from "./MapFlyToCenter";
 
 interface SitePickerMapProps {
   lat: number;
@@ -41,6 +42,7 @@ export function SitePickerMap({ lat, lng, radius, onLocationChange, instanceKey 
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
         <MapResizeOnMount />
+        <MapFlyToCenter lat={lat} lng={lng} />
         <Circle
           center={center}
           radius={radius}

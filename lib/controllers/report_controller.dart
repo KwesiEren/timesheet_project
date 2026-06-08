@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -24,7 +25,7 @@ class ReportController extends GetxController {
       final endStr = DateFormat('yyyy-MM-dd').format(endDate);
       final dateTag = DateFormat('yyyyMMdd').format(startDate);
       
-      final fileName = 'payroll_\${userName.replaceAll(' ', '_')}_\$dateTag.pdf';
+      final fileName = "payroll_${userName.replaceAll(' ', '_')}_$dateTag.pdf";
       late String savePath;
 
       // 1. Determine Save Path
@@ -66,18 +67,16 @@ class ReportController extends GetxController {
       isLoading.value = false;
 
       // 3. Prompt to Share
-      Get.dialog(
-        GetDialog(
-          title: 'Export Successful',
-          middleText: 'Payroll report saved to:\n\${savePath.split('/').last}\n\nWould you like to share it now?',
-          textConfirm: 'Share',
-          textCancel: 'Close',
-          confirmTextColor: .white,
-          onConfirm: () async {
-            Get.back();
-            await Share.shareXFiles([XFile(savePath)], text: 'Payroll Report for \$userName');
-          },
-        ),
+      Get.defaultDialog(
+        title: 'Export Successful',
+        middleText: 'Payroll report saved to:\n${savePath.split('/').last}\n\nWould you like to share it now?',
+        textConfirm: 'Share',
+        textCancel: 'Close',
+        confirmTextColor: Colors.white,
+        onConfirm: () async {
+          Get.back();
+          await Share.shareXFiles([XFile(savePath)], text: 'Payroll Report for $userName');
+        },
       );
 
     } catch (e) {
@@ -88,35 +87,5 @@ class ReportController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
-  }
-}
-
-// Simple wrapper for Get.defaultDialog to keep it clean
-class GetDialog extends StatelessWidget {
-  final String title;
-  final String middleText;
-  final String textConfirm;
-  final String textCancel;
-  final VoidCallback onConfirm;
-
-  const GetDialog({
-    super.key,
-    required this.title,
-    required this.middleText,
-    required this.textConfirm,
-    required this.textCancel,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Get.defaultDialog(
-      title: title,
-      middleText: middleText,
-      textConfirm: textConfirm,
-      textCancel: textCancel,
-      onConfirm: onConfirm,
-      barrierDismissible: false,
-    );
   }
 }

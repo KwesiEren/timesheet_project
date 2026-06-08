@@ -95,7 +95,7 @@ class TimesheetController extends GetxController {
         id: _uuid.v4(),
         userId: '',
         projectId: projectId,
-        description: description,
+        title: description,
         startTime: DateTime.now(),
       );
       
@@ -117,7 +117,7 @@ class TimesheetController extends GetxController {
     try {
       final updatedEntry = activeEntry.value!.copyWith(
         endTime: DateTime.now(),
-        totalDuration: DateTime.now().difference(activeEntry.value!.startTime),
+        totalDurationSeconds: DateTime.now().difference(activeEntry.value!.startTime).inSeconds,
       );
       
       final savedEntry = await _apiService.updateTimesheet(updatedEntry);
